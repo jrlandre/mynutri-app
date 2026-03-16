@@ -1,18 +1,77 @@
 "use client"
 
+import { useState } from "react"
 import { createClient } from "@/lib/supabase/client"
 import { motion } from "framer-motion"
+import { useRouter } from "next/navigation"
+
+type Mode = "signin" | "signup"
+type Step = "form" | "confirm"
 
 export default function AuthPage() {
   const supabase = createClient()
+  const router = useRouter()
 
-  async function signIn(provider: "google" | "apple" | "azure") {
+  const [mode, setMode] = useState<Mode>("signin")
+  const [step, setStep] = useState<Step>("form")
+  const [email, setEmail] = useState("")
+  const [password, setPassword] = useState("")
+  const [error, setError] = useState<string | null>(null)
+  const [loading, setLoading] = useState(false)
+
+  async function signInWithOAuth(provider: "google" | "apple" | "azure") {
     await supabase.auth.signInWithOAuth({
       provider,
-      options: {
-        redirectTo: `${window.location.origin}/auth/callback`,
-      },
+      options: { redirectTo: `${window.location.origin}/auth/callback` },
     })
+  }
+
+  async function handleSubmit(e: React.FormEvent) {
+    e.preventDefault()
+    setError(null)
+    setLoading(true)
+
+    try {
+      if (mode === "signin") {
+        const { error } = await supabase.auth.signInWithPassword({ email, password })
+        if (error) throw error
+        router.push("/")
+      } else {
+        const { error } = await supabase.auth.signUp({
+          email,
+          password,
+          options: { emailRedirectTo: `${window.location.origin}/auth/callback` },
+        })
+        if (error) throw error
+        setStep("confirm")
+      }
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : "Erro ao autenticar"
+      setError(translateError(msg))
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  if (step === "confirm") {
+    return (
+      <main className="h-dvh max-w-sm mx-auto flex flex-col items-center justify-center px-6 gap-6 text-center">
+        <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} className="flex flex-col gap-3">
+          <div className="text-4xl">📬</div>
+          <h1 className="text-xl font-extrabold tracking-tight">Confirme seu e-mail</h1>
+          <p className="text-sm text-muted-foreground">
+            Enviamos um link para <strong>{email}</strong>.<br />
+            Clique nele para ativar sua conta.
+          </p>
+          <button
+            onClick={() => { setStep("form"); setMode("signin") }}
+            className="mt-2 text-sm text-primary underline underline-offset-4"
+          >
+            Já confirmei — entrar
+          </button>
+        </motion.div>
+      </main>
+    )
   }
 
   return (
@@ -22,34 +81,94 @@ export default function AuthPage() {
         animate={{ opacity: 1, y: 0 }}
         className="flex flex-col items-center gap-2 text-center"
       >
-        <h1 className="text-2xl font-extrabold tracking-tight">mynutri.food</h1>
+        <h1 className="text-2xl font-extrabold tracking-tight">MyNutri</h1>
         <p className="text-sm text-muted-foreground">
-          Entre para continuar suas análises
+          {mode === "signin" ? "Entre para continuar suas análises" : "Crie sua conta gratuitamente"}
         </p>
       </motion.div>
 
+      {/* Email/password form */}
+      <motion.form
+        onSubmit={handleSubmit}
+        initial={{ opacity: 0, y: 12 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.05 }}
+        className="flex flex-col gap-3 w-full"
+      >
+        <input
+          type="email"
+          placeholder="seu@email.com"
+          value={email}
+          onChange={e => setEmail(e.target.value)}
+          required
+          className="w-full px-4 py-3 rounded-xl border border-border bg-card text-sm outline-none focus:ring-2 focus:ring-primary/30 transition"
+        />
+        <input
+          type="password"
+          placeholder="Senha"
+          value={password}
+          onChange={e => setPassword(e.target.value)}
+          required
+          minLength={6}
+          className="w-full px-4 py-3 rounded-xl border border-border bg-card text-sm outline-none focus:ring-2 focus:ring-primary/30 transition"
+        />
+
+        {error && (
+          <p className="text-sm text-destructive text-center">{error}</p>
+        )}
+
+        <button
+          type="submit"
+          disabled={loading}
+          className="w-full py-3 rounded-xl bg-primary text-primary-foreground text-sm font-semibold hover:opacity-90 transition disabled:opacity-50"
+        >
+          {loading ? "Aguarde..." : mode === "signin" ? "Entrar" : "Criar conta"}
+        </button>
+
+        <button
+          type="button"
+          onClick={() => { setMode(mode === "signin" ? "signup" : "signin"); setError(null) }}
+          className="text-sm text-muted-foreground hover:text-foreground transition text-center"
+        >
+          {mode === "signin" ? "Não tem conta? Criar agora" : "Já tem conta? Entrar"}
+        </button>
+      </motion.form>
+
+      {/* Divider */}
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ delay: 0.1 }}
+        className="flex items-center gap-3 w-full"
+      >
+        <div className="flex-1 h-px bg-border" />
+        <span className="text-xs text-muted-foreground">ou continue com</span>
+        <div className="flex-1 h-px bg-border" />
+      </motion.div>
+
+      {/* OAuth buttons */}
       <motion.div
         initial={{ opacity: 0, y: 12 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.1 }}
+        transition={{ delay: 0.15 }}
         className="flex flex-col gap-3 w-full"
       >
         <button
-          onClick={() => signIn("google")}
+          onClick={() => signInWithOAuth("google")}
           className="w-full flex items-center justify-center gap-3 px-4 py-3 rounded-xl border border-border bg-card text-sm font-medium hover:bg-muted transition-colors"
         >
           <GoogleIcon />
           Continuar com Google
         </button>
         <button
-          onClick={() => signIn("apple")}
+          onClick={() => signInWithOAuth("apple")}
           className="w-full flex items-center justify-center gap-3 px-4 py-3 rounded-xl border border-border bg-card text-sm font-medium hover:bg-muted transition-colors"
         >
           <AppleIcon />
           Continuar com Apple
         </button>
         <button
-          onClick={() => signIn("azure")}
+          onClick={() => signInWithOAuth("azure")}
           className="w-full flex items-center justify-center gap-3 px-4 py-3 rounded-xl border border-border bg-card text-sm font-medium hover:bg-muted transition-colors"
         >
           <MicrosoftIcon />
@@ -58,6 +177,15 @@ export default function AuthPage() {
       </motion.div>
     </main>
   )
+}
+
+function translateError(msg: string): string {
+  if (msg.includes("Invalid login credentials")) return "E-mail ou senha incorretos."
+  if (msg.includes("Email not confirmed")) return "Confirme seu e-mail antes de entrar."
+  if (msg.includes("User already registered")) return "Este e-mail já está cadastrado."
+  if (msg.includes("Password should be at least")) return "A senha deve ter pelo menos 6 caracteres."
+  if (msg.includes("rate limit")) return "Muitas tentativas. Aguarde alguns minutos."
+  return msg
 }
 
 function GoogleIcon() {
