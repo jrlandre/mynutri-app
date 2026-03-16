@@ -56,6 +56,32 @@ interface Partner {
   contact_links: ContactLink[]
 }
 
+interface Nutritionist {
+  id: string
+  user_id: string
+  subdomain: string
+  name: string
+  specialty: string | null
+  city: string | null
+  photo_url: string | null
+  contact_links: ContactLink[]
+  listed: boolean
+  system_prompt: string | null
+  plan: 'standard' | 'enterprise'
+  active: boolean
+}
+
+interface Patient {
+  id: string
+  user_id: string | null
+  nutritionist_id: string
+  email: string | null
+  active: boolean
+  magic_link_token: string | null
+  invited_at: string
+  activated_at: string | null
+}
+
 export type {
   MessageRole,
   ContentType,
@@ -69,4 +95,6 @@ export type {
   TenantConfig,
   ContactLink,
   Partner,
+  Nutritionist,
+  Patient,
 }
