@@ -56,7 +56,7 @@ export default function NutrisPage() {
               Voltar
             </button>
           </div>
-          <h1 className="text-xl font-extrabold tracking-tight">Nutricionistas parceiras</h1>
+          <h1 className="text-xl font-extrabold tracking-tight">Nutricionistas parceiros</h1>
           <p className="text-sm text-muted-foreground mt-1">
             Clientes desses profissionais têm acesso ilimitado ao MyNutri.
           </p>
@@ -107,7 +107,7 @@ export default function NutrisPage() {
               className="flex flex-col items-center gap-3 py-20 text-center"
             >
               <span className="text-3xl">🌱</span>
-              <p className="text-sm font-medium">Nenhuma parceira encontrada</p>
+              <p className="text-sm font-medium">Nenhum parceiro encontrado</p>
               <p className="text-xs text-muted-foreground">
                 {cityFilter || specialtyFilter
                   ? "Tente remover os filtros."
