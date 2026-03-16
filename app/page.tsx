@@ -107,12 +107,15 @@ export default function Home() {
         }),
       })
       if (!res.ok) {
-        const data = await res.json().catch(() => ({})) as { error?: string }
-        if (res.status === 429 && data.error === "limite_diario_atingido") {
-          setPaywalled(true)
-          return
+        const data = await res.json().catch(() => ({})) as { error?: string; message?: string }
+        if (res.status === 429) {
+          if (data.error === "limite_diario_atingido" || data.error === "limite_atingido") {
+            setPaywalled(true)
+            return
+          }
+          throw new Error(data.message ?? "Muitas análises em pouco tempo. Tente novamente.")
         }
-        throw new Error(data.error ?? `Erro ${res.status}`)
+        throw new Error(data.message ?? data.error ?? `Erro ${res.status}`)
       }
       const { result, updatedMessages } = await res.json() as {
         result: AnalysisResult
