@@ -17,9 +17,13 @@ function resolveInputType(contentType: ContentType, hint?: InputType): InputType
   return hint ?? "produce"
 }
 
-function detectInputType(text: string): InputType {
-  if (text.includes("MATURAÇÃO") || text.includes("Janela de consumo")) return "produce"
-  if (text.includes("O QUE É ISSO") || text.includes("O QUE CHAMA ATENÇÃO")) return "label"
+const PRODUCE_SIGNALS = ["MATURAÇÃO", "JANELA DE CONSUMO", "PONTO IDEAL", "PRÉ-MATURAÇÃO", "VERDE", "PASSANDO", "IMPRÓPRIO"]
+const LABEL_SIGNALS   = ["O QUE É ISSO", "O QUE CHAMA ATENÇÃO", "NÍVEL DE PROCESSAMENTO", "IN NATURA", "ULTRAPROCESSADO", "INGREDIENTES"]
+
+function detectInputType(responseText: string): InputType {
+  const upper = responseText.toUpperCase()
+  if (PRODUCE_SIGNALS.some(s => upper.includes(s))) return "produce"
+  if (LABEL_SIGNALS.some(s => upper.includes(s))) return "label"
   return "conversation"
 }
 
@@ -99,7 +103,9 @@ export async function analyzeMessage(
   }
 
   const result: AnalysisResult = {
-    inputType: detectInputType(responseText),
+    inputType: newMessage.contentType === "image" && !inputTypeHint
+      ? detectInputType(responseText)
+      : resolvedType,
     confidence: parseConfidence(responseText),
     confidenceReason: parseConfidenceReason(responseText),
     raw: responseText,

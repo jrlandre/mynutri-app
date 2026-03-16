@@ -84,7 +84,6 @@ export default function Home() {
   const recorderRef = useRef<MediaRecorder | null>(null)
   const chunksRef = useRef<Blob[]>([])
   const inputRef = useRef<HTMLInputElement>(null)
-  const bottomInputRef = useRef<HTMLInputElement>(null)
 
   const isEmpty = session.analyses.length === 0
 
@@ -184,8 +183,7 @@ export default function Home() {
     const text = inputText.trim()
     if (!text || isRecording) return
     setInputText("")
-    // Manter foco no campo ativo
-    ;(bottomInputRef.current ?? inputRef.current)?.focus()
+    inputRef.current?.focus()
     void submit("text", text)
   }
 
@@ -437,7 +435,7 @@ export default function Home() {
 
           {/* Campo de texto */}
           <input
-            ref={bottomInputRef}
+            ref={inputRef}
             type="text"
             value={isRecording ? "" : inputText}
             onChange={(e) => { if (!isRecording) setInputText(e.target.value) }}
