@@ -1,16 +1,16 @@
 import { NextRequest, NextResponse } from "next/server"
-import { Ratelimit } from "@upstash/ratelimit"
-import { kv } from "@vercel/kv"
 import { analyzeMessage } from "@/lib/gemini/analyze"
 import { createClient } from "@/lib/supabase/server"
 import { checkAndIncrementUsage } from "@/lib/usage"
 import type { Message, InputType, ContentType, TenantConfig } from "@/types"
 
-const ipRatelimit = new Ratelimit({
-  redis: kv,
-  limiter: Ratelimit.slidingWindow(15, "1 m"),
-  prefix: "ratelimit_analyze_",
-})
+async function buildIpRatelimit() {
+  const hasKV = !!(process.env.KV_REST_API_URL && process.env.KV_REST_API_TOKEN)
+  if (!hasKV) return null
+  const { Ratelimit } = await import("@upstash/ratelimit")
+  const { kv } = await import("@vercel/kv")
+  return new Ratelimit({ redis: kv, limiter: Ratelimit.slidingWindow(15, "1 m"), prefix: "ratelimit_analyze_" })
+}
 
 interface RequestBody {
   messages: Message[]
@@ -28,8 +28,9 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
   try {
     // Rate limiting por IP distribuído
     const ip = (request.headers.get("x-forwarded-for") ?? "unknown").split(",")[0].trim()
+    const ipRatelimit = await buildIpRatelimit()
 
-    if (ip !== "unknown") {
+    if (ip !== "unknown" && ipRatelimit) {
       const limit = await ipRatelimit.limit(ip)
       if (!limit.success) {
         return NextResponse.json(
