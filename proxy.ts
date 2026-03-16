@@ -61,13 +61,15 @@ export async function proxy(request: NextRequest) {
         }
 
         if (!isWebhook) {
-          const ip = (request.headers.get("x-forwarded-for") ?? "unknown").split(",")[0].trim()
-          const ipLimit = await limiters.ip.limit(`ratelimit_ip_${ip}`)
-          if (!ipLimit.success) {
-            return NextResponse.json(
-              { error: "limite_atingido", message: "Muitas análises em pouco tempo. Tente novamente em alguns minutos.", retryAfter: 60 },
-              { status: 429 }
-            )
+          const ip = (request.headers.get("x-forwarded-for") ?? "").split(",")[0].trim() || null
+          if (ip) {
+            const ipLimit = await limiters.ip.limit(`ratelimit_ip_${ip}`)
+            if (!ipLimit.success) {
+              return NextResponse.json(
+                { error: "limite_atingido", message: "Muitas análises em pouco tempo. Tente novamente em alguns minutos.", retryAfter: 60 },
+                { status: 429 }
+              )
+            }
           }
         }
       }
