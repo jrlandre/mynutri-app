@@ -47,30 +47,32 @@ export async function proxy(request: NextRequest) {
   }
 
   if (request.nextUrl.pathname.startsWith('/api/')) {
-    const limiters = await buildLimiters()
-    if (!limiters) {
-      return NextResponse.next({ request: { headers: requestHeaders } })
-    }
+    try {
+      const limiters = await buildLimiters()
+      if (limiters) {
+        const isWebhook = request.nextUrl.pathname.startsWith('/api/webhook')
 
-    const isWebhook = request.nextUrl.pathname.startsWith('/api/webhook')
+        const globalLimit = await limiters.global.limit("ratelimit_global")
+        if (!globalLimit.success) {
+          return NextResponse.json(
+            { error: "limite_atingido", message: "Muitas análises em pouco tempo. Tente novamente em alguns minutos.", retryAfter: 60 },
+            { status: 429 }
+          )
+        }
 
-    const globalLimit = await limiters.global.limit("ratelimit_global")
-    if (!globalLimit.success) {
-      return NextResponse.json(
-        { error: "limite_atingido", message: "Muitas análises em pouco tempo. Tente novamente em alguns minutos.", retryAfter: 60 },
-        { status: 429 }
-      )
-    }
-
-    if (!isWebhook) {
-      const ip = (request.headers.get("x-forwarded-for") ?? "unknown").split(",")[0].trim()
-      const ipLimit = await limiters.ip.limit(`ratelimit_ip_${ip}`)
-      if (!ipLimit.success) {
-        return NextResponse.json(
-          { error: "limite_atingido", message: "Muitas análises em pouco tempo. Tente novamente em alguns minutos.", retryAfter: 60 },
-          { status: 429 }
-        )
+        if (!isWebhook) {
+          const ip = (request.headers.get("x-forwarded-for") ?? "unknown").split(",")[0].trim()
+          const ipLimit = await limiters.ip.limit(`ratelimit_ip_${ip}`)
+          if (!ipLimit.success) {
+            return NextResponse.json(
+              { error: "limite_atingido", message: "Muitas análises em pouco tempo. Tente novamente em alguns minutos.", retryAfter: 60 },
+              { status: 429 }
+            )
+          }
+        }
       }
+    } catch {
+      // KV indisponível ou mal configurado — continua sem rate limiting
     }
   }
 
