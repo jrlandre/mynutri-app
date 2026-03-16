@@ -83,7 +83,7 @@ export default function AuthPage() {
       >
         <h1 className="text-2xl font-extrabold tracking-tight">MyNutri</h1>
         <p className="text-sm text-muted-foreground">
-          {mode === "signin" ? "Entre para continuar suas análises" : "Crie sua conta gratuitamente"}
+          {mode === "signin" ? "Entre para continuar" : "Crie sua conta gratuitamente"}
         </p>
       </motion.div>
 
