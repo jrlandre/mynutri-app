@@ -27,10 +27,10 @@ export const maxDuration = 60;
 export async function POST(request: NextRequest): Promise<NextResponse> {
   try {
     // Rate limiting por IP distribuído
-    const ip = (request.headers.get("x-forwarded-for") ?? "unknown").split(",")[0].trim()
+    const ip = (request.headers.get("x-forwarded-for") ?? "").split(",")[0].trim() || null
     const ipRatelimit = await buildIpRatelimit()
 
-    if (ip !== "unknown" && ipRatelimit) {
+    if (ip && ipRatelimit) {
       const limit = await ipRatelimit.limit(ip)
       if (!limit.success) {
         return NextResponse.json(
@@ -43,7 +43,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     // Verificar limite de uso por tier
     const supabase = await createClient()
     const { data: { user } } = await supabase.auth.getUser()
-    const usageCheck = await checkAndIncrementUsage(user?.id ?? null)
+    const usageCheck = await checkAndIncrementUsage(user?.id ?? null, ip)
 
     if (!usageCheck.allowed) {
       return NextResponse.json(

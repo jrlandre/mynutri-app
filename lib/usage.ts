@@ -13,34 +13,72 @@ export interface UsageCheck {
 }
 
 export async function checkAndIncrementUsage(
-  userId: string | null
+  userId: string | null,
+  ip?: string | null
 ): Promise<UsageCheck> {
-  // Não autenticado — controlado por rate limiting no proxy
+  const today = new Date().toISOString().split('T')[0]
+
+  // Não autenticado — rastrear por IP
   if (!userId) {
-    return { allowed: true, tier: 'anon', count: 0, limit: ANON_DAILY_LIMIT }
+    if (!ip) {
+      return { allowed: true, tier: 'anon', count: 0, limit: ANON_DAILY_LIMIT }
+    }
+
+    const { data: usage, error } = await adminClient
+      .from('usage')
+      .select('id, analysis_count')
+      .is('user_id', null)
+      .eq('ip', ip)
+      .eq('date', today)
+      .maybeSingle()
+
+    if (error) throw new Error(`usage check failed: ${error.message}`)
+
+    const currentCount = usage?.analysis_count ?? 0
+
+    if (currentCount >= ANON_DAILY_LIMIT) {
+      return { allowed: false, tier: 'anon', count: currentCount, limit: ANON_DAILY_LIMIT }
+    }
+
+    if (usage) {
+      const { error: updateErr } = await adminClient
+        .from('usage')
+        .update({ analysis_count: currentCount + 1 })
+        .eq('id', usage.id)
+      if (updateErr) throw new Error(`usage update failed: ${updateErr.message}`)
+    } else {
+      const { error: insertErr } = await adminClient
+        .from('usage')
+        .insert({ user_id: null, ip, date: today, analysis_count: 1 })
+      if (insertErr) throw new Error(`usage insert failed: ${insertErr.message}`)
+    }
+
+    return { allowed: true, tier: 'anon', count: currentCount + 1, limit: ANON_DAILY_LIMIT }
   }
 
   // Verificar se é paciente B2B (sem limite)
-  const { data: patient } = await adminClient
+  const { data: patient, error: patientErr } = await adminClient
     .from('patients')
     .select('id')
     .eq('user_id', userId)
     .eq('active', true)
     .maybeSingle()
 
+  if (patientErr) throw new Error(`patient check failed: ${patientErr.message}`)
+
   if (patient) {
     return { allowed: true, tier: 'patient', count: 0, limit: Infinity }
   }
 
   // Usuário free — verificar e incrementar contagem diária
-  const today = new Date().toISOString().split('T')[0]
-
-  const { data: usage } = await adminClient
+  const { data: usage, error: usageErr } = await adminClient
     .from('usage')
     .select('id, analysis_count')
     .eq('user_id', userId)
     .eq('date', today)
     .maybeSingle()
+
+  if (usageErr) throw new Error(`usage check failed: ${usageErr.message}`)
 
   const currentCount = usage?.analysis_count ?? 0
 
@@ -55,14 +93,16 @@ export async function checkAndIncrementUsage(
 
   // Incrementar
   if (usage) {
-    await adminClient
+    const { error: updateErr } = await adminClient
       .from('usage')
       .update({ analysis_count: currentCount + 1 })
       .eq('id', usage.id)
+    if (updateErr) throw new Error(`usage update failed: ${updateErr.message}`)
   } else {
-    await adminClient
+    const { error: insertErr } = await adminClient
       .from('usage')
       .insert({ user_id: userId, date: today, analysis_count: 1 })
+    if (insertErr) throw new Error(`usage insert failed: ${insertErr.message}`)
   }
 
   return {

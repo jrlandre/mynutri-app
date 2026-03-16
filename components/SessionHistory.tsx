@@ -13,10 +13,10 @@ interface SessionHistoryProps {
 }
 
 export default function SessionHistory({ session, onCorrectType, disabled }: SessionHistoryProps) {
-  const bottomRef = useRef<HTMLDivElement>(null)
+  const lastResultRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
-    bottomRef.current?.scrollIntoView({ behavior: "smooth" })
+    lastResultRef.current?.scrollIntoView({ behavior: "smooth", block: "start" })
   }, [session.analyses.length])
 
   return (
@@ -24,9 +24,11 @@ export default function SessionHistory({ session, onCorrectType, disabled }: Ses
       <AnimatePresence initial={false}>
         {session.analyses.map((result, i) => {
           const userMsg = session.messages[i * 2]
+          const isLast = i === session.analyses.length - 1
           return (
             <motion.div
               key={i}
+              ref={isLast ? lastResultRef : undefined}
               initial={{ opacity: 0, y: 16 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.28, ease: "easeOut" }}
@@ -44,7 +46,6 @@ export default function SessionHistory({ session, onCorrectType, disabled }: Ses
           )
         })}
       </AnimatePresence>
-      <div ref={bottomRef} />
     </div>
   )
 }
