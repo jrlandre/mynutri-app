@@ -28,8 +28,8 @@ export default function PaywallScreen() {
         <p className="text-lg font-semibold tracking-tight">
           Poxa, você esgotou suas solicitações...
         </p>
-        <p className="text-sm text-muted-foreground leading-relaxed">
-          Atualmente, o acesso é ilimitado se você for cliente de um profissional de nutrição parceiro.
+        <p className="text-sm text-muted-foreground leading-relaxed text-balance">
+          O acesso é ilimitado se você for cliente de um profissional de nutrição parceiro.
         </p>
         <p className="text-lg font-semibold tracking-tight mt-1">
           Você já realiza acompanhamento nutricional?
