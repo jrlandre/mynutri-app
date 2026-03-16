@@ -2,7 +2,9 @@ import { NextRequest, NextResponse } from "next/server"
 import { Ratelimit } from "@upstash/ratelimit"
 import { kv } from "@vercel/kv"
 import { analyzeMessage } from "@/lib/gemini/analyze"
-import type { Message, InputType, ContentType } from "@/types"
+import { createClient } from "@/lib/supabase/server"
+import { checkAndIncrementUsage } from "@/lib/usage"
+import type { Message, InputType, ContentType, TenantConfig } from "@/types"
 
 const ipRatelimit = new Ratelimit({
   redis: kv,
@@ -26,7 +28,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
   try {
     // Rate limiting por IP distribuído
     const ip = (request.headers.get("x-forwarded-for") ?? "unknown").split(",")[0].trim()
-    
+
     if (ip !== "unknown") {
       const limit = await ipRatelimit.limit(ip)
       if (!limit.success) {
@@ -36,6 +38,29 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
         )
       }
     }
+
+    // Verificar limite de uso por tier
+    const supabase = await createClient()
+    const { data: { user } } = await supabase.auth.getUser()
+    const usageCheck = await checkAndIncrementUsage(user?.id ?? null)
+
+    if (!usageCheck.allowed) {
+      return NextResponse.json(
+        {
+          error: "limite_diario_atingido",
+          tier: usageCheck.tier,
+          count: usageCheck.count,
+          limit: usageCheck.limit,
+        },
+        { status: 429 }
+      )
+    }
+
+    // Resolver tenant config (multi-tenant)
+    const tenantHeader = request.headers.get('x-tenant-config')
+    const tenantConfig: TenantConfig | null = tenantHeader
+      ? JSON.parse(tenantHeader)
+      : null
 
     const body: RequestBody = await request.json()
 
@@ -119,7 +144,8 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     const { result, updatedMessages } = await analyzeMessage(
       body.messages ?? [],
       body.newMessage,
-      body.inputTypeHint
+      body.inputTypeHint,
+      tenantConfig
     )
 
     return NextResponse.json({ result, updatedMessages })

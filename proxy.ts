@@ -1,5 +1,28 @@
 import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
+import { adminClient } from '@/lib/supabase/admin'
+
+async function resolveTenant(request: NextRequest): Promise<string | null> {
+  const host = request.headers.get('host') ?? ''
+  const match = host.match(/^([^.]+)\.mynutri\.pro$/)
+  if (!match) return null
+  const subdomain = match[1]
+
+  const { data } = await adminClient
+    .from('nutritionists')
+    .select('name, system_prompt')
+    .eq('subdomain', subdomain)
+    .eq('active', true)
+    .maybeSingle()
+
+  if (!data) return null
+
+  return JSON.stringify({
+    subdomain,
+    nutritionistName: data.name,
+    systemPrompt: data.system_prompt ?? '',
+  })
+}
 
 // Rate limiting lazy — só ativa se KV estiver configurado
 async function buildLimiters() {
@@ -16,9 +39,18 @@ async function buildLimiters() {
 }
 
 export async function proxy(request: NextRequest) {
+  // Resolver tenant e injetar no request (lido pela API route via x-tenant-config)
+  const tenantJson = await resolveTenant(request)
+  const requestHeaders = new Headers(request.headers)
+  if (tenantJson) {
+    requestHeaders.set('x-tenant-config', tenantJson)
+  }
+
   if (request.nextUrl.pathname.startsWith('/api/')) {
     const limiters = await buildLimiters()
-    if (!limiters) return NextResponse.next()
+    if (!limiters) {
+      return NextResponse.next({ request: { headers: requestHeaders } })
+    }
 
     const isWebhook = request.nextUrl.pathname.startsWith('/api/webhook')
 
@@ -42,7 +74,7 @@ export async function proxy(request: NextRequest) {
     }
   }
 
-  return NextResponse.next()
+  return NextResponse.next({ request: { headers: requestHeaders } })
 }
 
 export const config = {

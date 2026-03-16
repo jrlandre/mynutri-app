@@ -2,7 +2,7 @@ import { ThinkingLevel, createPartFromBase64 } from "@google/genai"
 import type { Content, Part } from "@google/genai"
 import { ai } from "./client"
 import { SYSTEM_PROMPT } from "./prompt"
-import type { Message, AnalysisResult, InputType, ContentType, ConfidenceLevel } from "@/types"
+import type { Message, AnalysisResult, InputType, ContentType, ConfidenceLevel, TenantConfig } from "@/types"
 
 const MODEL = "gemini-3-flash-preview"
 
@@ -56,7 +56,8 @@ function toSdkHistory(messages: Message[]): Content[] {
 export async function analyzeMessage(
   messages: Message[],
   newMessage: Pick<Message, "contentType" | "content" | "mimeType">,
-  inputTypeHint?: InputType
+  inputTypeHint?: InputType,
+  tenantConfig?: TenantConfig | null
 ): Promise<{ result: AnalysisResult; updatedMessages: Message[] }> {
   const resolvedType = resolveInputType(newMessage.contentType, inputTypeHint)
   const thinkingLevel = thinkingLevelMap[resolvedType]
@@ -69,11 +70,13 @@ export async function analyzeMessage(
     { role: "user", parts: newParts },
   ]
 
+  const systemPrompt = tenantConfig?.systemPrompt || SYSTEM_PROMPT
+
   const response = await ai.models.generateContent({
     model: MODEL,
     contents,
     config: {
-      systemInstruction: SYSTEM_PROMPT,
+      systemInstruction: systemPrompt,
       thinkingConfig: { thinkingLevel },
     },
   })

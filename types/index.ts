@@ -35,6 +35,12 @@ interface SessionState {
   analyses: AnalysisResult[]
 }
 
+interface TenantConfig {
+  subdomain: string
+  nutritionistName: string
+  systemPrompt: string
+}
+
 export type {
   MessageRole,
   ContentType,
@@ -45,4 +51,5 @@ export type {
   Message,
   AnalysisResult,
   SessionState,
+  TenantConfig,
 }

@@ -3,6 +3,7 @@
 import { useState, useRef } from "react"
 import { AnimatePresence, motion } from "framer-motion"
 import SessionHistory from "@/components/SessionHistory"
+import PaywallScreen from "@/components/PaywallScreen"
 import { compressImage } from "@/lib/compress-image"
 import type { SessionState, AnalysisResult, InputType } from "@/types"
 
@@ -79,6 +80,7 @@ export default function Home() {
   const [inputText, setInputText] = useState("")
   const [error, setError] = useState<string | null>(null)
   const [isRecording, setIsRecording] = useState(false)
+  const [paywalled, setPaywalled] = useState(false)
   const recorderRef = useRef<MediaRecorder | null>(null)
   const chunksRef = useRef<Blob[]>([])
 
@@ -104,6 +106,10 @@ export default function Home() {
       })
       if (!res.ok) {
         const data = await res.json().catch(() => ({})) as { error?: string }
+        if (res.status === 429 && data.error === "limite_diario_atingido") {
+          setPaywalled(true)
+          return
+        }
         throw new Error(data.error ?? `Erro ${res.status}`)
       }
       const { result, updatedMessages } = await res.json() as {
@@ -246,7 +252,9 @@ export default function Home() {
       {/* Histórico / Estado vazio */}
       <section className="flex-1 overflow-y-auto px-4 py-3 flex flex-col">
         <AnimatePresence mode="wait">
-          {isEmpty && !loading ? (
+          {paywalled ? (
+            <PaywallScreen />
+          ) : isEmpty && !loading ? (
             <motion.div
               key="empty"
               initial={{ opacity: 0 }}
