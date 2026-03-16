@@ -41,6 +41,21 @@ interface TenantConfig {
   systemPrompt: string
 }
 
+interface ContactLink {
+  type: 'whatsapp' | 'instagram' | 'email' | 'website' | string
+  label: string
+  url: string
+}
+
+interface Partner {
+  id: string
+  name: string
+  photo_url: string | null
+  specialty: string | null
+  city: string | null
+  contact_links: ContactLink[]
+}
+
 export type {
   MessageRole,
   ContentType,
@@ -52,4 +67,6 @@ export type {
   AnalysisResult,
   SessionState,
   TenantConfig,
+  ContactLink,
+  Partner,
 }
