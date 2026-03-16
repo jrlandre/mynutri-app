@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 
 export type AuthStep = 'email' | 'login' | 'signup' | 'verify'
-export type OAuthProvider = 'google' | 'apple' | 'azure'
+export type OAuthProvider = 'google'
 
 interface State {
   step: AuthStep
