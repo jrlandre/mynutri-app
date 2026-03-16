@@ -1,191 +1,292 @@
-"use client"
+'use client'
 
-import { useState } from "react"
-import { createClient } from "@/lib/supabase/client"
-import { motion } from "framer-motion"
-import { useRouter } from "next/navigation"
+import { useState } from 'react'
+import { motion, AnimatePresence } from 'framer-motion'
+import { useAuthFlow } from '@/hooks/useAuthFlow'
+import type { OAuthProvider } from '@/hooks/useAuthFlow'
+import Link from 'next/link'
 
-type Mode = "signin" | "signup"
-type Step = "form" | "confirm"
+const variants = {
+  enter: { opacity: 0, y: 10 },
+  center: { opacity: 1, y: 0 },
+  exit: { opacity: 0, y: -8 },
+}
 
 export default function AuthPage() {
-  const supabase = createClient()
-  const router = useRouter()
+  const flow = useAuthFlow()
 
-  const [mode, setMode] = useState<Mode>("signin")
-  const [step, setStep] = useState<Step>("form")
-  const [email, setEmail] = useState("")
-  const [password, setPassword] = useState("")
-  const [error, setError] = useState<string | null>(null)
-  const [loading, setLoading] = useState(false)
+  return (
+    <main className="h-dvh max-w-sm mx-auto flex flex-col items-center justify-center px-6">
+      <AnimatePresence mode="wait">
+        {flow.step === 'email' && (
+          <EmailStep key="email" flow={flow} />
+        )}
+        {flow.step === 'login' && (
+          <LoginStep key="login" flow={flow} />
+        )}
+        {flow.step === 'signup' && (
+          <SignupStep key="signup" flow={flow} />
+        )}
+        {flow.step === 'verify' && (
+          <VerifyStep key="verify" flow={flow} />
+        )}
+      </AnimatePresence>
+    </main>
+  )
+}
 
-  async function signInWithOAuth(provider: "google" | "apple" | "azure") {
-    await supabase.auth.signInWithOAuth({
-      provider,
-      options: { redirectTo: `${window.location.origin}/auth/callback` },
-    })
-  }
+// ── Email step ────────────────────────────────────────────────────────────────
 
-  async function handleSubmit(e: React.FormEvent) {
+function EmailStep({ flow }: { flow: ReturnType<typeof useAuthFlow> }) {
+  const [email, setEmail] = useState('')
+
+  function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
-    setError(null)
-    setLoading(true)
-
-    try {
-      if (mode === "signin") {
-        const { error } = await supabase.auth.signInWithPassword({ email, password })
-        if (error) throw error
-        router.push("/")
-      } else {
-        const { error } = await supabase.auth.signUp({
-          email,
-          password,
-          options: { emailRedirectTo: `${window.location.origin}/auth/callback` },
-        })
-        if (error) throw error
-        setStep("confirm")
-      }
-    } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : "Erro ao autenticar"
-      setError(translateError(msg))
-    } finally {
-      setLoading(false)
-    }
-  }
-
-  if (step === "confirm") {
-    return (
-      <main className="h-dvh max-w-sm mx-auto flex flex-col items-center justify-center px-6 gap-6 text-center">
-        <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} className="flex flex-col gap-3">
-          <div className="text-4xl">📬</div>
-          <h1 className="text-xl font-extrabold tracking-tight">Confirme seu e-mail</h1>
-          <p className="text-sm text-muted-foreground">
-            Enviamos um link para <strong>{email}</strong>.<br />
-            Clique nele para ativar sua conta.
-          </p>
-          <button
-            onClick={() => { setStep("form"); setMode("signin") }}
-            className="mt-2 text-sm text-primary underline underline-offset-4"
-          >
-            Já confirmei — entrar
-          </button>
-        </motion.div>
-      </main>
-    )
+    if (email.trim()) flow.handleEmailSubmit(email.trim())
   }
 
   return (
-    <main className="h-dvh max-w-sm mx-auto flex flex-col items-center justify-center px-6 gap-8">
-      <motion.div
-        initial={{ opacity: 0, y: 12 }}
-        animate={{ opacity: 1, y: 0 }}
-        className="flex flex-col items-center gap-2 text-center"
-      >
+    <motion.div
+      variants={variants} initial="enter" animate="center" exit="exit"
+      transition={{ duration: 0.2 }}
+      className="flex flex-col items-center gap-8 w-full"
+    >
+      <div className="flex flex-col items-center gap-2 text-center">
         <h1 className="text-2xl font-extrabold tracking-tight">MyNutri</h1>
-        <p className="text-sm text-muted-foreground">
-          {mode === "signin" ? "Entre para continuar" : "Crie sua conta gratuitamente"}
-        </p>
-      </motion.div>
+        <p className="text-sm text-muted-foreground">Entre para continuar</p>
+      </div>
 
-      {/* Email/password form */}
-      <motion.form
-        onSubmit={handleSubmit}
-        initial={{ opacity: 0, y: 12 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.05 }}
-        className="flex flex-col gap-3 w-full"
-      >
+      <form onSubmit={handleSubmit} className="flex flex-col gap-3 w-full">
         <input
           type="email"
           placeholder="seu@email.com"
           value={email}
           onChange={e => setEmail(e.target.value)}
           required
-          className="w-full px-4 py-3 rounded-xl border border-border bg-card text-sm outline-none focus:ring-2 focus:ring-primary/30 transition"
-        />
-        <input
-          type="password"
-          placeholder="Senha"
-          value={password}
-          onChange={e => setPassword(e.target.value)}
-          required
-          minLength={6}
+          autoFocus
           className="w-full px-4 py-3 rounded-xl border border-border bg-card text-sm outline-none focus:ring-2 focus:ring-primary/30 transition"
         />
 
-        {error && (
-          <p className="text-sm text-destructive text-center">{error}</p>
+        {flow.error && (
+          <p className="text-sm text-destructive text-center">{flow.error}</p>
         )}
 
         <button
           type="submit"
-          disabled={loading}
+          disabled={flow.loading || !email.trim()}
           className="w-full py-3 rounded-xl bg-primary text-primary-foreground text-sm font-semibold hover:opacity-90 transition disabled:opacity-50"
         >
-          {loading ? "Aguarde..." : mode === "signin" ? "Entrar" : "Criar conta"}
+          {flow.loading ? 'Verificando...' : 'Continuar'}
         </button>
+      </form>
 
-        <button
-          type="button"
-          onClick={() => { setMode(mode === "signin" ? "signup" : "signin"); setError(null) }}
-          className="text-sm text-muted-foreground hover:text-foreground transition text-center"
-        >
-          {mode === "signin" ? "Não tem conta? Criar agora" : "Já tem conta? Entrar"}
-        </button>
-      </motion.form>
-
-      {/* Divider */}
-      <motion.div
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ delay: 0.1 }}
-        className="flex items-center gap-3 w-full"
-      >
+      <div className="flex items-center gap-3 w-full">
         <div className="flex-1 h-px bg-border" />
-        <span className="text-xs text-muted-foreground">ou continue com</span>
+        <span className="text-xs text-muted-foreground">ou</span>
         <div className="flex-1 h-px bg-border" />
-      </motion.div>
+      </div>
 
-      {/* OAuth buttons */}
-      <motion.div
-        initial={{ opacity: 0, y: 12 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.15 }}
-        className="flex flex-col gap-3 w-full"
-      >
-        <button
-          onClick={() => signInWithOAuth("google")}
-          className="w-full flex items-center justify-center gap-3 px-4 py-3 rounded-xl border border-border bg-card text-sm font-medium hover:bg-muted transition-colors"
-        >
-          <GoogleIcon />
-          Continuar com Google
-        </button>
-        <button
-          onClick={() => signInWithOAuth("apple")}
-          className="w-full flex items-center justify-center gap-3 px-4 py-3 rounded-xl border border-border bg-card text-sm font-medium hover:bg-muted transition-colors"
-        >
-          <AppleIcon />
-          Continuar com Apple
-        </button>
-        <button
-          onClick={() => signInWithOAuth("azure")}
-          className="w-full flex items-center justify-center gap-3 px-4 py-3 rounded-xl border border-border bg-card text-sm font-medium hover:bg-muted transition-colors"
-        >
-          <MicrosoftIcon />
-          Continuar com Microsoft
-        </button>
-      </motion.div>
-    </main>
+      <OAuthRow onSelect={flow.handleOAuth} />
+    </motion.div>
   )
 }
 
-function translateError(msg: string): string {
-  if (msg.includes("Invalid login credentials")) return "E-mail ou senha incorretos."
-  if (msg.includes("Email not confirmed")) return "Confirme seu e-mail antes de entrar."
-  if (msg.includes("User already registered")) return "Este e-mail já está cadastrado."
-  if (msg.includes("Password should be at least")) return "A senha deve ter pelo menos 6 caracteres."
-  if (msg.includes("rate limit")) return "Muitas tentativas. Aguarde alguns minutos."
-  return msg
+// ── Login step ────────────────────────────────────────────────────────────────
+
+function LoginStep({ flow }: { flow: ReturnType<typeof useAuthFlow> }) {
+  const [password, setPassword] = useState('')
+
+  function handleSubmit(e: React.FormEvent) {
+    e.preventDefault()
+    flow.handleLogin(password)
+  }
+
+  return (
+    <motion.div
+      variants={variants} initial="enter" animate="center" exit="exit"
+      transition={{ duration: 0.2 }}
+      className="flex flex-col gap-6 w-full"
+    >
+      <div className="flex flex-col gap-1">
+        <button
+          onClick={flow.handleBack}
+          className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition w-fit"
+        >
+          <ChevronLeft />
+          Voltar
+        </button>
+        <h2 className="text-xl font-extrabold tracking-tight mt-2">Bem-vindo de volta</h2>
+        <p className="text-sm text-muted-foreground truncate">{flow.email}</p>
+      </div>
+
+      <form onSubmit={handleSubmit} className="flex flex-col gap-3">
+        <input
+          type="password"
+          placeholder="Sua senha"
+          value={password}
+          onChange={e => setPassword(e.target.value)}
+          required
+          autoFocus
+          className="w-full px-4 py-3 rounded-xl border border-border bg-card text-sm outline-none focus:ring-2 focus:ring-primary/30 transition"
+        />
+
+        {flow.error && (
+          <p className="text-sm text-destructive text-center">{flow.error}</p>
+        )}
+
+        <button
+          type="submit"
+          disabled={flow.loading || !password}
+          className="w-full py-3 rounded-xl bg-primary text-primary-foreground text-sm font-semibold hover:opacity-90 transition disabled:opacity-50"
+        >
+          {flow.loading ? 'Entrando...' : 'Entrar'}
+        </button>
+
+        <Link
+          href="/auth/forgot-password"
+          className="text-sm text-muted-foreground hover:text-foreground transition text-center"
+        >
+          Esqueceu a senha?
+        </Link>
+      </form>
+    </motion.div>
+  )
+}
+
+// ── Signup step ───────────────────────────────────────────────────────────────
+
+function SignupStep({ flow }: { flow: ReturnType<typeof useAuthFlow> }) {
+  const [password, setPassword] = useState('')
+
+  function handleSubmit(e: React.FormEvent) {
+    e.preventDefault()
+    flow.handleSignup(password)
+  }
+
+  return (
+    <motion.div
+      variants={variants} initial="enter" animate="center" exit="exit"
+      transition={{ duration: 0.2 }}
+      className="flex flex-col gap-6 w-full"
+    >
+      <div className="flex flex-col gap-1">
+        <button
+          onClick={flow.handleBack}
+          className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition w-fit"
+        >
+          <ChevronLeft />
+          Voltar
+        </button>
+        <h2 className="text-xl font-extrabold tracking-tight mt-2">Criar conta</h2>
+        <p className="text-sm text-muted-foreground truncate">{flow.email}</p>
+      </div>
+
+      <form onSubmit={handleSubmit} className="flex flex-col gap-3">
+        <input
+          type="password"
+          placeholder="Crie uma senha (mín. 6 caracteres)"
+          value={password}
+          onChange={e => setPassword(e.target.value)}
+          required
+          minLength={6}
+          autoFocus
+          className="w-full px-4 py-3 rounded-xl border border-border bg-card text-sm outline-none focus:ring-2 focus:ring-primary/30 transition"
+        />
+
+        {flow.error && (
+          <p className="text-sm text-destructive text-center">{flow.error}</p>
+        )}
+
+        <button
+          type="submit"
+          disabled={flow.loading || password.length < 6}
+          className="w-full py-3 rounded-xl bg-primary text-primary-foreground text-sm font-semibold hover:opacity-90 transition disabled:opacity-50"
+        >
+          {flow.loading ? 'Criando conta...' : 'Criar conta'}
+        </button>
+      </form>
+    </motion.div>
+  )
+}
+
+// ── Verify step ───────────────────────────────────────────────────────────────
+
+function VerifyStep({ flow }: { flow: ReturnType<typeof useAuthFlow> }) {
+  const [resent, setResent] = useState(false)
+
+  async function handleResend() {
+    await flow.handleResend()
+    if (!flow.error) setResent(true)
+  }
+
+  return (
+    <motion.div
+      variants={variants} initial="enter" animate="center" exit="exit"
+      transition={{ duration: 0.2 }}
+      className="flex flex-col items-center gap-6 w-full text-center"
+    >
+      <span className="text-4xl">📬</span>
+
+      <div className="flex flex-col gap-2">
+        <h2 className="text-xl font-extrabold tracking-tight">Confirme seu e-mail</h2>
+        <p className="text-sm text-muted-foreground">
+          Enviamos um link para <strong className="text-foreground">{flow.email}</strong>.
+          <br />
+          Clique nele para ativar sua conta.
+        </p>
+      </div>
+
+      {flow.error && (
+        <p className="text-sm text-destructive">{flow.error}</p>
+      )}
+
+      <button
+        onClick={handleResend}
+        disabled={flow.loading || resent}
+        className="text-sm text-primary underline underline-offset-4 disabled:opacity-50 disabled:no-underline"
+      >
+        {resent ? 'E-mail reenviado ✓' : flow.loading ? 'Reenviando...' : 'Reenviar e-mail'}
+      </button>
+
+      <button
+        onClick={flow.handleBack}
+        className="text-sm text-muted-foreground hover:text-foreground transition"
+      >
+        Usar outro e-mail
+      </button>
+    </motion.div>
+  )
+}
+
+// ── OAuth row ────────────────────────────────────────────────────────────────
+
+function OAuthRow({ onSelect }: { onSelect: (p: OAuthProvider) => void }) {
+  return (
+    <div className="flex gap-3 w-full">
+      {(['apple', 'google', 'azure'] as OAuthProvider[]).map(provider => (
+        <button
+          key={provider}
+          onClick={() => onSelect(provider)}
+          aria-label={`Continuar com ${provider}`}
+          className="flex-1 flex items-center justify-center py-3 rounded-xl border border-border bg-card hover:bg-muted transition-colors"
+        >
+          {provider === 'apple' && <AppleIcon />}
+          {provider === 'google' && <GoogleIcon />}
+          {provider === 'azure' && <MicrosoftIcon />}
+        </button>
+      ))}
+    </div>
+  )
+}
+
+// ── Icons ────────────────────────────────────────────────────────────────────
+
+function ChevronLeft() {
+  return (
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M15 18l-6-6 6-6" />
+    </svg>
+  )
 }
 
 function GoogleIcon() {
