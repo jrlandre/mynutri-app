@@ -44,7 +44,7 @@ export default function NutrisPage() {
 
   return (
     <>
-      <main className="min-h-dvh max-w-lg mx-auto px-4 pb-12">
+      <main className="min-h-dvh max-w-2xl mx-auto px-4 pb-12">
         {/* Header */}
         <div className="sticky top-0 bg-background pt-4 pb-3 z-10">
           <div className="flex items-center gap-3 mb-4">
