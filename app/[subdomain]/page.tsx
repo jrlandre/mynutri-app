@@ -18,7 +18,7 @@ export default async function SubdomainPage({
   if (!data) {
     return (
       <main className="min-h-dvh flex items-center justify-center px-6">
-        <p className="text-sm text-muted-foreground">Nutricionista não encontrada.</p>
+        <p className="text-sm text-muted-foreground">Nutricionista não encontrado.</p>
       </main>
     )
   }

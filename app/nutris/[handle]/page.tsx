@@ -93,7 +93,7 @@ export default async function NutriProfilePage({
         {/* Value prop */}
         <div className="w-full rounded-xl border border-border bg-card px-4 py-3 text-center">
           <p className="text-sm text-muted-foreground leading-relaxed">
-            Pacientes desta nutricionista têm{" "}
+            Pacientes deste nutricionista têm{" "}
             <span className="text-foreground font-medium">acesso ilimitado ao MyNutri</span>{" "}
             como parte do acompanhamento.
           </p>

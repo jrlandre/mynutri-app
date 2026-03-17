@@ -139,7 +139,7 @@ export default function AssinarClient({ appDomain }: Props) {
               type="text"
               value={name}
               onChange={(e) => setName(e.target.value)}
-              placeholder="Dra. Ana Souza"
+              placeholder="Dr. João Silva"
               required
               className="px-4 py-3 text-sm border border-border rounded-xl bg-card focus:outline-none focus:ring-2 focus:ring-ring/40 transition-shadow"
             />

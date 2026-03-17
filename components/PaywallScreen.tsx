@@ -7,7 +7,7 @@ export default function PaywallScreen() {
   const router = useRouter()
 
   function handleShare() {
-    const text = "Estou usando o MyNutri para fazer escolhas mais conscientes no mercado. Peça à sua nutricionista para liberar acesso ilimitado pra você!"
+    const text = "Estou usando o MyNutri para fazer escolhas mais conscientes no mercado. Peça ao seu nutricionista para liberar acesso ilimitado pra você!"
     const url = "https://mynutri.food"
 
     if (navigator.share) {

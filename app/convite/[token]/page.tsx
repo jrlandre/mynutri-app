@@ -46,7 +46,7 @@ export default async function ConvitePage({ params }: Props) {
     <ConviteClient
       token={token}
       email={patient.email ?? ''}
-      nutritionistName={nutritionist?.name ?? 'sua nutricionista'}
+      nutritionistName={nutritionist?.name ?? 'seu nutricionista'}
     />
   )
 }
