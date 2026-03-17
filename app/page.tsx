@@ -4,6 +4,7 @@ import { useState, useRef } from "react"
 import { AnimatePresence, motion } from "framer-motion"
 import SessionHistory from "@/components/SessionHistory"
 import PaywallScreen from "@/components/PaywallScreen"
+import LoginGateScreen from "@/components/LoginGateScreen"
 import { compressImage } from "@/lib/compress-image"
 import type { SessionState, AnalysisResult, InputType } from "@/types"
 
@@ -81,6 +82,7 @@ export default function Home() {
   const [error, setError] = useState<string | null>(null)
   const [isRecording, setIsRecording] = useState(false)
   const [paywalled, setPaywalled] = useState(false)
+  const [loginGated, setLoginGated] = useState(false)
   const recorderRef = useRef<MediaRecorder | null>(null)
   const chunksRef = useRef<Blob[]>([])
   const inputRef = useRef<HTMLInputElement>(null)
@@ -109,7 +111,11 @@ export default function Home() {
         const data = await res.json().catch(() => ({})) as { error?: string; message?: string }
         if (res.status === 429) {
           if (data.error === "limite_diario_atingido" || data.error === "limite_atingido") {
-            setPaywalled(true)
+            if (data.tier === 'anon') {
+              setLoginGated(true)
+            } else {
+              setPaywalled(true)
+            }
             return
           }
           throw new Error(data.message ?? "Muitas análises em pouco tempo. Tente novamente.")
@@ -257,8 +263,10 @@ export default function Home() {
       {/* Histórico / Estado vazio */}
       <section className="flex-1 overflow-y-auto px-4 py-3 flex flex-col">
         <AnimatePresence mode="wait">
-          {paywalled ? (
-            <PaywallScreen />
+          {loginGated ? (
+            <LoginGateScreen key="login-gate" />
+          ) : paywalled ? (
+            <PaywallScreen key="paywall" />
           ) : isEmpty && !loading ? (
             <motion.div
               key="empty"
