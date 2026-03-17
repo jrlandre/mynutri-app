@@ -93,12 +93,12 @@ export default function AssinarClient({ appDomain }: Props) {
   const canSubmit = subdomain && name && email && plan && subdomainStatus === "available" && !loading
 
   return (
-    <main className="min-h-dvh bg-background flex flex-col items-center px-4 py-10">
+    <main className="min-h-dvh bg-background max-w-sm mx-auto px-6 py-10 flex flex-col">
       <motion.div
         initial={{ opacity: 0, y: 16 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.3 }}
-        className="w-full max-w-md flex flex-col gap-8"
+        className="flex flex-col gap-8"
       >
         {/* Header */}
         <div className="flex flex-col gap-1">

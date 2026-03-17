@@ -30,8 +30,8 @@ export default async function ObrigadoPage({ searchParams }: Props) {
     : null
 
   return (
-    <main className="min-h-dvh bg-background flex flex-col items-center justify-center px-4">
-      <div className="w-full max-w-sm flex flex-col items-center gap-6 text-center">
+    <main className="min-h-dvh bg-background max-w-sm mx-auto px-6 flex flex-col items-center justify-center">
+      <div className="w-full flex flex-col items-center gap-6 text-center">
         <div className="text-4xl select-none">🎉</div>
 
         <div className="flex flex-col gap-2">
