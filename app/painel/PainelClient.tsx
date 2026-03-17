@@ -258,7 +258,7 @@ function TabVitrine({ nutritionist, onSave }: {
           onClick={() => setListed(v => !v)}
           className={`w-11 h-6 rounded-full transition-colors relative ${listed ? "bg-primary" : "bg-muted"}`}
         >
-          <span className={`absolute top-0.5 w-5 h-5 rounded-full bg-white shadow transition-transform ${listed ? "translate-x-5.5" : "translate-x-0.5"}`} />
+          <span className={`absolute top-0.5 left-0.5 w-5 h-5 rounded-full bg-white shadow transition-transform ${listed ? "translate-x-5" : "translate-x-0"}`} />
         </button>
       </div>
 
