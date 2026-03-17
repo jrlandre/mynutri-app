@@ -49,6 +49,7 @@ interface ContactLink {
 
 interface Partner {
   id: string
+  subdomain: string
   name: string
   photo_url: string | null
   specialty: string | null

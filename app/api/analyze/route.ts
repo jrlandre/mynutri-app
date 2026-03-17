@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server"
 import { analyzeMessage } from "@/lib/gemini/analyze"
 import { createClient } from "@/lib/supabase/server"
+import { adminClient } from "@/lib/supabase/admin"
 import { checkAndIncrementUsage } from "@/lib/usage"
 import type { Message, InputType, ContentType, TenantConfig } from "@/types"
 
@@ -20,6 +21,7 @@ interface RequestBody {
     mimeType?: string
   }
   inputTypeHint?: InputType
+  tenantSubdomain?: string
 }
 
 export const maxDuration = 60;
@@ -59,11 +61,28 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
 
     // Resolver tenant config (multi-tenant)
     const tenantHeader = request.headers.get('x-tenant-config')
-    const tenantConfig: TenantConfig | null = tenantHeader
+    let tenantConfig: TenantConfig | null = tenantHeader
       ? JSON.parse(tenantHeader)
       : null
 
     const body: RequestBody = await request.json()
+
+    // Fallback path-based: tenantSubdomain no body (quando não há subdomínio no host)
+    if (!tenantConfig && body.tenantSubdomain) {
+      const { data: nutri } = await adminClient
+        .from('nutritionists')
+        .select('name, system_prompt')
+        .eq('subdomain', body.tenantSubdomain)
+        .eq('active', true)
+        .maybeSingle()
+      if (nutri) {
+        tenantConfig = {
+          subdomain: body.tenantSubdomain,
+          nutritionistName: nutri.name,
+          systemPrompt: nutri.system_prompt ?? '',
+        }
+      }
+    }
 
     const contentType = body.newMessage?.contentType
     const content = body.newMessage?.content

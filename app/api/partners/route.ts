@@ -13,7 +13,7 @@ export async function GET(request: NextRequest) {
 
   let query = supabase
     .from('nutritionists')
-    .select('id, name, photo_url, specialty, city, contact_links')
+    .select('id, subdomain, name, photo_url, specialty, city, contact_links')
     .eq('active', true)
     .eq('listed', true)
     .order('name')
