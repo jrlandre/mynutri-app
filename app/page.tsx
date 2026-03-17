@@ -108,7 +108,7 @@ export default function Home() {
         }),
       })
       if (!res.ok) {
-        const data = await res.json().catch(() => ({})) as { error?: string; message?: string }
+        const data = await res.json().catch(() => ({})) as { error?: string; message?: string; tier?: string }
         if (res.status === 429) {
           if (data.error === "limite_diario_atingido" || data.error === "limite_atingido") {
             if (data.tier === 'anon') {
