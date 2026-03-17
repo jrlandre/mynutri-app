@@ -35,7 +35,7 @@ export default async function ObrigadoPage({ searchParams }: Props) {
         <div className="text-4xl select-none">🎉</div>
 
         <div className="flex flex-col gap-2">
-          <h1 className="text-xl font-extrabold tracking-tight">Seja bem-vindo ao MyNutri!</h1>
+          <h1 className="text-xl font-extrabold tracking-tight">Boas-vindas ao MyNutri!</h1>
           <p className="text-sm text-muted-foreground leading-relaxed">
             Seu cadastro foi confirmado. Verifique seu e-mail — enviamos o link de acesso ao seu painel.
           </p>
