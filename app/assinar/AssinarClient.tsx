@@ -98,7 +98,7 @@ export default function AssinarClient({ appDomain }: Props) {
         initial={{ opacity: 0, y: 16 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.3 }}
-        className="flex flex-col gap-8"
+        className="my-auto flex flex-col gap-8"
       >
         {/* Header */}
         <div className="flex flex-col gap-1">

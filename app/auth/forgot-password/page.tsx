@@ -31,11 +31,11 @@ export default function ForgotPasswordPage() {
 
   if (sent) {
     return (
-      <main className="h-dvh max-w-sm mx-auto flex flex-col items-center justify-center px-6 gap-6 text-center">
+      <main className="min-h-dvh max-w-sm mx-auto flex flex-col px-6 py-10">
         <motion.div
           initial={{ opacity: 0, y: 12 }}
           animate={{ opacity: 1, y: 0 }}
-          className="flex flex-col items-center gap-4"
+          className="my-auto flex flex-col items-center gap-4"
         >
           <span className="text-4xl">📩</span>
           <h1 className="text-xl font-extrabold tracking-tight">Verifique seu e-mail</h1>
@@ -51,7 +51,8 @@ export default function ForgotPasswordPage() {
   }
 
   return (
-    <main className="h-dvh max-w-sm mx-auto flex flex-col items-center justify-center px-6 gap-8">
+    <main className="min-h-dvh max-w-sm mx-auto flex flex-col px-6 py-10">
+      <div className="my-auto flex flex-col gap-8">
       <motion.div
         initial={{ opacity: 0, y: 12 }}
         animate={{ opacity: 1, y: 0 }}
@@ -101,6 +102,7 @@ export default function ForgotPasswordPage() {
           {loading ? 'Enviando...' : 'Enviar link'}
         </button>
       </motion.form>
+      </div>
     </main>
   )
 }

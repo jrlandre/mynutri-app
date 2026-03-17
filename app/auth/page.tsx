@@ -16,7 +16,8 @@ export default function AuthPage() {
   const flow = useAuthFlow()
 
   return (
-    <main className="h-dvh max-w-sm mx-auto flex flex-col items-center justify-center px-6">
+    <main className="min-h-dvh max-w-sm mx-auto flex flex-col px-6 py-10">
+      <div className="my-auto w-full">
       <AnimatePresence mode="wait">
         {flow.step === 'email' && (
           <EmailStep key="email" flow={flow} />
@@ -31,6 +32,7 @@ export default function AuthPage() {
           <VerifyStep key="verify" flow={flow} />
         )}
       </AnimatePresence>
+      </div>
     </main>
   )
 }

@@ -42,7 +42,7 @@ export default function ResetPasswordPage() {
 
   if (sessionOk === null) {
     return (
-      <main className="h-dvh flex items-center justify-center">
+      <main className="min-h-dvh flex items-center justify-center">
         <div className="w-5 h-5 rounded-full border-2 border-primary border-t-transparent animate-spin" />
       </main>
     )
@@ -50,25 +50,28 @@ export default function ResetPasswordPage() {
 
   if (!sessionOk) {
     return (
-      <main className="h-dvh max-w-sm mx-auto flex flex-col items-center justify-center px-6 gap-4 text-center">
-        <span className="text-4xl">🔗</span>
-        <h1 className="text-xl font-extrabold tracking-tight">Link expirado</h1>
-        <p className="text-sm text-muted-foreground">
-          Este link de redefinição não é mais válido.<br />
-          Solicite um novo abaixo.
-        </p>
-        <a
-          href="/auth/forgot-password"
-          className="text-sm text-primary underline underline-offset-4"
-        >
-          Solicitar novo link
-        </a>
+      <main className="min-h-dvh max-w-sm mx-auto flex flex-col px-6 py-10">
+        <div className="my-auto flex flex-col items-center gap-4 text-center">
+          <span className="text-4xl">🔗</span>
+          <h1 className="text-xl font-extrabold tracking-tight">Link expirado</h1>
+          <p className="text-sm text-muted-foreground">
+            Este link de redefinição não é mais válido.<br />
+            Solicite um novo abaixo.
+          </p>
+          <a
+            href="/auth/forgot-password"
+            className="text-sm text-primary underline underline-offset-4"
+          >
+            Solicitar novo link
+          </a>
+        </div>
       </main>
     )
   }
 
   return (
-    <main className="h-dvh max-w-sm mx-auto flex flex-col items-center justify-center px-6 gap-8">
+    <main className="min-h-dvh max-w-sm mx-auto flex flex-col px-6 py-10">
+      <div className="my-auto flex flex-col gap-8">
       <motion.div
         initial={{ opacity: 0, y: 12 }}
         animate={{ opacity: 1, y: 0 }}
@@ -121,6 +124,7 @@ export default function ResetPasswordPage() {
           {loading ? 'Salvando...' : 'Salvar nova senha'}
         </button>
       </motion.form>
+      </div>
     </main>
   )
 }

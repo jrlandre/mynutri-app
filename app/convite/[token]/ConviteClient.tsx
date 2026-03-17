@@ -37,7 +37,8 @@ export default function ConviteClient({ token, email: initialEmail, nutritionist
   }
 
   return (
-    <main className="min-h-dvh max-w-sm mx-auto flex flex-col items-center justify-center px-6 gap-6 text-center">
+    <main className="min-h-dvh max-w-sm mx-auto flex flex-col items-center px-6 py-10">
+      <div className="my-auto flex flex-col items-center gap-6 text-center w-full">
       <div className="flex flex-col gap-1.5">
         <p className="text-xs text-muted-foreground uppercase tracking-wider font-medium">Convite</p>
         <h1 className="text-xl font-extrabold tracking-tight">
@@ -93,6 +94,7 @@ export default function ConviteClient({ token, email: initialEmail, nutritionist
           </button>
         </form>
       )}
+      </div>
     </main>
   )
 }
