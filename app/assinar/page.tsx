@@ -6,6 +6,6 @@ export const metadata = {
 }
 
 export default function AssinarPage() {
-  const appDomain = process.env.NEXT_PUBLIC_APP_DOMAIN ?? ""
+  const appDomain = (process.env.NEXT_PUBLIC_APP_URL ?? "").replace(/^https?:\/\//, "").replace(/\/$/, "")
   return <AssinarClient appDomain={appDomain} />
 }

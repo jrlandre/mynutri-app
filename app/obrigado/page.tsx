@@ -11,7 +11,7 @@ export const metadata = {
 
 export default async function ObrigadoPage({ searchParams }: Props) {
   const { session_id } = await searchParams
-  const appDomain = process.env.NEXT_PUBLIC_APP_DOMAIN ?? ""
+  const appDomain = (process.env.NEXT_PUBLIC_APP_URL ?? "").replace(/^https?:\/\//, "").replace(/\/$/, "")
 
   let subdomain: string | null = null
 

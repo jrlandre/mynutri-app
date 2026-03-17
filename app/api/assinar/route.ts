@@ -52,7 +52,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       return NextResponse.json({ error: "Configuração de preço ausente." }, { status: 500 })
     }
 
-    const appDomain = process.env.NEXT_PUBLIC_APP_DOMAIN
+    const appDomain = (process.env.NEXT_PUBLIC_APP_URL ?? "").replace(/^https?:\/\//, "").replace(/\/$/, "")
     if (!appDomain) {
       return NextResponse.json({ error: "Configuração de domínio ausente." }, { status: 500 })
     }

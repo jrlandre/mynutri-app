@@ -4,7 +4,7 @@ import { adminClient } from '@/lib/supabase/admin'
 
 async function resolveTenant(request: NextRequest): Promise<string | null> {
   const host = request.headers.get('host') ?? ''
-  const appDomain = (process.env.NEXT_PUBLIC_APP_DOMAIN ?? '').replace(/\./g, '\\.')
+  const appDomain = (process.env.NEXT_PUBLIC_APP_URL ?? '').replace(/^https?:\/\//, '').replace(/\/$/, '').replace(/\./g, '\\.')
   const match = appDomain ? host.match(new RegExp(`^([^.]+)\\.${appDomain}$`)) : null
   if (!match) return null
   const subdomain = match[1]

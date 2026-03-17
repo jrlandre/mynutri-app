@@ -53,7 +53,7 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
     return
   }
 
-  const appDomain = process.env.NEXT_PUBLIC_APP_DOMAIN ?? ""
+  const appDomain = (process.env.NEXT_PUBLIC_APP_URL ?? "").replace(/^https?:\/\//, "").replace(/\/$/, "")
   const panelUrl = `https://${subdomain}.${appDomain}/painel`
 
   // Criar usuário no Supabase Auth via convite (envia email automaticamente)
