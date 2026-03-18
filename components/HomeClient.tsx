@@ -2,14 +2,18 @@
 
 import { useState, useRef } from "react"
 import { AnimatePresence, motion } from "framer-motion"
+import Link from "next/link"
+import { LogOut, LayoutDashboard } from "lucide-react"
+import { createClient } from "@/lib/supabase/client"
 import SessionHistory from "@/components/SessionHistory"
 import PaywallScreen from "@/components/PaywallScreen"
 import LoginGateScreen from "@/components/LoginGateScreen"
 import { compressImage } from "@/lib/compress-image"
-import type { SessionState, AnalysisResult, InputType } from "@/types"
+import type { SessionState, AnalysisResult, InputType, UserProfile } from "@/types"
 
 interface Props {
   tenantSubdomain?: string
+  userProfile?: UserProfile | null
 }
 
 function PearIcon() {
@@ -79,7 +83,7 @@ function StopIcon({ className }: { className?: string }) {
   )
 }
 
-export default function HomeClient({ tenantSubdomain }: Props) {
+export default function HomeClient({ tenantSubdomain, userProfile }: Props) {
   const [session, setSession] = useState<SessionState>({ messages: [], analyses: [] })
   const [loading, setLoading] = useState(false)
   const [inputText, setInputText] = useState("")
@@ -87,11 +91,19 @@ export default function HomeClient({ tenantSubdomain }: Props) {
   const [isRecording, setIsRecording] = useState(false)
   const [paywalled, setPaywalled] = useState(false)
   const [loginGated, setLoginGated] = useState(false)
+  const [menuOpen, setMenuOpen] = useState(false)
   const recorderRef = useRef<MediaRecorder | null>(null)
   const chunksRef = useRef<Blob[]>([])
   const inputRef = useRef<HTMLInputElement>(null)
 
   const isEmpty = session.analyses.length === 0
+
+  async function handleLogout() {
+    const supabase = createClient()
+    await supabase.auth.signOut()
+    setSession({ messages: [], analyses: [] })
+    window.location.href = "/"
+  }
 
   async function submit(
     contentType: "text" | "image" | "audio",
@@ -259,10 +271,83 @@ export default function HomeClient({ tenantSubdomain }: Props) {
   return (
     <main className="h-dvh max-w-2xl mx-auto flex flex-col">
       {/* Header */}
-      <header className="px-4 pt-5 pb-3.5 flex-shrink-0 flex items-center gap-3 border-b border-border">
+      <header className="px-4 pt-5 pb-3.5 flex-shrink-0 flex items-center justify-between border-b border-border">
         <div>
           <h1 className="text-xl font-extrabold leading-tight tracking-tight">MyNutri</h1>
           <p className="text-xs text-muted-foreground leading-tight">Assistente de escolhas nutricionais</p>
+        </div>
+        
+        <div className="relative">
+          {userProfile ? (
+            <>
+              <button
+                onClick={() => setMenuOpen(!menuOpen)}
+                className="w-10 h-10 rounded-full bg-secondary border border-border flex items-center justify-center text-sm font-semibold text-secondary-foreground hover:bg-secondary/80 transition-colors"
+              >
+                {userProfile.name?.[0]?.toUpperCase() || userProfile.email[0].toUpperCase()}
+              </button>
+
+              <AnimatePresence>
+                {menuOpen && (
+                  <>
+                    <div
+                      className="fixed inset-0 z-40"
+                      onClick={() => setMenuOpen(false)}
+                    />
+                    <motion.div
+                      initial={{ opacity: 0, y: -8, scale: 0.95 }}
+                      animate={{ opacity: 1, y: 0, scale: 1 }}
+                      exit={{ opacity: 0, y: -8, scale: 0.95 }}
+                      transition={{ duration: 0.15 }}
+                      className="absolute right-0 top-full mt-2 w-64 bg-card rounded-xl border border-border shadow-lg z-50 overflow-hidden"
+                    >
+                      <div className="px-4 py-3 border-b border-border">
+                        <p className="text-sm font-medium truncate">
+                          {userProfile.name || "Usuário"}
+                        </p>
+                        <p className="text-xs text-muted-foreground truncate">
+                          {userProfile.email}
+                        </p>
+                        {userProfile.nutritionistName && (
+                          <div className="mt-2 inline-flex items-center gap-1.5 px-2 py-1 rounded-md bg-primary/10 text-primary text-xs font-medium">
+                            <span className="w-1.5 h-1.5 rounded-full bg-primary" />
+                            Nutri: {userProfile.nutritionistName}
+                          </div>
+                        )}
+                      </div>
+                      <div className="p-1">
+                        {userProfile.hasPanel && (
+                          <Link
+                            href="/painel"
+                            className="w-full text-left px-3 py-2 text-sm hover:bg-muted rounded-lg transition-colors flex items-center gap-2"
+                            onClick={() => setMenuOpen(false)}
+                          >
+                            <LayoutDashboard size={16} className="text-muted-foreground" /> Acessar painel
+                          </Link>
+                        )}
+                        <button
+                          onClick={() => {
+                            setMenuOpen(false)
+                            handleLogout()
+                          }}
+                          className="w-full text-left px-3 py-2 text-sm text-destructive hover:bg-destructive/10 rounded-lg transition-colors flex items-center gap-2"
+                        >
+                          <LogOut size={16} /> Sair
+                        </button>
+                      </div>
+                    </motion.div>
+                  </>
+                )}
+              </AnimatePresence>
+            </>
+          ) : (
+            <Link
+              href="/auth"
+              className="text-sm font-medium px-4 py-2.5 rounded-xl bg-secondary border border-border hover:bg-secondary/80 transition-colors"
+            >
+              Entrar
+            </Link>
+          )}
         </div>
       </header>
 

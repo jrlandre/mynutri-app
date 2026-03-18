@@ -3,7 +3,11 @@ import { createClient } from '@/lib/supabase/server'
 import { adminClient } from '@/lib/supabase/admin'
 
 export async function GET(request: NextRequest): Promise<NextResponse> {
-  const { searchParams, origin } = request.nextUrl
+  const host = request.headers.get('x-forwarded-host') || request.headers.get('host')
+  const protocol = request.headers.get('x-forwarded-proto') || 'http'
+  const origin = host ? `${protocol}://${host}` : request.nextUrl.origin
+
+  const { searchParams } = request.nextUrl
   const token = searchParams.get('token')
   const code = searchParams.get('code')
 

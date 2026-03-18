@@ -83,6 +83,13 @@ interface Patient {
   activated_at: string | null
 }
 
+interface UserProfile {
+  email: string
+  name?: string | null
+  nutritionistName?: string | null
+  hasPanel?: boolean
+}
+
 export type {
   MessageRole,
   ContentType,
@@ -98,4 +105,5 @@ export type {
   Partner,
   Nutritionist,
   Patient,
+  UserProfile,
 }

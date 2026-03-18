@@ -4,6 +4,12 @@ import { useState, useCallback, useEffect, useMemo } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 
+function getNextUrl(): string {
+  if (typeof window === 'undefined') return '/'
+  const raw = new URLSearchParams(window.location.search).get('next') ?? '/'
+  return raw.startsWith('/') && !raw.startsWith('//') ? raw : '/'
+}
+
 export type AuthStep = 'email' | 'login' | 'signup' | 'verify'
 export type OAuthProvider = 'google'
 
@@ -34,14 +40,14 @@ export function useAuthFlow() {
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event) => {
       if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') {
-        router.push('/')
+        router.push(getNextUrl())
       }
     })
 
     const handleVisibility = async () => {
       if (document.visibilityState === 'visible') {
         const { data: { session } } = await supabase.auth.getSession()
-        if (session) router.push('/')
+        if (session) router.push(getNextUrl())
       }
     }
     document.addEventListener('visibilitychange', handleVisibility)
@@ -97,7 +103,7 @@ export function useAuthFlow() {
         }
         throw error
       }
-      router.push('/')
+      router.push(getNextUrl())
     } catch (err: unknown) {
       set({ loading: false, error: translateError(err) })
     }
@@ -106,16 +112,17 @@ export function useAuthFlow() {
   const handleSignup = useCallback(async (password: string) => {
     set({ loading: true, error: null })
     try {
+      const next = getNextUrl()
       const { data, error } = await supabase.auth.signUp({
         email: state.email,
         password,
         options: {
-          emailRedirectTo: `${window.location.origin}/auth/callback?source=signup`,
+          emailRedirectTo: `${window.location.origin}/auth/callback?source=signup&next=${encodeURIComponent(next)}`,
         },
       })
       if (error) throw error
       if (data.session) {
-        router.push('/')
+        router.push(getNextUrl())
       } else {
         set({ loading: false, step: 'verify' })
       }
@@ -127,11 +134,12 @@ export function useAuthFlow() {
   const handleResend = useCallback(async () => {
     set({ loading: true, error: null })
     try {
+      const next = getNextUrl()
       const { error } = await supabase.auth.resend({
         type: 'signup',
         email: state.email,
         options: {
-          emailRedirectTo: `${window.location.origin}/auth/callback?source=signup`,
+          emailRedirectTo: `${window.location.origin}/auth/callback?source=signup&next=${encodeURIComponent(next)}`,
         },
       })
       if (error) throw error
@@ -146,9 +154,12 @@ export function useAuthFlow() {
   }, [])
 
   const handleOAuth = useCallback(async (provider: OAuthProvider) => {
+    const next = getNextUrl()
     await supabase.auth.signInWithOAuth({
       provider,
-      options: { redirectTo: `${window.location.origin}/auth/callback` },
+      options: {
+        redirectTo: `${window.location.origin}/auth/callback?next=${encodeURIComponent(next)}`,
+      },
     })
   }, [supabase])
 

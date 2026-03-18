@@ -5,7 +5,7 @@ const nextConfig: NextConfig = {
     return [
       {
         source: "/:path*",
-        has: [{ type: "host", value: "(?<subdomain>[^.]+)\\.mynutri\\.pro" }],
+        has: [{ type: "host", value: "(?<subdomain>[^.]+)\\.relapro\\.app" }],
         destination: "/:path*",
       },
     ]

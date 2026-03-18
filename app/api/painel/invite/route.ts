@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from 'next/server'
 import { adminClient } from '@/lib/supabase/admin'
 import { requireNutritionist, isResponse, PATIENT_LIMIT } from '@/lib/painel/guard'
 import { randomUUID } from 'crypto'
+import { Resend } from 'resend'
+import PatientInviteEmail from '@/emails/PatientInviteEmail'
 
 export async function POST(request: NextRequest): Promise<NextResponse> {
   try {
@@ -46,9 +48,24 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
 
     if (upsertError) throw new Error(upsertError.message)
 
-    const host = request.headers.get('host') ?? 'mynutri.pro'
+    const host = request.headers.get('host') ?? 'relapro.app'
     const protocol = host.startsWith('localhost') ? 'http' : 'https'
     const invite_url = `${protocol}://${host}/convite/${token}`
+
+    // Enviar email ao paciente (best-effort — não bloqueia se falhar)
+    if (process.env.RESEND_API_KEY) {
+      try {
+        const resend = new Resend(process.env.RESEND_API_KEY)
+        await resend.emails.send({
+          from: process.env.RESEND_FROM_EMAIL ?? 'MyNutri <noreply@relapro.app>',
+          to: email,
+          subject: `${nutritionist.name} te convidou para o MyNutri`,
+          react: PatientInviteEmail({ nutritionistName: nutritionist.name, inviteUrl: invite_url }),
+        })
+      } catch (err) {
+        console.error('[invite] Falha ao enviar email:', err)
+      }
+    }
 
     return NextResponse.json({ invite_url })
   } catch (e) {

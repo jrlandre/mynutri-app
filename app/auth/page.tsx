@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import { useRouter } from 'next/navigation'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useAuthFlow } from '@/hooks/useAuthFlow'
 import type { OAuthProvider } from '@/hooks/useAuthFlow'
@@ -41,6 +42,15 @@ export default function AuthPage() {
 
 function EmailStep({ flow }: { flow: ReturnType<typeof useAuthFlow> }) {
   const [email, setEmail] = useState('')
+  const router = useRouter()
+
+  function handleBack() {
+    if (window.history.length > 1 && document.referrer.includes(window.location.host)) {
+      router.back()
+    } else {
+      router.push('/')
+    }
+  }
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
@@ -51,8 +61,16 @@ function EmailStep({ flow }: { flow: ReturnType<typeof useAuthFlow> }) {
     <motion.div
       variants={variants} initial="enter" animate="center" exit="exit"
       transition={{ duration: 0.2 }}
-      className="flex flex-col items-center gap-8 w-full"
+      className="flex flex-col gap-6 w-full"
     >
+      <button
+        onClick={handleBack}
+        className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition w-fit"
+      >
+        <ChevronLeft />
+        Voltar
+      </button>
+
       <div className="flex flex-col items-center gap-2 text-center">
         <h1 className="text-2xl font-extrabold tracking-tight">MyNutri</h1>
         <p className="text-sm text-muted-foreground">Entre para continuar</p>

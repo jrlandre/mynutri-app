@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from "next/server"
 import Stripe from "stripe"
 import { adminClient } from "@/lib/supabase/admin"
+import { Resend } from "resend"
+import NutritionistWelcomeEmail from "@/emails/NutritionistWelcomeEmail"
 
 function getStripe() {
   const key = process.env.STRIPE_SECRET_KEY
@@ -91,6 +93,21 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
   }
 
   console.log(`[stripe/webhook] Nutricionista criada: ${subdomain} (${email})`)
+
+  // Enviar email de boas-vindas via Resend (best-effort — não bloqueia o webhook)
+  if (process.env.RESEND_API_KEY) {
+    try {
+      const resend = new Resend(process.env.RESEND_API_KEY)
+      await resend.emails.send({
+        from: process.env.RESEND_FROM_EMAIL ?? 'MyNutri <noreply@relapro.app>',
+        to: email,
+        subject: `Boas-vindas ao MyNutri, ${name.split(' ')[0]}!`,
+        react: NutritionistWelcomeEmail({ name, panelUrl }),
+      })
+    } catch (err) {
+      console.error('[stripe/webhook] Falha ao enviar email de boas-vindas:', err)
+    }
+  }
 }
 
 async function handleSubscriptionDeleted(subscription: Stripe.Subscription) {

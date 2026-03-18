@@ -69,6 +69,20 @@ function TabInicio({ nutritionist, patients, onInvite, onDeactivate }: {
         </button>
       </div>
 
+      {/* Gerenciar assinatura */}
+      <div className="flex justify-end -mt-4">
+        <button
+          onClick={async () => {
+            const res = await fetch('/api/painel/billing', { method: 'POST' })
+            const { url } = await res.json()
+            if (url) window.location.href = url
+          }}
+          className="text-xs text-muted-foreground hover:text-foreground underline underline-offset-2 transition-colors"
+        >
+          Gerenciar assinatura ↗
+        </button>
+      </div>
+
       {/* Modal de convite */}
       <AnimatePresence>
         {showInvite && (

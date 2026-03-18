@@ -1,5 +1,7 @@
 import { headers } from 'next/headers'
 import { redirect } from 'next/navigation'
+import Link from 'next/link'
+import { ChevronLeft } from 'lucide-react'
 import { createClient } from '@/lib/supabase/server'
 import { adminClient } from '@/lib/supabase/admin'
 import PainelClient from './PainelClient'
@@ -10,8 +12,8 @@ function extractSubdomain(host: string): string | null {
   if (process.env.PAINEL_DEV_SUBDOMAIN) return process.env.PAINEL_DEV_SUBDOMAIN
   const match = host.match(/^([^.]+)\./)
   const sub = match?.[1]
-  // Ignorar hosts sem subdomain real (ex: localhost, mynutri-one)
-  if (!sub || sub === 'www' || sub === 'mynutri-one' || sub === 'localhost') return null
+  // Ignorar hosts sem subdomain real (ex: localhost, relapro.app)
+  if (!sub || sub === 'www' || sub === 'localhost') return null
   return sub
 }
 
@@ -36,13 +38,20 @@ export default async function PainelPage() {
 
   if (error || !nutritionist) {
     return (
-      <main className="min-h-dvh flex items-center justify-center px-6">
+      <main className="min-h-dvh flex flex-col items-center justify-center px-6 gap-6">
         <div className="text-center flex flex-col gap-2 max-w-sm">
           <p className="text-lg font-semibold">Acesso negado</p>
           <p className="text-sm text-muted-foreground">
             Sua conta não está associada a este painel.
           </p>
         </div>
+        <Link
+          href="/"
+          className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors"
+        >
+          <ChevronLeft size={16} />
+          Voltar
+        </Link>
       </main>
     )
   }
