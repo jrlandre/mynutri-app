@@ -64,6 +64,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       line_items: [{ price: priceId, quantity: 1 }],
       customer_email: email,
       metadata: { subdomain, name, email },
+      allow_promotion_codes: true,
       success_url: `https://${appDomain}/obrigado?session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: `https://${appDomain}/assinar`,
     })

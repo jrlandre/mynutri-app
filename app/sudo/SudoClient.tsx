@@ -2,20 +2,14 @@
 
 import { useState, useTransition } from "react"
 import { motion, AnimatePresence } from "framer-motion"
-import { ShieldCheck, Users, Brain, Trash2, Plus, X, ChevronRight } from "lucide-react"
-import type { Expert, Coupon } from "@/types"
-import {
-  toggleExpertStatus,
-  changeExpertPlan,
-  createCoupon,
-  deleteCoupon,
-} from "./actions"
+import { ShieldCheck, Users, Brain, ChevronRight, ExternalLink } from "lucide-react"
+import type { Expert } from "@/types"
+import { toggleExpertStatus, changeExpertPlan } from "./actions"
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
 interface Props {
   experts: Expert[]
-  coupons: Coupon[]
   clientCountByExpert: Record<string, number>
   totalActiveClients: number
   usageTodayCount: number
@@ -82,7 +76,7 @@ function TabExperts({ experts, clientCountByExpert }: {
   experts: Expert[]
   clientCountByExpert: Record<string, number>
 }) {
-  const [pending, startTransition] = useTransition()
+  const [, startTransition] = useTransition()
   const [loadingId, setLoadingId] = useState<string | null>(null)
 
   function handleToggleStatus(expertId: string, newStatus: boolean) {
@@ -108,7 +102,6 @@ function TabExperts({ experts, clientCountByExpert }: {
           key={expert.id}
           className={`rounded-2xl border border-border bg-card px-4 py-3 flex flex-col gap-3 transition-opacity ${!expert.active ? "opacity-50" : ""}`}
         >
-          {/* Linha superior: avatar + info */}
           <div className="flex items-center gap-3">
             <div className="w-9 h-9 rounded-full bg-muted flex items-center justify-center text-sm font-semibold text-muted-foreground shrink-0">
               {expert.name[0].toUpperCase()}
@@ -126,9 +119,7 @@ function TabExperts({ experts, clientCountByExpert }: {
             </div>
           </div>
 
-          {/* Linha inferior: ações */}
           <div className="flex items-center gap-2 flex-wrap">
-            {/* Plano toggle */}
             <button
               onClick={() => handleChangePlan(expert.id, expert.plan === 'standard' ? 'enterprise' : 'standard')}
               disabled={!!loadingId}
@@ -141,14 +132,12 @@ function TabExperts({ experts, clientCountByExpert }: {
               {loadingId === expert.id + "-plan" ? "..." : expert.plan}
             </button>
 
-            {/* Clientes */}
             <span className="text-xs text-muted-foreground">
               {clientCountByExpert[expert.id] ?? 0} clientes
             </span>
 
             <div className="flex-1" />
 
-            {/* Status toggle */}
             <button
               onClick={() => handleToggleStatus(expert.id, !expert.active)}
               disabled={!!loadingId}
@@ -173,180 +162,22 @@ function TabExperts({ experts, clientCountByExpert }: {
 
 // ─── Tab Cupons ───────────────────────────────────────────────────────────────
 
-function TabCupons({ initialCoupons }: { initialCoupons: Coupon[] }) {
-  const [coupons, setCoupons] = useState(initialCoupons)
-  const [pending, startTransition] = useTransition()
-
-  // Form state
-  const [code, setCode] = useState("")
-  const [discountPct, setDiscountPct] = useState("")
-  const [validUntil, setValidUntil] = useState("")
-  const [usageLimit, setUsageLimit] = useState("")
-  const [formError, setFormError] = useState<string | null>(null)
-  const [creating, setCreating] = useState(false)
-
-  // Delete confirm
-  const [confirmDelete, setConfirmDelete] = useState<string | null>(null)
-
-  async function handleCreate(e: React.FormEvent) {
-    e.preventDefault()
-    setFormError(null)
-    if (!code || !discountPct) return
-    const pct = parseInt(discountPct)
-    if (isNaN(pct) || pct < 1 || pct > 100) {
-      setFormError("Desconto deve ser entre 1 e 100%")
-      return
-    }
-    setCreating(true)
-    try {
-      await createCoupon(
-        code,
-        pct,
-        validUntil || undefined,
-        usageLimit ? parseInt(usageLimit) : undefined,
-      )
-      setCode("")
-      setDiscountPct("")
-      setValidUntil("")
-      setUsageLimit("")
-    } catch (err: unknown) {
-      setFormError(err instanceof Error ? err.message : "Erro ao criar cupom")
-    }
-    setCreating(false)
-  }
-
-  function handleDelete(couponId: string) {
-    startTransition(async () => {
-      await deleteCoupon(couponId)
-      setCoupons(prev => prev.filter(c => c.id !== couponId))
-      setConfirmDelete(null)
-    })
-  }
-
-  const now = new Date()
-
+function TabCupons() {
   return (
-    <div className="flex flex-col gap-5 pt-4">
-      {/* Formulário de criação */}
-      <div className="rounded-2xl border border-border bg-card px-5 py-4 flex flex-col gap-3">
-        <p className="text-sm font-semibold">Novo cupom</p>
-        <form onSubmit={handleCreate} className="flex flex-col gap-3">
-          <div className="flex gap-2">
-            <input
-              value={code}
-              onChange={e => setCode(e.target.value.toUpperCase())}
-              placeholder="CÓDIGO"
-              required
-              className="flex-1 px-3 py-2.5 rounded-xl border border-border bg-background text-sm font-mono uppercase focus:outline-none focus:ring-2 focus:ring-ring/40"
-            />
-            <div className="relative w-24">
-              <input
-                type="number"
-                value={discountPct}
-                onChange={e => setDiscountPct(e.target.value)}
-                placeholder="10"
-                min={1}
-                max={100}
-                required
-                className="w-full px-3 py-2.5 rounded-xl border border-border bg-background text-sm focus:outline-none focus:ring-2 focus:ring-ring/40"
-              />
-              <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-muted-foreground">%</span>
-            </div>
-          </div>
-          <div className="flex gap-2">
-            <input
-              type="date"
-              value={validUntil}
-              onChange={e => setValidUntil(e.target.value)}
-              className="flex-1 px-3 py-2.5 rounded-xl border border-border bg-background text-sm text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring/40"
-            />
-            <input
-              type="number"
-              value={usageLimit}
-              onChange={e => setUsageLimit(e.target.value)}
-              placeholder="∞ usos"
-              min={1}
-              className="w-28 px-3 py-2.5 rounded-xl border border-border bg-background text-sm focus:outline-none focus:ring-2 focus:ring-ring/40"
-            />
-          </div>
-          {formError && <p className="text-xs text-destructive">{formError}</p>}
-          <button
-            type="submit"
-            disabled={creating || !code || !discountPct}
-            className="w-full py-2.5 rounded-xl bg-primary text-primary-foreground text-sm font-medium hover:opacity-90 active:scale-[0.97] transition-all disabled:opacity-50 flex items-center justify-center gap-2"
-          >
-            <Plus size={15} />
-            {creating ? "Criando..." : "Criar cupom"}
-          </button>
-        </form>
-      </div>
-
-      {/* Lista de cupons */}
-      <div className="flex flex-col gap-2">
-        <p className="text-sm font-semibold">Cupons</p>
-        {coupons.length === 0 ? (
-          <p className="text-sm text-muted-foreground text-center py-6">Nenhum cupom criado ainda.</p>
-        ) : (
-          coupons.map(coupon => {
-            const expired = coupon.valid_until ? new Date(coupon.valid_until) < now : false
-            const isConfirming = confirmDelete === coupon.id
-
-            return (
-              <div key={coupon.id} className="rounded-2xl border border-border bg-card px-4 py-3 flex items-center gap-3">
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2 flex-wrap">
-                    <span className="font-mono text-sm font-semibold">{coupon.code}</span>
-                    <span className="text-xs font-medium px-1.5 py-0.5 rounded bg-primary/10 text-primary">
-                      -{coupon.discount_pct}%
-                    </span>
-                    {expired && (
-                      <span className="text-xs font-medium px-1.5 py-0.5 rounded bg-destructive/10 text-destructive">
-                        Expirado
-                      </span>
-                    )}
-                  </div>
-                  <div className="flex items-center gap-2 mt-0.5 text-xs text-muted-foreground">
-                    <span>
-                      {coupon.used_count} / {coupon.usage_limit ?? "∞"} usos
-                    </span>
-                    {coupon.valid_until && (
-                      <>
-                        <span>·</span>
-                        <span>até {new Date(coupon.valid_until).toLocaleDateString('pt-BR')}</span>
-                      </>
-                    )}
-                  </div>
-                </div>
-
-                {/* Delete */}
-                {isConfirming ? (
-                  <div className="flex items-center gap-2 shrink-0">
-                    <button
-                      onClick={() => handleDelete(coupon.id)}
-                      disabled={pending}
-                      className="text-xs font-medium text-destructive hover:opacity-70 disabled:opacity-40"
-                    >
-                      Confirmar
-                    </button>
-                    <button
-                      onClick={() => setConfirmDelete(null)}
-                      className="p-1 text-muted-foreground hover:text-foreground"
-                    >
-                      <X size={14} />
-                    </button>
-                  </div>
-                ) : (
-                  <button
-                    onClick={() => setConfirmDelete(coupon.id)}
-                    className="p-1.5 rounded-lg text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors shrink-0"
-                  >
-                    <Trash2 size={15} />
-                  </button>
-                )}
-              </div>
-            )
-          })
-        )}
+    <div className="flex flex-col gap-4 pt-4">
+      <div className="rounded-2xl border border-border bg-card px-5 py-8 flex flex-col gap-3 items-center text-center">
+        <p className="text-sm font-semibold">Cupons e Promoções</p>
+        <p className="text-sm text-muted-foreground max-w-xs">
+          Crie, edite e acompanhe o uso de cupons diretamente no Stripe.
+        </p>
+        <a
+          href="https://dashboard.stripe.com/promotion_codes"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="flex items-center gap-1.5 text-sm text-primary font-medium hover:opacity-70 transition-opacity"
+        >
+          Abrir no Stripe <ExternalLink size={14} />
+        </a>
       </div>
     </div>
   )
@@ -359,7 +190,6 @@ type Tab = typeof TABS[number]
 
 export default function SudoClient({
   experts,
-  coupons,
   clientCountByExpert,
   totalActiveClients,
   usageTodayCount,
@@ -368,7 +198,6 @@ export default function SudoClient({
 
   return (
     <div className="flex flex-col">
-      {/* Tabs */}
       <div className="sticky top-[49px] bg-background pt-4 pb-2 z-10">
         <div className="flex gap-1 bg-muted rounded-xl p-1">
           {TABS.map(t => (
@@ -387,7 +216,6 @@ export default function SudoClient({
         </div>
       </div>
 
-      {/* Content */}
       <AnimatePresence mode="wait">
         <motion.div
           key={tab}
@@ -409,9 +237,7 @@ export default function SudoClient({
               clientCountByExpert={clientCountByExpert}
             />
           )}
-          {tab === "Cupons" && (
-            <TabCupons initialCoupons={coupons} />
-          )}
+          {tab === "Cupons" && <TabCupons />}
         </motion.div>
       </AnimatePresence>
     </div>

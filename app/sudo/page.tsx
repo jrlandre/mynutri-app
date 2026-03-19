@@ -1,6 +1,6 @@
 import { adminClient } from '@/lib/supabase/admin'
 import SudoClient from './SudoClient'
-import type { Expert, Coupon } from '@/types'
+import type { Expert } from '@/types'
 
 export default async function SudoPage() {
   const today = new Date()
@@ -9,17 +9,12 @@ export default async function SudoPage() {
 
   const [
     { data: experts },
-    { data: coupons },
     { data: clients },
     { data: usageToday },
   ] = await Promise.all([
     adminClient
       .from('experts')
       .select('id, name, subdomain, plan, active, is_admin, created_at')
-      .order('created_at', { ascending: false }),
-    adminClient
-      .from('coupons')
-      .select('*')
       .order('created_at', { ascending: false }),
     adminClient
       .from('clients')
@@ -39,7 +34,6 @@ export default async function SudoPage() {
   return (
     <SudoClient
       experts={(experts ?? []) as unknown as Expert[]}
-      coupons={(coupons ?? []) as Coupon[]}
       clientCountByExpert={clientCountByExpert}
       totalActiveClients={clients?.filter(c => c.active).length ?? 0}
       usageTodayCount={usageToday?.length ?? 0}
