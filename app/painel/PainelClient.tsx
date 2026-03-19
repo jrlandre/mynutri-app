@@ -446,7 +446,7 @@ export default function PainelClient({ expert: initialExpert, initialClients }: 
   async function handleLogout() {
     const supabase = createClient()
     await supabase.auth.signOut()
-    router.push("/auth")
+    router.replace("/auth")
   }
 
   return (
