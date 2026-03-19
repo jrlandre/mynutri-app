@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server'
 import { adminClient } from '@/lib/supabase/admin'
-import { requireExpert, isResponse, PATIENT_LIMIT } from '@/lib/painel/guard'
+import { requireExpert, isResponse, CLIENT_LIMIT } from '@/lib/painel/guard'
 
 export async function GET(): Promise<NextResponse> {
   try {
@@ -17,8 +17,8 @@ export async function GET(): Promise<NextResponse> {
 
     if (error) throw new Error(error.message)
 
-    const activeCount = (clients ?? []).filter(p => p.active).length
-    const limit = PATIENT_LIMIT[expert.plan] ?? 50
+    const activeCount = (clients ?? []).filter(c => c.active).length
+    const limit = CLIENT_LIMIT[expert.plan] ?? 50
 
     return NextResponse.json({
       expert,

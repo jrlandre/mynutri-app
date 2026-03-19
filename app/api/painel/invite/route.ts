@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { adminClient } from '@/lib/supabase/admin'
-import { requireExpert, isResponse, PATIENT_LIMIT } from '@/lib/painel/guard'
+import { requireExpert, isResponse, CLIENT_LIMIT } from '@/lib/painel/guard'
 import { randomUUID } from 'crypto'
 import { Resend } from 'resend'
 import ClientInviteEmail from '@/emails/ClientInviteEmail'
@@ -18,7 +18,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     }
 
     // Verificar limite de clientes ativos (Modo Padrinho: bypass se for admin)
-    const limit = PATIENT_LIMIT[expert.plan] ?? 50
+    const limit = CLIENT_LIMIT[expert.plan] ?? 50
     if (isFinite(limit) && !expert.is_admin) {
       const { count, error: countError } = await adminClient
         .from('clients')

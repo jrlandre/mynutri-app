@@ -18,14 +18,14 @@ async function checkAdmin() {
   if (!profile?.is_admin) throw new Error('Acesso negado: Requer privilégios Sudo')
 }
 
-export async function toggleProStatus(proId: string, newStatus: boolean) {
+export async function toggleExpertStatus(expertId: string, newStatus: boolean) {
   await checkAdmin()
-  await adminClient.from('experts').update({ active: newStatus }).eq('id', proId)
+  await adminClient.from('experts').update({ active: newStatus }).eq('id', expertId)
   revalidatePath('/sudo')
 }
 
-export async function changeProPlan(proId: string, newPlan: 'standard' | 'enterprise') {
+export async function changeExpertPlan(expertId: string, newPlan: 'standard' | 'enterprise') {
   await checkAdmin()
-  await adminClient.from('experts').update({ plan: newPlan }).eq('id', proId)
+  await adminClient.from('experts').update({ plan: newPlan }).eq('id', expertId)
   revalidatePath('/sudo')
 }

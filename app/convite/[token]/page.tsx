@@ -8,13 +8,13 @@ interface Props {
 export default async function ConvitePage({ params }: Props) {
   const { token } = await params
 
-  const { data: patient } = await adminClient
-    .from('patients')
+  const { data: client } = await adminClient
+    .from('clients')
     .select('id, email, activated_at, expert_id')
     .eq('magic_link_token', token)
     .maybeSingle()
 
-  if (!patient) {
+  if (!client) {
     return (
       <main className="min-h-dvh flex items-center justify-center px-6">
         <div className="text-center flex flex-col gap-2">
@@ -25,7 +25,7 @@ export default async function ConvitePage({ params }: Props) {
     )
   }
 
-  if (patient.activated_at) {
+  if (client.activated_at) {
     return (
       <main className="min-h-dvh flex items-center justify-center px-6">
         <div className="text-center flex flex-col gap-2">
@@ -39,13 +39,13 @@ export default async function ConvitePage({ params }: Props) {
   const { data: expert } = await adminClient
     .from('experts')
     .select('name')
-    .eq('id', patient.expert_id)
+    .eq('id', client.expert_id)
     .maybeSingle()
 
   return (
     <ConviteClient
       token={token}
-      email={patient.email ?? ''}
+      email={client.email ?? ''}
       expertName={expert?.name ?? 'seu Expert'}
     />
   )
