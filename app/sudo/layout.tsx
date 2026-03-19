@@ -1,6 +1,9 @@
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
+import { adminClient } from '@/lib/supabase/admin'
 import { ReactNode } from 'react'
+import Link from 'next/link'
+import { ChevronLeft, ShieldCheck } from 'lucide-react'
 
 export default async function SudoLayout({ children }: { children: ReactNode }) {
   const supabase = await createClient()
@@ -10,25 +13,29 @@ export default async function SudoLayout({ children }: { children: ReactNode }) 
     redirect('/')
   }
 
-  // Verifica se o usuário atual é admin na tabela experts
-  const { data: profile } = await supabase
+  const { data: profile } = await adminClient
     .from('experts')
     .select('is_admin')
     .eq('user_id', user.id)
-    .single()
+    .maybeSingle()
 
   if (!profile?.is_admin) {
     redirect('/')
   }
 
   return (
-    <div className="min-h-screen bg-neutral-100 dark:bg-neutral-900">
-      <header className="bg-black text-white p-4">
-        <div className="max-w-5xl mx-auto font-bold tracking-tight">
-          ⚡ Sudo Panel (God Mode)
+    <div className="min-h-dvh bg-background">
+      <header className="sticky top-0 z-10 bg-background border-b border-border">
+        <div className="max-w-2xl mx-auto px-4 py-3 flex items-center gap-3">
+          <Link href="/" className="text-muted-foreground hover:text-foreground transition-colors">
+            <ChevronLeft size={18} />
+          </Link>
+          <span className="text-sm font-semibold flex items-center gap-1.5">
+            <ShieldCheck size={15} /> Sudo
+          </span>
         </div>
       </header>
-      <main className="max-w-5xl mx-auto p-4 py-8">
+      <main className="max-w-2xl mx-auto px-4 pb-12">
         {children}
       </main>
     </div>

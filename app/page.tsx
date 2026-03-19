@@ -29,7 +29,7 @@ export default async function Home() {
     let expertName = null
     let hasPanel = false
 
-    const [{ data: client }, { data: expert }] = await Promise.all([
+    const [{ data: client }, { data: expert }, { data: adminCheck }] = await Promise.all([
       adminClient
         .from('clients')
         .select('experts(name)')
@@ -39,29 +39,34 @@ export default async function Home() {
         .maybeSingle(),
       adminClient
         .from('experts')
-        .select('id, is_admin')
+        .select('id')
         .eq('user_id', user.id)
         .eq('active', true)
         .limit(1)
-        .maybeSingle()
+        .maybeSingle(),
+      adminClient
+        .from('experts')
+        .select('is_admin')
+        .eq('user_id', user.id)
+        .maybeSingle(),
     ])
 
     if (expert) {
       hasPanel = true
     }
-      
+
     if (client?.experts) {
-      expertName = Array.isArray(client.experts) 
-        ? client.experts[0]?.name 
+      expertName = Array.isArray(client.experts)
+        ? client.experts[0]?.name
         : (client.experts as { name?: string })?.name
     }
-    
+
     userProfile = {
       email: user.email,
       name: user.user_metadata?.full_name || user.user_metadata?.name || null,
       expertName,
       hasPanel,
-      isSudo: expert?.is_admin === true,
+      isSudo: adminCheck?.is_admin === true,
     }
   }
 

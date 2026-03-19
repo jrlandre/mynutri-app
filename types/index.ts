@@ -74,6 +74,16 @@ interface Client {
   activated_at: string | null
 }
 
+interface Coupon {
+  id: string
+  code: string
+  discount_pct: number
+  valid_until: string | null
+  usage_limit: number | null
+  used_count: number
+  created_at: string
+}
+
 interface UserProfile {
   email: string
   name?: string | null
@@ -96,5 +106,6 @@ export type {
   ContactLink,
   Expert,
   Client,
+  Coupon,
   UserProfile,
 }
