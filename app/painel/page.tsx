@@ -12,10 +12,11 @@ function extractSubdomain(host: string): string | null {
   if (process.env.NODE_ENV === 'development' && process.env.PAINEL_DEV_SUBDOMAIN) {
     return process.env.PAINEL_DEV_SUBDOMAIN
   }
-  const match = host.match(/^([^.]+)\./)
+  const appDomain = (process.env.NEXT_PUBLIC_APP_URL ?? '').replace(/^https?:\/\//, '').replace(/\/$/, '')
+  if (!appDomain) return null
+  const match = host.match(new RegExp(`^([^.]+)\\.${appDomain.replace(/\./g, '\\.')}$`))
   const sub = match?.[1]
-  // Ignorar hosts sem subdomain real (ex: localhost, relapro.app)
-  if (!sub || sub === 'www' || sub === 'localhost') return null
+  if (!sub || sub === 'www') return null
   return sub
 }
 
