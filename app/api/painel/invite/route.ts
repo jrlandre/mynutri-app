@@ -48,7 +48,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
 
     if (upsertError) throw new Error(upsertError.message)
 
-    const host = request.headers.get('host') ?? 'relapro.app'
+    const host = request.headers.get('host') ?? 'mynutri.pro'
     const protocol = host.startsWith('localhost') ? 'http' : 'https'
     const invite_url = `${protocol}://${host}/convite/${token}`
 
@@ -57,7 +57,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       try {
         const resend = new Resend(process.env.RESEND_API_KEY)
         await resend.emails.send({
-          from: process.env.RESEND_FROM_EMAIL ?? 'MyNutri <noreply@relapro.app>',
+          from: process.env.RESEND_FROM_EMAIL ?? 'MyNutri <noreply@mynutri.pro>',
           to: email,
           subject: `${expert.name} te convidou para o MyNutri`,
           react: ClientInviteEmail({ expertName: expert.name, inviteUrl: invite_url }),

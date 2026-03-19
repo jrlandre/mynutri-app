@@ -8,7 +8,7 @@ export default function PaywallScreen() {
 
   function handleShare() {
     const text = "Estou usando o MyNutri para fazer escolhas mais conscientes no mercado. Peça ao seu Expert para liberar acesso ilimitado pra você!"
-    const url = "https://relapro.app"
+    const url = "https://mynutri.pro"
 
     if (navigator.share) {
       navigator.share({ text, url }).catch(() => {})

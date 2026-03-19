@@ -99,7 +99,7 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
     try {
       const resend = new Resend(process.env.RESEND_API_KEY)
       await resend.emails.send({
-        from: process.env.RESEND_FROM_EMAIL ?? 'MyNutri <noreply@relapro.app>',
+        from: process.env.RESEND_FROM_EMAIL ?? 'MyNutri <noreply@mynutri.pro>',
         to: email,
         subject: `Boas-vindas ao MyNutri, ${name.split(' ')[0]}!`,
         react: ExpertWelcomeEmail({ name, panelUrl }),
