@@ -3,7 +3,7 @@
 import { useState, useRef } from "react"
 import { AnimatePresence, motion } from "framer-motion"
 import Link from "next/link"
-import { LogOut, LayoutDashboard } from "lucide-react"
+import { LogOut, LayoutDashboard, ShieldCheck } from "lucide-react"
 import { createClient } from "@/lib/supabase/client"
 import SessionHistory from "@/components/SessionHistory"
 import PaywallScreen from "@/components/PaywallScreen"
@@ -323,6 +323,15 @@ export default function HomeClient({ tenantSubdomain, userProfile }: Props) {
                             onClick={() => setMenuOpen(false)}
                           >
                             <LayoutDashboard size={16} className="text-muted-foreground" /> Acessar painel
+                          </Link>
+                        )}
+                        {userProfile.isSudo && (
+                          <Link
+                            href="/sudo"
+                            className="w-full text-left px-3 py-2 text-sm hover:bg-muted rounded-lg transition-colors flex items-center gap-2"
+                            onClick={() => setMenuOpen(false)}
+                          >
+                            <ShieldCheck size={16} className="text-muted-foreground" /> Sudo
                           </Link>
                         )}
                         <button

@@ -79,6 +79,7 @@ interface UserProfile {
   name?: string | null
   expertName?: string | null
   hasPanel?: boolean
+  isSudo?: boolean
 }
 
 export type {

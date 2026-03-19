@@ -39,7 +39,7 @@ export default async function Home() {
         .maybeSingle(),
       adminClient
         .from('experts')
-        .select('id')
+        .select('id, is_admin')
         .eq('user_id', user.id)
         .eq('active', true)
         .limit(1)
@@ -60,7 +60,8 @@ export default async function Home() {
       email: user.email,
       name: user.user_metadata?.full_name || user.user_metadata?.name || null,
       expertName,
-      hasPanel
+      hasPanel,
+      isSudo: expert?.is_admin === true,
     }
   }
 
