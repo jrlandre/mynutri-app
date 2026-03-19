@@ -1,4 +1,4 @@
-import { ThinkingLevel, createPartFromBase64 } from "@google/genai"
+import { ThinkingLevel, createPartFromBase64, Type } from "@google/genai"
 import type { Content, Part } from "@google/genai"
 import { ai } from "./client"
 import { SYSTEM_PROMPT } from "./prompt"
@@ -17,29 +17,10 @@ function resolveInputType(contentType: ContentType, hint?: InputType): InputType
   return hint ?? "produce"
 }
 
-const PRODUCE_SIGNALS = ["MATURAÇÃO", "JANELA DE CONSUMO", "PONTO IDEAL", "PRÉ-MATURAÇÃO", "VERDE", "PASSANDO", "IMPRÓPRIO"]
-const LABEL_SIGNALS   = ["O QUE É ISSO", "O QUE CHAMA ATENÇÃO", "NÍVEL DE PROCESSAMENTO", "IN NATURA", "ULTRAPROCESSADO", "INGREDIENTES"]
-
-function detectInputType(responseText: string): InputType {
-  const upper = responseText.toUpperCase()
-  if (PRODUCE_SIGNALS.some(s => upper.includes(s))) return "produce"
-  if (LABEL_SIGNALS.some(s => upper.includes(s))) return "label"
-  return "conversation"
-}
-
-function parseConfidence(text: string): ConfidenceLevel {
-  const match = text.match(/CONFIANÇA:[*\s]*(Alta|Média|Baixa)/i)
-  return (match?.[1] as ConfidenceLevel) ?? "Média"
-}
-
-function parseConfidenceReason(text: string): string | undefined {
-  const match = text.match(/CONFIANÇA:[*\s]*Baixa[*\s]*\n([^\n]+)/i)
-  return match?.[1]?.trim()
-}
-
-function buildPart(msg: Pick<Message, "contentType" | "content" | "mimeType">): Part[] {
+function buildPart(msg: Pick<Message, "contentType" | "content" | "mimeType">, isUser = false): Part[] {
   if (msg.contentType === "text") {
-    return [{ text: msg.content }]
+    // Delimitar estritamente a entrada do usuário para evitar Jailbreak
+    return [{ text: isUser ? `<user_input>\n${msg.content}\n</user_input>` : msg.content }]
   }
   if (msg.contentType === "image") {
     return [createPartFromBase64(msg.content, msg.mimeType ?? "image/jpeg")]
@@ -53,8 +34,34 @@ function buildPart(msg: Pick<Message, "contentType" | "content" | "mimeType">): 
 function toSdkHistory(messages: Message[]): Content[] {
   return messages.map((msg) => ({
     role: msg.role === "assistant" ? "model" : "user",
-    parts: buildPart(msg),
+    parts: buildPart(msg, msg.role === "user"),
   }))
+}
+
+// Define o JSON Schema estrito para o retorno (Structured Output)
+const analysisResponseSchema = {
+  type: Type.OBJECT,
+  properties: {
+    confidence: {
+      type: Type.STRING,
+      description: "Nível de confiança da análise",
+      enum: ["Alta", "Média", "Baixa"]
+    },
+    confidenceReason: {
+      type: Type.STRING,
+      description: "Justificativa detalhada para o nível de confiança, obrigatório se for Baixa ou Média. Se a entrada for maliciosa, explicar o bloqueio."
+    },
+    raw: {
+      type: Type.STRING,
+      description: "A resposta natural que será exibida para o usuário (pode conter formatação em markdown e emojis)"
+    },
+    inputType: {
+      type: Type.STRING,
+      description: "O tipo detectado do conteúdo da imagem/texto",
+      enum: ["produce", "label", "conversation"]
+    }
+  },
+  required: ["confidence", "raw", "inputType"],
 }
 
 export async function analyzeMessage(
@@ -67,7 +74,7 @@ export async function analyzeMessage(
   const thinkingLevel = thinkingLevelMap[resolvedType]
 
   const history = toSdkHistory(messages)
-  const newParts = buildPart(newMessage)
+  const newParts = buildPart(newMessage, true)
 
   const contents: Content[] = [
     ...history,
@@ -82,15 +89,36 @@ export async function analyzeMessage(
     config: {
       systemInstruction: systemPrompt,
       thinkingConfig: { thinkingLevel },
+      responseMimeType: "application/json",
+      responseSchema: analysisResponseSchema,
     },
   })
 
-  const responseText = response.text ?? ""
+  const responseText = response.text ?? "{}"
+  
+  let parsedData: {
+    confidence: ConfidenceLevel;
+    confidenceReason?: string;
+    raw: string;
+    inputType: InputType;
+  }
+
+  try {
+    parsedData = JSON.parse(responseText)
+  } catch (error) {
+    console.error("Falha ao parsear JSON da LLM:", responseText, error)
+    parsedData = {
+      confidence: "Baixa",
+      confidenceReason: "Erro na estruturação da resposta da IA.",
+      raw: "Desculpe, ocorreu um erro técnico ao processar sua solicitação.",
+      inputType: "conversation"
+    }
+  }
 
   const userMessage: Message = {
     role: "user",
     contentType: newMessage.contentType,
-    content: newMessage.content,
+    content: newMessage.content, // Mantém o original para o frontend
     mimeType: newMessage.mimeType,
     timestamp: Date.now(),
   }
@@ -98,17 +126,15 @@ export async function analyzeMessage(
   const assistantMessage: Message = {
     role: "assistant",
     contentType: "text",
-    content: responseText,
+    content: parsedData.raw, // A resposta formatada é apenas a chave 'raw'
     timestamp: Date.now(),
   }
 
   const result: AnalysisResult = {
-    inputType: newMessage.contentType === "image" && !inputTypeHint
-      ? detectInputType(responseText)
-      : resolvedType,
-    confidence: parseConfidence(responseText),
-    confidenceReason: parseConfidenceReason(responseText),
-    raw: responseText,
+    inputType: parsedData.inputType,
+    confidence: parsedData.confidence,
+    confidenceReason: parsedData.confidenceReason,
+    raw: parsedData.raw,
   }
 
   return {

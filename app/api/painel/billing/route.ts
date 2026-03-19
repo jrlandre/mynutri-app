@@ -19,8 +19,12 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: 'No subscription found' }, { status: 404 })
   }
 
+  const host = (request.headers.get('x-forwarded-host') || request.headers.get('host') || '')
+    .replace(/^0\.0\.0\.0/, 'localhost')
+  const protocol = request.headers.get('x-forwarded-proto') || 'http'
+  const origin = host ? `${protocol}://${host}` : new URL(request.url).origin
+
   const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!)
-  const { origin } = new URL(request.url)
 
   const session = await stripe.billingPortal.sessions.create({
     customer: nutritionist.stripe_customer_id,
