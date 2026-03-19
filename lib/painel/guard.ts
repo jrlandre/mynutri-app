@@ -1,11 +1,7 @@
 import { createClient } from '@/lib/supabase/server'
 import { adminClient } from '@/lib/supabase/admin'
 import type { Expert } from '@/types'
-
-export const CLIENT_LIMIT: Record<string, number> = {
-  standard: 50,
-  enterprise: Infinity,
-}
+export { CLIENT_LIMIT } from '@/lib/plans'
 
 export interface GuardResult {
   expert: Expert

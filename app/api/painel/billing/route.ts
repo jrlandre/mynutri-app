@@ -16,7 +16,7 @@ export async function POST(request: Request) {
     .single()
 
   if (!expert?.stripe_customer_id) {
-    return NextResponse.json({ error: 'No subscription found' }, { status: 404 })
+    return NextResponse.json({ url: '/assinar' })
   }
 
   const host = (request.headers.get('x-forwarded-host') || request.headers.get('host') || '')

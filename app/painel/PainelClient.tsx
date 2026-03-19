@@ -6,8 +6,7 @@ import { Plus, X, Trash2, Check, Upload, Link2, ChevronLeft } from "lucide-react
 import { useRouter } from "next/navigation"
 import { createClient } from "@/lib/supabase/client"
 import type { Expert, Client, ContactLink } from "@/types"
-
-const PLAN_LIMIT: Record<string, number> = { standard: 50, enterprise: Infinity }
+import { CLIENT_LIMIT as PLAN_LIMIT } from "@/lib/plans"
 const CONTACT_TYPES = ["whatsapp", "instagram", "email", "website"] as const
 
 interface Props {
