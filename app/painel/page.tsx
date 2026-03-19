@@ -9,7 +9,9 @@ import type { Expert, Client } from '@/types'
 
 function extractSubdomain(host: string): string | null {
   // dev override
-  if (process.env.PAINEL_DEV_SUBDOMAIN) return process.env.PAINEL_DEV_SUBDOMAIN
+  if (process.env.NODE_ENV === 'development' && process.env.PAINEL_DEV_SUBDOMAIN) {
+    return process.env.PAINEL_DEV_SUBDOMAIN
+  }
   const match = host.match(/^([^.]+)\./)
   const sub = match?.[1]
   // Ignorar hosts sem subdomain real (ex: localhost, relapro.app)
