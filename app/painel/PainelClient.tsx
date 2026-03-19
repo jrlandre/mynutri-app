@@ -77,9 +77,9 @@ function TabInicio({ expert, clients, onInvite, onDeactivate }: {
             const { url } = await res.json()
             if (url) window.location.href = url
           }}
-          className="text-xs text-muted-foreground hover:text-foreground underline underline-offset-2 transition-colors"
+          className="text-xs text-muted-foreground hover:text-foreground transition-colors"
         >
-          Gerenciar assinatura ↗
+          <span className="underline underline-offset-2">Gerenciar assinatura</span> ↗
         </button>
       </div>
 
