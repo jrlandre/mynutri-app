@@ -14,7 +14,7 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
   }
 
   const { data, error } = await adminClient
-    .from("nutritionists")
+    .from("experts")
     .select("id")
     .eq("subdomain", subdomain)
     .maybeSingle()

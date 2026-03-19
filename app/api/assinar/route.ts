@@ -35,7 +35,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
 
     // Verificar disponibilidade do subdomínio
     const { data: existing } = await adminClient
-      .from("nutritionists")
+      .from("experts")
       .select("id")
       .eq("subdomain", subdomain)
       .maybeSingle()
