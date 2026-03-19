@@ -31,10 +31,16 @@ function buildPart(msg: Pick<Message, "contentType" | "content" | "mimeType">, i
   return [{ text: msg.content }]
 }
 
+const HISTORY_WINDOW = 20
+
 function toSdkHistory(messages: Message[]): Content[] {
-  return messages.map((msg) => ({
+  return messages.slice(-HISTORY_WINDOW).map((msg) => ({
     role: msg.role === "assistant" ? "model" : "user",
-    parts: buildPart(msg, msg.role === "user"),
+    parts: msg.contentType === "image"
+      ? [{ text: "<imagem enviada anteriormente — já analisada>" }]
+      : msg.contentType === "audio"
+        ? [{ text: "<áudio enviado anteriormente — já analisado>" }]
+        : buildPart(msg, msg.role === "user"),
   }))
 }
 

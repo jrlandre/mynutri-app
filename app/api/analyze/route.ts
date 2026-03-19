@@ -109,47 +109,6 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
           { status: 400 }
         )
       }
-
-      // Padrões semânticos de Jailbreak
-      const JAILBREAK_PATTERNS = [
-        /ignore (todas )?as (regras|instruções) (anteriores|acima)/i,
-        /você (agora )?é/i,
-        /esqueça (tudo )?que/i,
-        /traduza/i,
-        /escreva um (código|poema)/i,
-        /bypass/i
-      ]
-
-      const isSemanticJailbreakAttempt = JAILBREAK_PATTERNS.some(pattern => pattern.test(content))
-
-      const lower = content.toLowerCase()
-      const forbidden = [
-        "ignore previous instructions",
-        "ignore all instructions",
-        "you are now",
-        "new persona",
-        "forget your instructions",
-        "system prompt",
-        "ignore as instruções",
-      ]
-      const isForbidden = forbidden.some((p) => lower.includes(p))
-
-      // Camada de Defesa 1: Validação Semântica e Blacklist
-      if (isSemanticJailbreakAttempt || isForbidden) {
-        console.warn("Possível tentativa de Jailbreak interceptada.")
-        return NextResponse.json(
-          {
-            result: {
-              confidence: "Baixa",
-              confidenceReason: "Entrada recusada por violação de políticas de segurança.",
-              raw: "Desculpe, não posso ajudar com essa solicitação.",
-              inputType: "conversation"
-            },
-            updatedMessages: body.messages
-          },
-          { status: 403 }
-        )
-      }
     }
 
     if (contentType === "image") {
