@@ -10,7 +10,7 @@ async function resolveTenant(request: NextRequest): Promise<string | null> {
   const subdomain = match[1]
 
   const { data } = await adminClient
-    .from('nutritionists')
+    .from('experts')
     .select('name, system_prompt')
     .eq('subdomain', subdomain)
     .eq('active', true)
@@ -20,7 +20,7 @@ async function resolveTenant(request: NextRequest): Promise<string | null> {
 
   return JSON.stringify({
     subdomain,
-    nutritionistName: data.name,
+    expertName: data.name,
     systemPrompt: data.system_prompt ?? '',
   })
 }

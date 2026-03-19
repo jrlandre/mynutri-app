@@ -37,7 +37,7 @@ interface SessionState {
 
 interface TenantConfig {
   subdomain: string
-  nutritionistName: string
+  expertName: string
   systemPrompt: string
 }
 
@@ -47,17 +47,7 @@ interface ContactLink {
   url: string
 }
 
-interface Partner {
-  id: string
-  subdomain: string
-  name: string
-  photo_url: string | null
-  specialty: string | null
-  city: string | null
-  contact_links: ContactLink[]
-}
-
-interface Nutritionist {
+interface Expert {
   id: string
   user_id: string
   subdomain: string
@@ -70,12 +60,13 @@ interface Nutritionist {
   system_prompt: string | null
   plan: 'standard' | 'enterprise'
   active: boolean
+  is_admin?: boolean
 }
 
-interface Patient {
+interface Client {
   id: string
   user_id: string | null
-  nutritionist_id: string
+  expert_id: string
   email: string | null
   active: boolean
   magic_link_token: string | null
@@ -86,7 +77,7 @@ interface Patient {
 interface UserProfile {
   email: string
   name?: string | null
-  nutritionistName?: string | null
+  expertName?: string | null
   hasPanel?: boolean
 }
 
@@ -102,8 +93,7 @@ export type {
   SessionState,
   TenantConfig,
   ContactLink,
-  Partner,
-  Nutritionist,
-  Patient,
+  Expert,
+  Client,
   UserProfile,
 }

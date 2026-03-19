@@ -4,15 +4,15 @@ import {
 } from '@react-email/components'
 
 interface Props {
-  nutritionistName: string
+  expertName: string
   inviteUrl: string
 }
 
-export default function PatientInviteEmail({ nutritionistName, inviteUrl }: Props) {
+export default function ClientInviteEmail({ expertName, inviteUrl }: Props) {
   return (
     <Html lang="pt-BR">
       <Head />
-      <Preview>{nutritionistName} te convidou para o MyNutri</Preview>
+      <Preview>{expertName} te convidou para o MyNutri</Preview>
       <Body style={body}>
         <Container style={container}>
           <Section style={header}>
@@ -22,12 +22,12 @@ export default function PatientInviteEmail({ nutritionistName, inviteUrl }: Prop
           <Section style={content}>
             <Heading style={h1}>Você foi convidado!</Heading>
             <Text style={text}>
-              <strong>{nutritionistName}</strong> te convidou para usar o MyNutri —
-              seu assistente de nutrição com inteligência artificial.
+              <strong>{expertName}</strong> te convidou para usar o MyNutri —
+              seu assistente de saúde com inteligência artificial.
             </Text>
             <Text style={text}>
-              Como paciente de {nutritionistName}, você terá acesso ilimitado ao MyNutri
-              como parte do seu acompanhamento nutricional.
+              Como cliente de {expertName}, você terá acesso ilimitado ao MyNutri
+              como parte do seu acompanhamento.
             </Text>
 
             <Section style={{ textAlign: 'center' as const, margin: '32px 0' }}>

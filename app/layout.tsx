@@ -15,7 +15,7 @@ const geistMono = Geist_Mono({
 
 export const metadata: Metadata = {
   title: "MyNutri",
-  description: "Assistente de compras nutricional",
+  description: "Assistente de Saúde & Performance",
 }
 
 export default function RootLayout({

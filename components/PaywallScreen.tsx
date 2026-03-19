@@ -7,7 +7,7 @@ export default function PaywallScreen() {
   const router = useRouter()
 
   function handleShare() {
-    const text = "Estou usando o MyNutri para fazer escolhas mais conscientes no mercado. Peça ao seu nutricionista para liberar acesso ilimitado pra você!"
+    const text = "Estou usando o MyNutri para fazer escolhas mais conscientes no mercado. Peça ao seu Expert para liberar acesso ilimitado pra você!"
     const url = "https://relapro.app"
 
     if (navigator.share) {
@@ -29,10 +29,10 @@ export default function PaywallScreen() {
           Poxa, você esgotou suas solicitações...
         </p>
         <p className="text-sm text-muted-foreground leading-relaxed text-balance">
-          Seu acesso é ilimitado se você for cliente de um profissional de nutrição parceiro.
+          Seu acesso é ilimitado se você for cliente de um Expert parceiro.
         </p>
         <p className="text-lg font-semibold tracking-tight mt-1">
-          Você já realiza acompanhamento nutricional?
+          Você já realiza acompanhamento com um profissional?
         </p>
       </div>
 
@@ -45,11 +45,11 @@ export default function PaywallScreen() {
           <span className="text-xs opacity-75">Solicitar acesso</span>
         </button>
         <button
-          onClick={() => router.push('/nutris')}
+          onClick={() => router.push('/experts')}
           className="w-full flex flex-col items-center justify-center px-5 py-3 rounded-xl border border-border bg-card hover:bg-muted active:scale-[0.97] transition-all"
         >
           <span className="text-sm font-medium">Ainda não</span>
-          <span className="text-xs text-muted-foreground">Descobrir parceiros</span>
+          <span className="text-xs text-muted-foreground">Encontre um Expert</span>
         </button>
       </div>
 

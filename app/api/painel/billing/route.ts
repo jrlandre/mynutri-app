@@ -1,21 +1,21 @@
 import { NextResponse } from 'next/server'
-import Stripe from 'stripe'
 import { createClient } from '@/lib/supabase/server'
 import { adminClient } from '@/lib/supabase/admin'
+import Stripe from 'stripe'
 
 export async function POST(request: Request) {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
+
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
-  const { data: nutritionist } = await adminClient
-    .from('nutritionists')
+  const { data: expert } = await adminClient
+    .from('experts')
     .select('stripe_customer_id')
     .eq('user_id', user.id)
-    .eq('active', true)
-    .maybeSingle()
+    .single()
 
-  if (!nutritionist?.stripe_customer_id) {
+  if (!expert?.stripe_customer_id) {
     return NextResponse.json({ error: 'No subscription found' }, { status: 404 })
   }
 
@@ -27,7 +27,7 @@ export async function POST(request: Request) {
   const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!)
 
   const session = await stripe.billingPortal.sessions.create({
-    customer: nutritionist.stripe_customer_id,
+    customer: expert.stripe_customer_id,
     return_url: `${origin}/painel`,
   })
 

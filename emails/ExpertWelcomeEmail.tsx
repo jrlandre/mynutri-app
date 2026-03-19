@@ -8,7 +8,7 @@ interface Props {
   panelUrl: string
 }
 
-export default function NutritionistWelcomeEmail({ name, panelUrl }: Props) {
+export default function ExpertWelcomeEmail({ name, panelUrl }: Props) {
   const firstName = name.split(' ')[0]
 
   return (
@@ -24,8 +24,8 @@ export default function NutritionistWelcomeEmail({ name, panelUrl }: Props) {
           <Section style={content}>
             <Heading style={h1}>Boas-vindas, {firstName}!</Heading>
             <Text style={text}>
-              Sua conta MyNutri está configurada. A partir de agora, seus pacientes têm acesso
-              a um assistente de nutrição com IA personalizado para o seu atendimento.
+              Sua conta MyNutri está configurada. A partir de agora, seus clientes têm acesso
+              a um assistente de saúde com IA personalizado para o seu acompanhamento.
             </Text>
 
             <Section style={card}>

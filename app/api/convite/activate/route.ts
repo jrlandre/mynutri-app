@@ -31,27 +31,27 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
       return NextResponse.redirect(`${origin}/convite/${token}?error=auth_required`)
     }
 
-    // Buscar patient pelo token
-    const { data: patient, error } = await adminClient
-      .from('patients')
+    // Buscar client pelo token
+    const { data: client, error } = await adminClient
+      .from('clients')
       .select('id, activated_at')
       .eq('magic_link_token', token)
       .maybeSingle()
 
-    if (error || !patient) {
+    if (error || !client) {
       return NextResponse.redirect(`${origin}/?invite_error=token_invalid`)
     }
 
-    if (!patient.activated_at) {
-      // Ativar paciente
+    if (!client.activated_at) {
+      // Ativar cliente
       await adminClient
-        .from('patients')
+        .from('clients')
         .update({
           user_id: user.id,
           activated_at: new Date().toISOString(),
           magic_link_token: null,
         })
-        .eq('id', patient.id)
+        .eq('id', client.id)
     }
 
     return NextResponse.redirect(`${origin}/`)

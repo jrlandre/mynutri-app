@@ -1,7 +1,7 @@
 import Link from "next/link"
 import { ChevronLeft } from "lucide-react"
 import { adminClient } from "@/lib/supabase/admin"
-import type { Nutritionist } from "@/types"
+import type { Expert } from "@/types"
 
 const AVATAR_COLORS = [
   "bg-rose-200 text-rose-800",
@@ -22,9 +22,9 @@ function initials(name: string) {
   return name.split(" ").slice(0, 2).map(w => w[0]).join("").toUpperCase()
 }
 
-type NutriProfile = Pick<Nutritionist, "id" | "name" | "photo_url" | "specialty" | "city" | "contact_links">
+type ExpertProfile = Pick<Expert, "id" | "name" | "photo_url" | "specialty" | "city" | "contact_links">
 
-export default async function NutriProfilePage({
+export default async function ExpertProfilePage({
   params,
 }: {
   params: Promise<{ handle: string }>
@@ -32,7 +32,7 @@ export default async function NutriProfilePage({
   const { handle } = await params
 
   const { data } = await adminClient
-    .from("nutritionists")
+    .from("experts")
     .select("id, name, photo_url, specialty, city, contact_links")
     .eq("subdomain", handle)
     .eq("active", true)
@@ -47,20 +47,20 @@ export default async function NutriProfilePage({
     )
   }
 
-  const nutri = data as NutriProfile
-  const colorClass = avatarColor(nutri.name)
-  const inits = initials(nutri.name)
+  const expert = data as ExpertProfile
+  const colorClass = avatarColor(expert.name)
+  const inits = initials(expert.name)
 
   return (
     <main className="min-h-dvh max-w-2xl mx-auto px-4 pb-12 flex flex-col">
       {/* Header — mesmo padrão da listagem */}
       <div className="sticky top-0 bg-background pt-4 pb-3 z-10">
         <Link
-          href="/nutris"
+          href="/experts"
           className="flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground transition-colors w-fit"
         >
           <ChevronLeft size={16} />
-          Nutricionistas parceiros
+          Encontre um Expert
         </Link>
       </div>
 
@@ -68,10 +68,10 @@ export default async function NutriProfilePage({
       <div className="max-w-sm mx-auto w-full flex flex-col items-center gap-8 pt-8">
         {/* Avatar + info */}
         <div className="flex flex-col items-center gap-4 text-center">
-          {nutri.photo_url ? (
+          {expert.photo_url ? (
             <img
-              src={nutri.photo_url}
-              alt={nutri.name}
+              src={expert.photo_url}
+              alt={expert.name}
               className="w-24 h-24 rounded-full object-cover"
             />
           ) : (
@@ -80,12 +80,12 @@ export default async function NutriProfilePage({
             </div>
           )}
           <div className="flex flex-col gap-1">
-            <h1 className="text-xl font-extrabold tracking-tight">{nutri.name}</h1>
-            {nutri.specialty && (
-              <p className="text-sm text-muted-foreground">{nutri.specialty}</p>
+            <h1 className="text-xl font-extrabold tracking-tight">{expert.name}</h1>
+            {expert.specialty && (
+              <p className="text-sm text-muted-foreground">{expert.specialty}</p>
             )}
-            {nutri.city && (
-              <p className="text-xs text-muted-foreground">{nutri.city}</p>
+            {expert.city && (
+              <p className="text-xs text-muted-foreground">{expert.city}</p>
             )}
           </div>
         </div>
@@ -93,19 +93,19 @@ export default async function NutriProfilePage({
         {/* Value prop */}
         <div className="w-full rounded-xl border border-border bg-card px-4 py-3 text-center">
           <p className="text-sm text-muted-foreground leading-relaxed">
-            Pacientes deste nutricionista têm{" "}
+            Clientes deste Expert têm{" "}
             <span className="text-foreground font-medium">acesso ilimitado ao MyNutri</span>{" "}
             como parte do acompanhamento.
           </p>
         </div>
 
         {/* Contact links */}
-        {nutri.contact_links?.length > 0 && (
+        {expert.contact_links?.length > 0 && (
           <div className="w-full flex flex-col gap-2">
             <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide px-1">
               Contato
             </p>
-            {nutri.contact_links.map((link, i) => (
+            {expert.contact_links.map((link, i) => (
               <a
                 key={i}
                 href={link.url}

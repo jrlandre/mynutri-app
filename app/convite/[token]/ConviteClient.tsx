@@ -6,10 +6,10 @@ import { createClient } from "@/lib/supabase/client"
 interface Props {
   token: string
   email: string
-  nutritionistName: string
+  expertName: string
 }
 
-export default function ConviteClient({ token, email: initialEmail, nutritionistName }: Props) {
+export default function ConviteClient({ token, email: initialEmail, expertName }: Props) {
   const [email, setEmail] = useState(initialEmail)
   const [loading, setLoading] = useState(false)
   const [sent, setSent] = useState(false)
@@ -42,10 +42,10 @@ export default function ConviteClient({ token, email: initialEmail, nutritionist
       <div className="flex flex-col gap-1.5">
         <p className="text-xs text-muted-foreground uppercase tracking-wider font-medium">Convite</p>
         <h1 className="text-xl font-extrabold tracking-tight">
-          {nutritionistName} te convidou para o MyNutri
+          {expertName} te convidou para o MyNutri
         </h1>
         <p className="text-sm text-muted-foreground leading-relaxed text-balance">
-          Clientes de nutricionistas parceiros têm acesso ilimitado ao assistente de análise nutricional.
+          Clientes de Experts parceiros têm acesso ilimitado ao assistente de análise de saúde e performance.
         </p>
       </div>
 

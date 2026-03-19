@@ -308,10 +308,10 @@ export default function HomeClient({ tenantSubdomain, userProfile }: Props) {
                         <p className="text-xs text-muted-foreground truncate">
                           {userProfile.email}
                         </p>
-                        {userProfile.nutritionistName && (
+                        {userProfile.expertName && (
                           <div className="mt-2 inline-flex items-center gap-1.5 px-2 py-1 rounded-md bg-primary/10 text-primary text-xs font-medium">
                             <span className="w-1.5 h-1.5 rounded-full bg-primary" />
-                            Nutri: {userProfile.nutritionistName}
+                            Expert: {userProfile.expertName}
                           </div>
                         )}
                       </div>

@@ -10,7 +10,7 @@ export default async function ConvitePage({ params }: Props) {
 
   const { data: patient } = await adminClient
     .from('patients')
-    .select('id, email, activated_at, nutritionist_id')
+    .select('id, email, activated_at, expert_id')
     .eq('magic_link_token', token)
     .maybeSingle()
 
@@ -36,17 +36,17 @@ export default async function ConvitePage({ params }: Props) {
     )
   }
 
-  const { data: nutritionist } = await adminClient
-    .from('nutritionists')
+  const { data: expert } = await adminClient
+    .from('experts')
     .select('name')
-    .eq('id', patient.nutritionist_id)
+    .eq('id', patient.expert_id)
     .maybeSingle()
 
   return (
     <ConviteClient
       token={token}
       email={patient.email ?? ''}
-      nutritionistName={nutritionist?.name ?? 'seu nutricionista'}
+      expertName={expert?.name ?? 'seu Expert'}
     />
   )
 }

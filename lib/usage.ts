@@ -3,7 +3,7 @@ import { adminClient } from '@/lib/supabase/admin'
 const FREE_DAILY_LIMIT = 3
 const ANON_DAILY_LIMIT = 1
 
-export type UsageTier = 'anon' | 'free' | 'patient'
+export type UsageTier = 'anon' | 'free' | 'client'
 
 export interface UsageCheck {
   allowed: boolean
@@ -56,18 +56,18 @@ export async function checkAndIncrementUsage(
     return { allowed: true, tier: 'anon', count: currentCount + 1, limit: ANON_DAILY_LIMIT }
   }
 
-  // Verificar se é paciente B2B (sem limite)
-  const { data: patient, error: patientErr } = await adminClient
-    .from('patients')
+  // Verificar se é cliente B2B (sem limite)
+  const { data: client, error: clientErr } = await adminClient
+    .from('clients')
     .select('id')
     .eq('user_id', userId)
     .eq('active', true)
     .maybeSingle()
 
-  if (patientErr) throw new Error(`patient check failed: ${patientErr.message}`)
+  if (clientErr) throw new Error(`client check failed: ${clientErr.message}`)
 
-  if (patient) {
-    return { allowed: true, tier: 'patient', count: 0, limit: Infinity }
+  if (client) {
+    return { allowed: true, tier: 'client', count: 0, limit: Infinity }
   }
 
   // Usuário free — verificar e incrementar contagem diária

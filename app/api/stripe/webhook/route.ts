@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server"
 import Stripe from "stripe"
 import { adminClient } from "@/lib/supabase/admin"
 import { Resend } from "resend"
-import NutritionistWelcomeEmail from "@/emails/NutritionistWelcomeEmail"
+import ExpertWelcomeEmail from "@/emails/ExpertWelcomeEmail"
 
 function getStripe() {
   const key = process.env.STRIPE_SECRET_KEY
@@ -74,9 +74,9 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
 
   const userId = inviteData.user.id
 
-  // Criar registro da nutricionista
+  // Criar registro do expert
   const { error: insertError } = await adminClient
-    .from("nutritionists")
+    .from("experts")
     .insert({
       user_id: userId,
       subdomain,
@@ -88,11 +88,11 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
     })
 
   if (insertError) {
-    console.error("[stripe/webhook] Erro ao inserir nutricionista:", insertError.message)
+    console.error("[stripe/webhook] Erro ao inserir expert:", insertError.message)
     throw insertError
   }
 
-  console.log(`[stripe/webhook] Nutricionista criada: ${subdomain} (${email})`)
+  console.log(`[stripe/webhook] Expert criado: ${subdomain} (${email})`)
 
   // Enviar email de boas-vindas via Resend (best-effort — não bloqueia o webhook)
   if (process.env.RESEND_API_KEY) {
@@ -102,7 +102,7 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
         from: process.env.RESEND_FROM_EMAIL ?? 'MyNutri <noreply@relapro.app>',
         to: email,
         subject: `Boas-vindas ao MyNutri, ${name.split(' ')[0]}!`,
-        react: NutritionistWelcomeEmail({ name, panelUrl }),
+        react: ExpertWelcomeEmail({ name, panelUrl }),
       })
     } catch (err) {
       console.error('[stripe/webhook] Falha ao enviar email de boas-vindas:', err)
@@ -112,12 +112,12 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
 
 async function handleSubscriptionDeleted(subscription: Stripe.Subscription) {
   const { error } = await adminClient
-    .from("nutritionists")
+    .from("experts")
     .update({ active: false })
     .eq("stripe_subscription_id", subscription.id)
 
   if (error) {
-    console.error("[stripe/webhook] Erro ao desativar nutricionista:", error.message)
+    console.error("[stripe/webhook] Erro ao desativar expert:", error.message)
     throw error
   }
 

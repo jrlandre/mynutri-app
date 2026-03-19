@@ -13,7 +13,7 @@ export default async function Home() {
   let tenantSubdomain: string | undefined
   if (subdomain && subdomain !== 'www') {
     const { data } = await adminClient
-      .from('nutritionists')
+      .from('experts')
       .select('id')
       .eq('subdomain', subdomain)
       .eq('active', true)
@@ -26,19 +26,19 @@ export default async function Home() {
 
   let userProfile: UserProfile | null = null
   if (user && user.email) {
-    let nutritionistName = null
+    let expertName = null
     let hasPanel = false
 
-    const [{ data: patient }, { data: nutritionist }] = await Promise.all([
+    const [{ data: client }, { data: expert }] = await Promise.all([
       adminClient
-        .from('patients')
-        .select('nutritionists(name)')
+        .from('clients')
+        .select('experts(name)')
         .eq('user_id', user.id)
         .eq('active', true)
         .limit(1)
         .maybeSingle(),
       adminClient
-        .from('nutritionists')
+        .from('experts')
         .select('id')
         .eq('user_id', user.id)
         .eq('active', true)
@@ -46,20 +46,20 @@ export default async function Home() {
         .maybeSingle()
     ])
 
-    if (nutritionist) {
+    if (expert) {
       hasPanel = true
     }
       
-    if (patient?.nutritionists) {
-      nutritionistName = Array.isArray(patient.nutritionists) 
-        ? patient.nutritionists[0]?.name 
-        : (patient.nutritionists as { name?: string })?.name
+    if (client?.experts) {
+      expertName = Array.isArray(client.experts) 
+        ? client.experts[0]?.name 
+        : (client.experts as { name?: string })?.name
     }
     
     userProfile = {
       email: user.email,
       name: user.user_metadata?.full_name || user.user_metadata?.name || null,
-      nutritionistName,
+      expertName,
       hasPanel
     }
   }

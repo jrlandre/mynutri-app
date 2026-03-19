@@ -1,6 +1,6 @@
 "use client"
 
-import type { Partner } from "@/types"
+import type { Expert } from "@/types"
 
 const AVATAR_COLORS = [
   "bg-rose-200 text-rose-800",
@@ -22,35 +22,35 @@ function initials(name: string) {
 }
 
 interface Props {
-  partner: Partner
+  expert: Expert
   onClick: () => void
 }
 
-export default function PartnerCard({ partner, onClick }: Props) {
+export default function ExpertCard({ expert, onClick }: Props) {
   return (
     <button
       onClick={onClick}
       className="w-full flex items-center gap-4 px-4 py-4 rounded-2xl border border-border bg-card hover:bg-muted active:scale-[0.98] transition-all text-left"
     >
-      {partner.photo_url ? (
+      {expert.photo_url ? (
         <img
-          src={partner.photo_url}
-          alt={partner.name}
-          className="w-12 h-12 rounded-full object-cover shrink-0"
+          src={expert.photo_url}
+          alt={expert.name}
+          className="w-24 h-24 rounded-full object-cover shrink-0"
         />
       ) : (
-        <div className={`w-12 h-12 rounded-full flex items-center justify-center text-sm font-semibold shrink-0 ${avatarColor(partner.name)}`}>
-          {initials(partner.name)}
+        <div className={`w-12 h-12 rounded-full flex items-center justify-center text-sm font-semibold shrink-0 ${avatarColor(expert.name)}`}>
+          {initials(expert.name)}
         </div>
       )}
 
       <div className="flex flex-col gap-0.5 min-w-0">
-        <span className="text-sm font-semibold truncate">{partner.name}</span>
-        {partner.specialty && (
-          <span className="text-xs text-muted-foreground truncate">{partner.specialty}</span>
+        <span className="text-sm font-semibold truncate">{expert.name}</span>
+        {expert.specialty && (
+          <span className="text-xs text-muted-foreground truncate">{expert.specialty}</span>
         )}
-        {partner.city && (
-          <span className="text-xs text-muted-foreground truncate">{partner.city}</span>
+        {expert.city && (
+          <span className="text-xs text-muted-foreground truncate">{expert.city}</span>
         )}
       </div>
     </button>

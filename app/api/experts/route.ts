@@ -9,7 +9,7 @@ export async function GET(request: NextRequest) {
   const supabase = await createClient()
 
   let query = supabase
-    .from('nutritionists')
+    .from('experts')
     .select('id, subdomain, name, photo_url, specialty, city, contact_links')
     .eq('active', true)
     .eq('listed', true)
@@ -21,8 +21,8 @@ export async function GET(request: NextRequest) {
   const { data, error } = await query
 
   if (error) {
-    return NextResponse.json({ error: 'Erro ao buscar parceiros' }, { status: 500 })
+    return NextResponse.json({ error: 'Erro ao buscar experts' }, { status: 500 })
   }
 
-  return NextResponse.json({ partners: data ?? [] })
+  return NextResponse.json({ experts: data ?? [] })
 }

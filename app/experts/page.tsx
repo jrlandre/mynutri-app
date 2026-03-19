@@ -4,41 +4,41 @@ import { useState, useEffect, useCallback } from "react"
 import { motion } from "framer-motion"
 import { useRouter } from "next/navigation"
 import { ChevronLeft } from "lucide-react"
-import PartnerCard from "@/components/PartnerCard"
-import type { Partner } from "@/types"
+import ExpertCard from "@/components/ExpertCard"
+import type { Expert } from "@/types"
 
-export default function NutrisPage() {
+export default function ExpertsPage() {
   const router = useRouter()
-  const [partners, setPartners] = useState<Partner[]>([])
+  const [experts, setExperts] = useState<Expert[]>([])
   const [loading, setLoading] = useState(true)
 
   const [cityFilter, setCityFilter] = useState("")
   const [specialtyFilter, setSpecialtyFilter] = useState("")
 
-  const fetchPartners = useCallback(async () => {
+  const fetchExperts = useCallback(async () => {
     setLoading(true)
     const params = new URLSearchParams()
     if (cityFilter) params.set("city", cityFilter)
     if (specialtyFilter) params.set("specialty", specialtyFilter)
 
     try {
-      const res = await fetch(`/api/partners?${params}`)
+      const res = await fetch(`/api/experts?${params}`)
       const data = await res.json()
-      setPartners(data.partners ?? [])
+      setExperts(data.experts ?? [])
     } catch {
-      setPartners([])
+      setExperts([])
     } finally {
       setLoading(false)
     }
   }, [cityFilter, specialtyFilter])
 
   useEffect(() => {
-    fetchPartners()
-  }, [fetchPartners])
+    fetchExperts()
+  }, [fetchExperts])
 
   // Unique cities and specialties for filter pills
-  const cities = [...new Set(partners.map(p => p.city).filter(Boolean))] as string[]
-  const specialties = [...new Set(partners.map(p => p.specialty).filter(Boolean))] as string[]
+  const cities = [...new Set(experts.map(p => p.city).filter(Boolean))] as string[]
+  const specialties = [...new Set(experts.map(p => p.specialty).filter(Boolean))] as string[]
 
   return (
     <main className="min-h-dvh max-w-2xl mx-auto px-4 pb-12 flex flex-col">
@@ -53,7 +53,7 @@ export default function NutrisPage() {
             Voltar
           </button>
         </div>
-        <h1 className="text-xl font-extrabold tracking-tight">Nutricionistas parceiros</h1>
+        <h1 className="text-xl font-extrabold tracking-tight">Experts parceiros</h1>
         <p className="text-sm text-muted-foreground mt-1">
           Clientes desses profissionais têm acesso ilimitado ao MyNutri.
         </p>
@@ -97,14 +97,14 @@ export default function NutrisPage() {
           <div className="flex-1 flex items-center justify-center">
             <div className="w-5 h-5 rounded-full border-2 border-primary border-t-transparent animate-spin" />
           </div>
-        ) : partners.length === 0 ? (
+        ) : experts.length === 0 ? (
           <motion.div
             initial={{ opacity: 0, y: 8 }}
             animate={{ opacity: 1, y: 0 }}
             className="flex-1 flex flex-col items-center justify-center gap-3 text-center"
           >
             <span className="text-3xl">🌱</span>
-            <p className="text-sm font-medium">Nenhum parceiro encontrado</p>
+            <p className="text-sm font-medium">Nenhum Expert encontrado</p>
             <p className="text-xs text-muted-foreground">
               {cityFilter || specialtyFilter
                 ? "Tente remover os filtros."
@@ -117,11 +117,11 @@ export default function NutrisPage() {
             animate={{ opacity: 1 }}
             className="grid grid-cols-1 sm:grid-cols-2 gap-3"
           >
-            {partners.map(partner => (
-              <PartnerCard
-                key={partner.id}
-                partner={partner}
-                onClick={() => router.push(`/nutris/${partner.subdomain}`)}
+            {experts.map(expert => (
+              <ExpertCard
+                key={expert.id}
+                expert={expert}
+                onClick={() => router.push(`/experts/${expert.subdomain}`)}
               />
             ))}
           </motion.div>

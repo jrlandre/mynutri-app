@@ -3,7 +3,7 @@
 import { useEffect } from "react"
 import { motion, AnimatePresence } from "framer-motion"
 import { Mail, Globe, MapPin, X, Phone, Instagram } from "lucide-react"
-import type { Partner, ContactLink } from "@/types"
+import type { Expert, ContactLink } from "@/types"
 
 const AVATAR_COLORS = [
   "bg-rose-200 text-rose-800",
@@ -32,21 +32,21 @@ function ContactIcon({ type }: { type: string }) {
 }
 
 interface Props {
-  partner: Partner | null
+  expert: Expert | null
   onClose: () => void
 }
 
-export default function PartnerSheet({ partner, onClose }: Props) {
+export default function ExpertSheet({ expert, onClose }: Props) {
   useEffect(() => {
-    if (!partner) return
+    if (!expert) return
     const onKey = (e: KeyboardEvent) => e.key === "Escape" && onClose()
     document.addEventListener("keydown", onKey)
     return () => document.removeEventListener("keydown", onKey)
-  }, [partner, onClose])
+  }, [expert, onClose])
 
   return (
     <AnimatePresence>
-      {partner && (
+      {expert && (
         <>
           {/* Overlay */}
           <motion.div
@@ -81,34 +81,34 @@ export default function PartnerSheet({ partner, onClose }: Props) {
 
             {/* Avatar + info */}
             <div className="flex flex-col items-center gap-3 text-center mb-6">
-              {partner.photo_url ? (
+              {expert.photo_url ? (
                 <img
-                  src={partner.photo_url}
-                  alt={partner.name}
+                  src={expert.photo_url}
+                  alt={expert.name}
                   className="w-20 h-20 rounded-full object-cover"
                 />
               ) : (
-                <div className={`w-20 h-20 rounded-full flex items-center justify-center text-xl font-bold ${avatarColor(partner.name)}`}>
-                  {initials(partner.name)}
+                <div className={`w-20 h-20 rounded-full flex items-center justify-center text-xl font-bold ${avatarColor(expert.name)}`}>
+                  {initials(expert.name)}
                 </div>
               )}
               <div className="flex flex-col gap-1">
-                <h2 className="text-lg font-bold tracking-tight">{partner.name}</h2>
-                {partner.specialty && (
-                  <p className="text-sm text-muted-foreground">{partner.specialty}</p>
+                <h2 className="text-lg font-bold tracking-tight">{expert.name}</h2>
+                {expert.specialty && (
+                  <p className="text-sm text-muted-foreground">{expert.specialty}</p>
                 )}
-                {partner.city && (
+                {expert.city && (
                   <p className="text-xs text-muted-foreground flex items-center justify-center gap-1">
-                    <MapPin size={12} /> {partner.city}
+                    <MapPin size={12} /> {expert.city}
                   </p>
                 )}
               </div>
             </div>
 
             {/* Contatos */}
-            {partner.contact_links.length > 0 && (
+            {expert.contact_links.length > 0 && (
               <div className="flex flex-col gap-2.5">
-                {partner.contact_links.map((link: ContactLink, i: number) => (
+                {expert.contact_links.map((link: ContactLink, i: number) => (
                   <a
                     key={i}
                     href={link.url}

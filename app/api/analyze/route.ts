@@ -69,17 +69,17 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
 
     // Fallback path-based: tenantSubdomain no body (quando não há subdomínio no host)
     if (!tenantConfig && body.tenantSubdomain) {
-      const { data: nutri } = await adminClient
-        .from('nutritionists')
+      const { data: expert } = await adminClient
+        .from('experts')
         .select('name, system_prompt')
         .eq('subdomain', body.tenantSubdomain)
         .eq('active', true)
         .maybeSingle()
-      if (nutri) {
+      if (expert) {
         tenantConfig = {
           subdomain: body.tenantSubdomain,
-          nutritionistName: nutri.name,
-          systemPrompt: nutri.system_prompt ?? '',
+          expertName: expert.name,
+          systemPrompt: expert.system_prompt ?? '',
         }
       }
     }

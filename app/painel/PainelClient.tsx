@@ -5,26 +5,26 @@ import { motion, AnimatePresence } from "framer-motion"
 import { Plus, X, Trash2, Check, Upload, Link2, ChevronLeft } from "lucide-react"
 import { useRouter } from "next/navigation"
 import { createClient } from "@/lib/supabase/client"
-import type { Nutritionist, Patient, ContactLink } from "@/types"
+import type { Expert, Client, ContactLink } from "@/types"
 
 const PLAN_LIMIT: Record<string, number> = { standard: 50, enterprise: Infinity }
 const CONTACT_TYPES = ["whatsapp", "instagram", "email", "website"] as const
 
 interface Props {
-  nutritionist: Nutritionist
-  initialPatients: Patient[]
+  expert: Expert
+  initialClients: Client[]
 }
 
 // ─── Aba Início ──────────────────────────────────────────────────────────────
 
-function TabInicio({ nutritionist, patients, onInvite, onDeactivate }: {
-  nutritionist: Nutritionist
-  patients: Patient[]
+function TabInicio({ expert, clients, onInvite, onDeactivate }: {
+  expert: Expert
+  clients: Client[]
   onInvite: (email: string) => Promise<{ invite_url?: string; error?: string }>
   onDeactivate: (id: string) => Promise<void>
 }) {
-  const limit = PLAN_LIMIT[nutritionist.plan] ?? 50
-  const active = patients.filter(p => p.active)
+  const limit = PLAN_LIMIT[expert.plan] ?? 50
+  const active = clients.filter(p => p.active)
   const [inviteEmail, setInviteEmail] = useState("")
   const [inviteLoading, setInviteLoading] = useState(false)
   const [inviteResult, setInviteResult] = useState<{ url?: string; error?: string } | null>(null)
@@ -52,7 +52,7 @@ function TabInicio({ nutritionist, patients, onInvite, onDeactivate }: {
       {/* Card de vagas */}
       <div className="rounded-2xl border border-border bg-card px-5 py-4 flex items-center justify-between">
         <div>
-          <p className="text-sm text-muted-foreground">Pacientes ativos</p>
+          <p className="text-sm text-muted-foreground">Clientes ativos</p>
           <p className="text-2xl font-bold tracking-tight mt-0.5">
             {active.length}
             <span className="text-base font-normal text-muted-foreground">
@@ -103,7 +103,7 @@ function TabInicio({ nutritionist, patients, onInvite, onDeactivate }: {
                 type="email"
                 value={inviteEmail}
                 onChange={e => setInviteEmail(e.target.value)}
-                placeholder="email@paciente.com"
+                placeholder="email@cliente.com"
                 required
                 className="flex-1 px-3 py-2.5 rounded-xl border border-border bg-background text-sm focus:outline-none focus:ring-2 focus:ring-ring/40"
               />
@@ -134,13 +134,13 @@ function TabInicio({ nutritionist, patients, onInvite, onDeactivate }: {
         )}
       </AnimatePresence>
 
-      {/* Lista de pacientes */}
+      {/* Lista de clientes */}
       <div className="flex flex-col gap-2">
-        <p className="text-sm font-semibold">Pacientes</p>
-        {patients.length === 0 ? (
-          <p className="text-sm text-muted-foreground py-6 text-center">Nenhum paciente ainda. Gere o primeiro convite!</p>
+        <p className="text-sm font-semibold">Clientes</p>
+        {clients.length === 0 ? (
+          <p className="text-sm text-muted-foreground py-6 text-center">Nenhum cliente ainda. Gere o primeiro convite!</p>
         ) : (
-          patients.map(p => (
+          clients.map(p => (
             <div key={p.id} className="flex items-center gap-3 px-4 py-3 rounded-xl border border-border bg-card">
               <div className="w-8 h-8 rounded-full bg-muted flex items-center justify-center text-xs font-semibold shrink-0 text-muted-foreground">
                 {(p.email ?? "?")[0].toUpperCase()}
@@ -170,21 +170,21 @@ function TabInicio({ nutritionist, patients, onInvite, onDeactivate }: {
 
 // ─── Aba Vitrine ──────────────────────────────────────────────────────────────
 
-function TabVitrine({ nutritionist, onSave }: {
-  nutritionist: Nutritionist
-  onSave: (data: Partial<Nutritionist>) => Promise<void>
+function TabVitrine({ expert, onSave }: {
+  expert: Expert
+  onSave: (data: Partial<Expert>) => Promise<void>
 }) {
-  const [name, setName] = useState(nutritionist.name)
-  const [specialty, setSpecialty] = useState(nutritionist.specialty ?? "")
-  const [city, setCity] = useState(nutritionist.city ?? "")
-  const [listed, setListed] = useState(nutritionist.listed)
-  const [links, setLinks] = useState<ContactLink[]>(nutritionist.contact_links ?? [])
+  const [name, setName] = useState(expert.name)
+  const [specialty, setSpecialty] = useState(expert.specialty ?? "")
+  const [city, setCity] = useState(expert.city ?? "")
+  const [listed, setListed] = useState(expert.listed)
+  const [links, setLinks] = useState<ContactLink[]>(expert.contact_links ?? [])
   const [saving, setSaving] = useState(false)
   const [saved, setSaved] = useState(false)
 
   // Photo
   const fileRef = useRef<HTMLInputElement>(null)
-  const [photoPreview, setPhotoPreview] = useState<string | null>(nutritionist.photo_url)
+  const [photoPreview, setPhotoPreview] = useState<string | null>(expert.photo_url)
   const [uploadingPhoto, setUploadingPhoto] = useState(false)
   const [photoError, setPhotoError] = useState<string | null>(null)
 
@@ -199,7 +199,7 @@ function TabVitrine({ nutritionist, onSave }: {
     formData.append("photo", file)
     const res = await fetch("/api/painel/photo", { method: "POST", body: formData })
     const data = await res.json() as { photo_url?: string; error?: string }
-    if (data.error) { setPhotoError(data.error); setPhotoPreview(nutritionist.photo_url) }
+    if (data.error) { setPhotoError(data.error); setPhotoPreview(expert.photo_url) }
     setUploadingPhoto(false)
   }
 
@@ -258,14 +258,14 @@ function TabVitrine({ nutritionist, onSave }: {
 
       {/* Campos */}
       <Field label="Nome" value={name} onChange={setName} required />
-      <Field label="Especialidade" value={specialty} onChange={setSpecialty} placeholder="Ex: Nutrição esportiva" />
+      <Field label="Especialidade" value={specialty} onChange={setSpecialty} placeholder="Ex: Treinador de Alta Performance" />
       <Field label="Cidade" value={city} onChange={setCity} placeholder="Ex: São Paulo – SP" />
 
       {/* Vitrine toggle */}
       <div className="flex items-center justify-between py-1">
         <div>
           <p className="text-sm font-medium">Aparecer na vitrine</p>
-          <p className="text-xs text-muted-foreground">Exibir perfil na página /nutris para novos clientes</p>
+          <p className="text-xs text-muted-foreground">Exibir perfil na página /experts para novos clientes</p>
         </div>
         <button
           type="button"
@@ -327,11 +327,11 @@ function TabVitrine({ nutritionist, onSave }: {
 
 // ─── Aba IA ───────────────────────────────────────────────────────────────────
 
-function TabIA({ nutritionist, onSave }: {
-  nutritionist: Nutritionist
-  onSave: (data: Partial<Nutritionist>) => Promise<void>
+function TabIA({ expert, onSave }: {
+  expert: Expert
+  onSave: (data: Partial<Expert>) => Promise<void>
 }) {
-  const [prompt, setPrompt] = useState(nutritionist.system_prompt ?? "")
+  const [prompt, setPrompt] = useState(expert.system_prompt ?? "")
   const [saving, setSaving] = useState(false)
   const [saved, setSaved] = useState(false)
 
@@ -349,13 +349,13 @@ function TabIA({ nutritionist, onSave }: {
       <div className="flex flex-col gap-1.5">
         <p className="text-sm font-semibold">Prompt personalizado</p>
         <p className="text-xs text-muted-foreground leading-relaxed">
-          Este texto é enviado à IA antes de cada análise dos seus pacientes. Use para definir tom, foco nutricional, restrições ou orientações específicas da sua abordagem.
+          Este texto é enviado à IA antes de cada análise dos seus clientes. Use para definir tom, foco e restrições ou orientações específicas da sua abordagem.
         </p>
       </div>
       <textarea
         value={prompt}
         onChange={e => setPrompt(e.target.value)}
-        placeholder="Ex: Você é uma assistente de nutrição especializada em nutrição funcional. Priorize sempre alimentos in natura e minimamente processados…"
+        placeholder="Ex: Você é um expert especializado em performance humana. Priorize sempre dados baseados em evidências…"
         rows={10}
         className="w-full px-4 py-3 rounded-xl border border-border bg-card text-sm focus:outline-none focus:ring-2 focus:ring-ring/40 resize-none leading-relaxed"
       />
@@ -399,11 +399,11 @@ function Field({ label, value, onChange, placeholder, required }: {
 const TABS = ["Início", "Vitrine", "IA"] as const
 type Tab = typeof TABS[number]
 
-export default function PainelClient({ nutritionist: initialNutritionist, initialPatients }: Props) {
+export default function PainelClient({ expert: initialExpert, initialClients }: Props) {
   const router = useRouter()
   const [tab, setTab] = useState<Tab>("Início")
-  const [nutritionist, setNutritionist] = useState(initialNutritionist)
-  const [patients, setPatients] = useState<Patient[]>(initialPatients)
+  const [expert, setExpert] = useState(initialExpert)
+  const [clients, setClients] = useState<Client[]>(initialClients)
 
   async function handleInvite(email: string) {
     const res = await fetch("/api/painel/invite", {
@@ -413,11 +413,11 @@ export default function PainelClient({ nutritionist: initialNutritionist, initia
     })
     const data = await res.json() as { invite_url?: string; error?: string }
     if (!data.error) {
-      // Adiciona paciente pendente à lista localmente
-      setPatients(prev => [{
+      // Adiciona cliente pendente à lista localmente
+      setClients(prev => [{
         id: crypto.randomUUID(),
         user_id: null,
-        nutritionist_id: nutritionist.id,
+        expert_id: expert.id,
         email,
         active: true,
         magic_link_token: "pending",
@@ -429,18 +429,18 @@ export default function PainelClient({ nutritionist: initialNutritionist, initia
   }
 
   async function handleDeactivate(id: string) {
-    await fetch(`/api/painel/patients/${id}`, { method: "DELETE" })
-    setPatients(prev => prev.map(p => p.id === id ? { ...p, active: false } : p))
+    await fetch(`/api/painel/clients/${id}`, { method: "DELETE" })
+    setClients(prev => prev.map(p => p.id === id ? { ...p, active: false } : p))
   }
 
-  async function handleSaveProfile(data: Partial<Nutritionist>) {
+  async function handleSaveProfile(data: Partial<Expert>) {
     const res = await fetch("/api/painel/profile", {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(data),
     })
-    const json = await res.json() as { nutritionist?: Nutritionist }
-    if (json.nutritionist) setNutritionist(json.nutritionist)
+    const json = await res.json() as { expert?: Expert }
+    if (json.expert) setExpert(json.expert)
   }
 
   async function handleLogout() {
@@ -468,7 +468,7 @@ export default function PainelClient({ nutritionist: initialNutritionist, initia
           </button>
         </div>
         <h1 className="text-xl font-extrabold tracking-tight">Painel</h1>
-        <p className="text-sm text-muted-foreground mt-0.5">{nutritionist.name}</p>
+        <p className="text-sm text-muted-foreground mt-0.5">{expert.name}</p>
 
         {/* Tabs */}
         <div className="flex gap-1 mt-4 bg-muted rounded-xl p-1">
@@ -498,17 +498,17 @@ export default function PainelClient({ nutritionist: initialNutritionist, initia
         >
           {tab === "Início" && (
             <TabInicio
-              nutritionist={nutritionist}
-              patients={patients}
+              expert={expert}
+              clients={clients}
               onInvite={handleInvite}
               onDeactivate={handleDeactivate}
             />
           )}
           {tab === "Vitrine" && (
-            <TabVitrine nutritionist={nutritionist} onSave={handleSaveProfile} />
+            <TabVitrine expert={expert} onSave={handleSaveProfile} />
           )}
           {tab === "IA" && (
-            <TabIA nutritionist={nutritionist} onSave={handleSaveProfile} />
+            <TabIA expert={expert} onSave={handleSaveProfile} />
           )}
         </motion.div>
       </AnimatePresence>

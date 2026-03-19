@@ -5,6 +5,9 @@
 		},
 		{
 			"path": "../mynutri-core"
+		},
+		{
+			"path": "../../.gemini/tmp/mynutri/16d364e4-6e23-44e6-ad9b-b5208150d8d6/plans"
 		}
 	],
 	"settings": {}

@@ -1,6 +1,6 @@
 import { createClient } from '@/lib/supabase/server'
 import { adminClient } from '@/lib/supabase/admin'
-import type { Nutritionist } from '@/types'
+import type { Expert } from '@/types'
 
 export const PATIENT_LIMIT: Record<string, number> = {
   standard: 50,
@@ -8,10 +8,10 @@ export const PATIENT_LIMIT: Record<string, number> = {
 }
 
 export interface GuardResult {
-  nutritionist: Nutritionist
+  expert: Expert
 }
 
-export async function requireNutritionist(): Promise<GuardResult | Response> {
+export async function requireExpert(): Promise<GuardResult | Response> {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
 
@@ -19,8 +19,8 @@ export async function requireNutritionist(): Promise<GuardResult | Response> {
     return Response.json({ error: 'Não autenticado' }, { status: 401 })
   }
 
-  const { data: nutritionist, error } = await adminClient
-    .from('nutritionists')
+  const { data: expert, error } = await adminClient
+    .from('experts')
     .select('*')
     .eq('user_id', user.id)
     .eq('active', true)
@@ -28,11 +28,11 @@ export async function requireNutritionist(): Promise<GuardResult | Response> {
 
   if (error) throw new Error(error.message)
 
-  if (!nutritionist) {
+  if (!expert) {
     return Response.json({ error: 'Acesso negado' }, { status: 403 })
   }
 
-  return { nutritionist: nutritionist as Nutritionist }
+  return { expert: expert as Expert }
 }
 
 export function isResponse(v: GuardResult | Response): v is Response {

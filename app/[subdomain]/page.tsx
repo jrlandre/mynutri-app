@@ -11,7 +11,7 @@ export default async function SubdomainPage({
   const { subdomain } = await params
 
   const { data } = await adminClient
-    .from("nutritionists")
+    .from("experts")
     .select("id")
     .eq("subdomain", subdomain)
     .eq("active", true)
@@ -20,7 +20,7 @@ export default async function SubdomainPage({
   if (!data) {
     return (
       <main className="min-h-dvh flex items-center justify-center px-6">
-        <p className="text-sm text-muted-foreground">Nutricionista não encontrado.</p>
+        <p className="text-sm text-muted-foreground">Expert não encontrado.</p>
       </main>
     )
   }
@@ -30,19 +30,19 @@ export default async function SubdomainPage({
 
   let userProfile: UserProfile | null = null
   if (user && user.email) {
-    let nutritionistName = null
+    let expertName = null
     let hasPanel = false
 
-    const [{ data: patient }, { data: nutritionist }] = await Promise.all([
+    const [{ data: client }, { data: expert }] = await Promise.all([
       adminClient
-        .from('patients')
-        .select('nutritionists(name)')
+        .from('clients')
+        .select('experts(name)')
         .eq('user_id', user.id)
         .eq('active', true)
         .limit(1)
         .maybeSingle(),
       adminClient
-        .from('nutritionists')
+        .from('experts')
         .select('id')
         .eq('user_id', user.id)
         .eq('active', true)
@@ -50,20 +50,20 @@ export default async function SubdomainPage({
         .maybeSingle()
     ])
 
-    if (nutritionist) {
+    if (expert) {
       hasPanel = true
     }
       
-    if (patient?.nutritionists) {
-      nutritionistName = Array.isArray(patient.nutritionists) 
-        ? patient.nutritionists[0]?.name 
-        : (patient.nutritionists as { name?: string })?.name
+    if (client?.experts) {
+      expertName = Array.isArray(client.experts) 
+        ? client.experts[0]?.name 
+        : (client.experts as { name?: string })?.name
     }
     
     userProfile = {
       email: user.email,
       name: user.user_metadata?.full_name || user.user_metadata?.name || null,
-      nutritionistName,
+      expertName,
       hasPanel
     }
   }

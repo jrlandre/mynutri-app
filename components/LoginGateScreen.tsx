@@ -17,7 +17,7 @@ export default function LoginGateScreen() {
           Você usou sua análise gratuita de hoje.
         </p>
         <p className="text-sm text-muted-foreground leading-relaxed text-balance">
-          Crie uma conta gratuita e tenha até 3 análises por dia — sem precisar de nutricionista.
+          Crie uma conta gratuita e tenha até 3 análises por dia — sem precisar de um Expert.
         </p>
       </div>
 

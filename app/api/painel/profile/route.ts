@@ -1,13 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { adminClient } from '@/lib/supabase/admin'
-import { requireNutritionist, isResponse } from '@/lib/painel/guard'
+import { requireExpert, isResponse } from '@/lib/painel/guard'
 
 export async function PATCH(request: NextRequest): Promise<NextResponse> {
   try {
-    const guard = await requireNutritionist()
+    const guard = await requireExpert()
     if (isResponse(guard)) return guard as unknown as NextResponse
 
-    const { nutritionist } = guard
+    const { expert } = guard
     const body = await request.json()
 
     const allowed = ['name', 'specialty', 'city', 'contact_links', 'listed', 'system_prompt'] as const
@@ -21,15 +21,15 @@ export async function PATCH(request: NextRequest): Promise<NextResponse> {
     }
 
     const { data, error } = await adminClient
-      .from('nutritionists')
+      .from('experts')
       .update(updates)
-      .eq('id', nutritionist.id)
+      .eq('id', expert.id)
       .select()
       .single()
 
     if (error) throw new Error(error.message)
 
-    return NextResponse.json({ nutritionist: data })
+    return NextResponse.json({ expert: data })
   } catch (e) {
     return NextResponse.json({ error: e instanceof Error ? e.message : 'Erro interno' }, { status: 500 })
   }

@@ -1,17 +1,17 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { adminClient } from '@/lib/supabase/admin'
 import { createClient } from '@/lib/supabase/server'
-import { requireNutritionist, isResponse } from '@/lib/painel/guard'
+import { requireExpert, isResponse } from '@/lib/painel/guard'
 
 const MAX_BYTES = 2 * 1024 * 1024 // 2 MB
 const ALLOWED_TYPES = ['image/jpeg', 'image/png', 'image/webp']
 
 export async function POST(request: NextRequest): Promise<NextResponse> {
   try {
-    const guard = await requireNutritionist()
+    const guard = await requireExpert()
     if (isResponse(guard)) return guard as unknown as NextResponse
 
-    const { nutritionist } = guard
+    const { expert } = guard
 
     const formData = await request.formData()
     const file = formData.get('photo') as File | null
@@ -25,7 +25,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     }
 
     const ext = file.type.split('/')[1].replace('jpeg', 'jpg')
-    const path = `${nutritionist.user_id}/avatar.${ext}`
+    const path = `${expert.user_id}/avatar.${ext}`
     const buffer = Buffer.from(await file.arrayBuffer())
 
     // Upload usando o client do usuário autenticado (respeita RLS de storage)
@@ -42,9 +42,9 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     const photo_url = `${publicUrl}?v=${Date.now()}`
 
     const { error: updateError } = await adminClient
-      .from('nutritionists')
+      .from('experts')
       .update({ photo_url })
-      .eq('id', nutritionist.id)
+      .eq('id', expert.id)
 
     if (updateError) throw new Error(updateError.message)
 
