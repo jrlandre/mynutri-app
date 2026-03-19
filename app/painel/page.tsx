@@ -39,6 +39,15 @@ export default async function PainelPage() {
     .eq(subdomain ? 'subdomain' : 'active', subdomain ?? true)
     .maybeSingle()
 
+  // Auto-populate photo from social login on first access
+  if (expert && !expert.photo_url) {
+    const avatarUrl = user.user_metadata?.avatar_url || user.user_metadata?.picture
+    if (avatarUrl) {
+      await adminClient.from('experts').update({ photo_url: avatarUrl }).eq('id', expert.id)
+      expert.photo_url = avatarUrl
+    }
+  }
+
   if (error || !expert) {
     return (
       <main className="min-h-dvh flex flex-col items-center justify-center px-6 gap-6">
