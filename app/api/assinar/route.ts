@@ -17,9 +17,10 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       name?: string
       email?: string
       plan?: string
+      ref?: string
     }
 
-    const { subdomain, name, email, plan } = body
+    const { subdomain, name, email, plan, ref } = body
 
     if (!subdomain || !name || !email || !plan) {
       return NextResponse.json({ error: "Todos os campos são obrigatórios." }, { status: 400 })
@@ -63,7 +64,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       mode: "subscription",
       line_items: [{ price: priceId, quantity: 1 }],
       customer_email: email,
-      metadata: { subdomain, name, email },
+      metadata: { subdomain, name, email, ref_code: ref ?? "" },
       allow_promotion_codes: true,
       success_url: `https://${appDomain}/obrigado?session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: `https://${appDomain}/assinar`,

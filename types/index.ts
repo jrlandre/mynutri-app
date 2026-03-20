@@ -61,6 +61,11 @@ interface Expert {
   plan: 'standard' | 'enterprise'
   active: boolean
   is_admin?: boolean
+  is_promoter?: boolean
+  referral_code?: string | null
+  stripe_coupon_id?: string | null
+  stripe_customer_id?: string | null
+  subscription_period?: 'monthly' | 'yearly' | null
 }
 
 interface Client {
@@ -82,6 +87,30 @@ interface UserProfile {
   isSudo?: boolean
 }
 
+interface Referral {
+  id: string
+  promoter_id: string
+  referred_expert_id: string | null
+  stripe_invoice_id: string | null
+  stripe_subscription_id: string | null
+  amount_gross_cents: number
+  commission_pct: number
+  commission_cents: number
+  attribution: 'link' | 'coupon' | 'link_and_coupon' | 'link_split' | 'coupon_split'
+  status: 'pending' | 'cleared' | 'paid'
+  clears_at: string
+  paid_at: string | null
+  created_at: string
+}
+
+interface Commission {
+  id: string
+  promoter_id: string
+  percentage: number
+  valid_from: string
+  valid_until: string | null
+}
+
 export type {
   MessageRole,
   ContentType,
@@ -97,4 +126,6 @@ export type {
   Expert,
   Client,
   UserProfile,
+  Referral,
+  Commission,
 }

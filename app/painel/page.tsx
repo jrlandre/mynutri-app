@@ -5,7 +5,7 @@ import { ChevronLeft } from 'lucide-react'
 import { createClient } from '@/lib/supabase/server'
 import { adminClient } from '@/lib/supabase/admin'
 import PainelClient from './PainelClient'
-import type { Expert, Client } from '@/types'
+import type { Expert, Client, Referral } from '@/types'
 
 function extractSubdomain(host: string): string | null {
   // dev override
@@ -68,16 +68,26 @@ export default async function PainelPage() {
     )
   }
 
-  const { data: clients } = await adminClient
-    .from('clients')
-    .select('id, user_id, email, active, invited_at, activated_at')
-    .eq('expert_id', expert.id)
-    .order('invited_at', { ascending: false })
+  const [{ data: clients }, referralsResult] = await Promise.all([
+    adminClient
+      .from('clients')
+      .select('id, user_id, email, active, invited_at, activated_at')
+      .eq('expert_id', expert.id)
+      .order('invited_at', { ascending: false }),
+    expert.is_promoter
+      ? adminClient
+          .from('referrals')
+          .select('*')
+          .eq('promoter_id', expert.id)
+          .order('created_at', { ascending: false })
+      : Promise.resolve({ data: null, error: null }),
+  ])
 
   return (
     <PainelClient
       expert={expert as unknown as Expert}
       initialClients={(clients ?? []) as Client[]}
+      initialReferrals={(referralsResult.data ?? []) as Referral[]}
     />
   )
 }

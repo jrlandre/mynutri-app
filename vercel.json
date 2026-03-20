@@ -1,0 +1,12 @@
+{
+  "crons": [
+    {
+      "path": "/api/cron/retry-welcome-emails",
+      "schedule": "0 9 * * *"
+    },
+    {
+      "path": "/api/cron/clear-commissions",
+      "schedule": "0 8 * * *"
+    }
+  ]
+}

@@ -1,4 +1,4 @@
-import { redirect } from 'next/navigation'
+import { notFound } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import { adminClient } from '@/lib/supabase/admin'
 import { ReactNode } from 'react'
@@ -10,7 +10,7 @@ export default async function SudoLayout({ children }: { children: ReactNode }) 
   const { data: { user } } = await supabase.auth.getUser()
 
   if (!user) {
-    redirect('/')
+    notFound()
   }
 
   const { data: profile } = await adminClient
@@ -20,7 +20,7 @@ export default async function SudoLayout({ children }: { children: ReactNode }) 
     .maybeSingle()
 
   if (!profile?.is_admin) {
-    redirect('/')
+    notFound()
   }
 
   return (

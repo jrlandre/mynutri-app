@@ -1,17 +1,18 @@
 "use client"
 
-import { useState, useRef } from "react"
+import { useState, useRef, useEffect } from "react"
 import { motion, AnimatePresence } from "framer-motion"
-import { Plus, X, Trash2, Check, Upload, Link2, ChevronLeft } from "lucide-react"
+import { Plus, X, Trash2, Check, Upload, Link2, ChevronLeft, Copy } from "lucide-react"
 import { useRouter } from "next/navigation"
 import { createClient } from "@/lib/supabase/client"
-import type { Expert, Client, ContactLink } from "@/types"
+import type { Expert, Client, ContactLink, Referral } from "@/types"
 import { CLIENT_LIMIT as PLAN_LIMIT } from "@/lib/plans"
 const CONTACT_TYPES = ["whatsapp", "instagram", "email", "website"] as const
 
 interface Props {
   expert: Expert
   initialClients: Client[]
+  initialReferrals: Referral[]
 }
 
 // ─── Aba Início ──────────────────────────────────────────────────────────────
@@ -369,6 +370,128 @@ function TabIA({ expert, onSave }: {
   )
 }
 
+// ─── Aba Comissões ────────────────────────────────────────────────────────────
+
+function TabComissoes({ expert, referrals }: {
+  expert: Expert
+  referrals: Referral[]
+}) {
+  const [promoCode, setPromoCode] = useState<string | null>(null)
+  const [copiedLink, setCopiedLink] = useState(false)
+  const [copiedCode, setCopiedCode] = useState(false)
+
+  const appDomain = (process.env.NEXT_PUBLIC_APP_URL ?? "mynutri.pro").replace(/^https?:\/\//, "").replace(/\/$/, "")
+  const referralLink = expert.referral_code ? `https://${appDomain}/r/${expert.referral_code}` : null
+
+  useEffect(() => {
+    if (!expert.stripe_coupon_id) return
+    fetch("/api/painel/promoter-code")
+      .then(r => r.json())
+      .then(d => setPromoCode(d.code ?? null))
+      .catch(() => null)
+  }, [expert.stripe_coupon_id])
+
+  function formatBRL(cents: number) {
+    return (cents / 100).toLocaleString("pt-BR", { style: "currency", currency: "BRL" })
+  }
+
+  const pending = referrals.filter(r => r.status === "pending").reduce((s, r) => s + r.commission_cents, 0)
+  const cleared = referrals.filter(r => r.status === "cleared").reduce((s, r) => s + r.commission_cents, 0)
+  const paid = referrals.filter(r => r.status === "paid").reduce((s, r) => s + r.commission_cents, 0)
+
+  const statusLabel: Record<string, string> = {
+    pending: "Pendente",
+    cleared: "A pagar",
+    paid: "Pago",
+  }
+
+  const statusClass: Record<string, string> = {
+    pending: "text-muted-foreground",
+    cleared: "text-amber-600",
+    paid: "text-green-600",
+  }
+
+  return (
+    <div className="flex flex-col gap-5">
+      {/* Link de referral */}
+      {referralLink && (
+        <div className="flex flex-col gap-2">
+          <p className="text-sm font-semibold">Seu link de indicação</p>
+          <div className="flex items-center gap-2 bg-muted rounded-xl px-3 py-2.5">
+            <p className="text-xs truncate flex-1 font-mono">{referralLink}</p>
+            <button
+              onClick={() => { navigator.clipboard.writeText(referralLink); setCopiedLink(true); setTimeout(() => setCopiedLink(false), 2000) }}
+              className="text-xs text-primary font-medium hover:opacity-70 shrink-0 flex items-center gap-1"
+            >
+              {copiedLink ? <><Check size={12} /> Copiado</> : <><Copy size={12} /> Copiar</>}
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Cupom de desconto */}
+      {promoCode && (
+        <div className="flex flex-col gap-2">
+          <p className="text-sm font-semibold">Cupom de desconto</p>
+          <div className="flex items-center gap-2 bg-muted rounded-xl px-3 py-2.5">
+            <p className="text-sm font-bold flex-1 font-mono">{promoCode}</p>
+            <button
+              onClick={() => { navigator.clipboard.writeText(promoCode); setCopiedCode(true); setTimeout(() => setCopiedCode(false), 2000) }}
+              className="text-xs text-primary font-medium hover:opacity-70 shrink-0 flex items-center gap-1"
+            >
+              {copiedCode ? <><Check size={12} /> Copiado</> : <><Copy size={12} /> Copiar</>}
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Cards de resumo */}
+      <div className="grid grid-cols-3 gap-2 text-center">
+        <div className="rounded-2xl border border-border bg-card px-3 py-3">
+          <p className="text-[10px] text-muted-foreground mb-1">Pendente</p>
+          <p className="text-sm font-bold">{formatBRL(pending)}</p>
+        </div>
+        <div className="rounded-2xl border border-border bg-card px-3 py-3">
+          <p className="text-[10px] text-muted-foreground mb-1">A receber</p>
+          <p className="text-sm font-bold text-amber-600">{formatBRL(cleared)}</p>
+        </div>
+        <div className="rounded-2xl border border-border bg-card px-3 py-3">
+          <p className="text-[10px] text-muted-foreground mb-1">Recebido</p>
+          <p className="text-sm font-bold text-green-600">{formatBRL(paid)}</p>
+        </div>
+      </div>
+
+      {/* Tabela de referrals */}
+      <div className="flex flex-col gap-2">
+        <p className="text-sm font-semibold">Histórico</p>
+        {referrals.length === 0 ? (
+          <p className="text-sm text-muted-foreground text-center py-6">Nenhuma indicação ainda.</p>
+        ) : (
+          referrals.map(r => (
+            <div key={r.id} className="px-4 py-3 rounded-xl border border-border bg-card flex flex-col gap-1">
+              <div className="flex items-center justify-between">
+                <p className="text-xs text-muted-foreground">
+                  {new Date(r.created_at).toLocaleDateString("pt-BR")}
+                </p>
+                <span className={`text-xs font-medium ${statusClass[r.status] ?? ""}`}>
+                  {statusLabel[r.status] ?? r.status}
+                </span>
+              </div>
+              <div className="flex items-center justify-between">
+                <p className="text-xs text-muted-foreground">{r.attribution.replace(/_/g, " ")}</p>
+                <p className="text-sm font-semibold">{formatBRL(r.commission_cents)}</p>
+              </div>
+              <p className="text-xs text-muted-foreground">
+                {formatBRL(r.amount_gross_cents)} × {r.commission_pct}%
+              </p>
+            </div>
+          ))
+        )}
+      </div>
+    </div>
+  )
+}
+
 // ─── Field helper ─────────────────────────────────────────────────────────────
 
 function Field({ label, value, onChange, placeholder, required }: {
@@ -395,14 +518,18 @@ function Field({ label, value, onChange, placeholder, required }: {
 
 // ─── Main component ───────────────────────────────────────────────────────────
 
-const TABS = ["Início", "Vitrine", "IA"] as const
-type Tab = typeof TABS[number]
-
-export default function PainelClient({ expert: initialExpert, initialClients }: Props) {
+export default function PainelClient({ expert: initialExpert, initialClients, initialReferrals }: Props) {
   const router = useRouter()
-  const [tab, setTab] = useState<Tab>("Início")
   const [expert, setExpert] = useState(initialExpert)
   const [clients, setClients] = useState<Client[]>(initialClients)
+  const [referrals] = useState<Referral[]>(initialReferrals)
+
+  const TABS = expert.is_promoter
+    ? (["Início", "Vitrine", "IA", "Comissões"] as const)
+    : (["Início", "Vitrine", "IA"] as const)
+  type Tab = typeof TABS[number]
+
+  const [tab, setTab] = useState<Tab>("Início")
 
   async function handleInvite(email: string) {
     const res = await fetch("/api/painel/invite", {
@@ -412,7 +539,6 @@ export default function PainelClient({ expert: initialExpert, initialClients }: 
     })
     const data = await res.json() as { invite_url?: string; error?: string }
     if (!data.error) {
-      // Adiciona cliente pendente à lista localmente
       setClients(prev => [{
         id: crypto.randomUUID(),
         user_id: null,
@@ -508,6 +634,9 @@ export default function PainelClient({ expert: initialExpert, initialClients }: 
           )}
           {tab === "IA" && (
             <TabIA expert={expert} onSave={handleSaveProfile} />
+          )}
+          {tab === "Comissões" && expert.is_promoter && (
+            <TabComissoes expert={expert} referrals={referrals} />
           )}
         </motion.div>
       </AnimatePresence>

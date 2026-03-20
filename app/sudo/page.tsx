@@ -1,3 +1,4 @@
+import Stripe from 'stripe'
 import { adminClient } from '@/lib/supabase/admin'
 import SudoClient from './SudoClient'
 import type { Expert, ContactLink } from '@/types'
@@ -11,6 +12,9 @@ export default async function SudoPage() {
     { data: expertsData },
     { data: clients },
     { data: usageToday },
+    { data: promotersData },
+    { data: allReferrals },
+    { data: pendingCommissions },
   ] = await Promise.all([
     adminClient
       .from('experts')
@@ -23,7 +27,43 @@ export default async function SudoPage() {
       .from('usage')
       .select('id')
       .gte('created_at', todayStart),
+    adminClient
+      .from('experts')
+      .select('id, name, referral_code, stripe_coupon_id, commissions(percentage, valid_from, valid_until)')
+      .eq('is_promoter', true)
+      .eq('active', true),
+    adminClient
+      .from('referrals')
+      .select('promoter_id, commission_cents, status'),
+    adminClient
+      .from('referrals')
+      .select('commission_cents')
+      .eq('status', 'cleared'),
   ])
+
+  // MRR from Stripe
+  let mrrCents = 0
+  try {
+    const stripeKey = process.env.STRIPE_SECRET_KEY
+    if (stripeKey) {
+      const stripe = new Stripe(stripeKey)
+      const subs = await stripe.subscriptions.list({
+        status: 'active',
+        limit: 100,
+        expand: ['data.items.data.price'],
+      })
+      mrrCents = subs.data.reduce((sum, sub) => {
+        const item = sub.items.data[0]
+        const amount = item.price.unit_amount ?? 0
+        const interval = item.price.recurring?.interval
+        return sum + (interval === 'year' ? Math.round(amount / 12) : amount)
+      }, 0)
+    }
+  } catch {
+    // non-critical
+  }
+
+  const totalToPayCents = pendingCommissions?.reduce((s, r) => s + r.commission_cents, 0) ?? 0
 
   const experts: Expert[] = (expertsData ?? []).map(row => ({
     id: row.id,
@@ -33,8 +73,8 @@ export default async function SudoPage() {
     specialty: row.specialty,
     city: row.city,
     photo_url: row.photo_url,
-    contact_links: Array.isArray(row.contact_links) 
-      ? row.contact_links.filter((link): link is { type: string, label: string, url: string } => 
+    contact_links: Array.isArray(row.contact_links)
+      ? row.contact_links.filter((link): link is { type: string, label: string, url: string } =>
           typeof link === 'object' && link !== null && 'type' in link && 'label' in link && 'url' in link
         ) as ContactLink[]
       : [],
@@ -42,7 +82,11 @@ export default async function SudoPage() {
     system_prompt: row.system_prompt,
     plan: row.plan,
     active: row.active,
-    is_admin: row.is_admin
+    is_admin: row.is_admin,
+    is_promoter: row.is_promoter,
+    referral_code: row.referral_code,
+    stripe_coupon_id: row.stripe_coupon_id,
+    stripe_customer_id: row.stripe_customer_id,
   }))
 
   const clientCountByExpert: Record<string, number> = {}
@@ -57,6 +101,10 @@ export default async function SudoPage() {
       clientCountByExpert={clientCountByExpert}
       totalActiveClients={clients?.filter(c => c.active).length ?? 0}
       usageTodayCount={usageToday?.length ?? 0}
+      mrrCents={mrrCents}
+      totalToPayCents={totalToPayCents}
+      promoters={promotersData ?? []}
+      allReferrals={allReferrals ?? []}
     />
   )
 }
