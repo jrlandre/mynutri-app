@@ -89,18 +89,49 @@ export async function analyzeMessage(
 
   const systemPrompt = tenantConfig?.systemPrompt || SYSTEM_PROMPT
 
-  const response = await ai.models.generateContent({
-    model: MODEL,
-    contents,
-    config: {
-      systemInstruction: systemPrompt,
-      thinkingConfig: { thinkingLevel },
-      responseMimeType: "application/json",
-      responseSchema: analysisResponseSchema,
-    },
-  })
+  let responseText = "{}"
+  let attempt = 0
+  const maxAttempts = 3
 
-  const responseText = response.text ?? "{}"
+  while (attempt < maxAttempts) {
+    try {
+      const response = await ai.models.generateContent({
+        model: MODEL,
+        contents,
+        config: {
+          systemInstruction: systemPrompt,
+          thinkingConfig: { thinkingLevel },
+          responseMimeType: "application/json",
+          responseSchema: analysisResponseSchema,
+        },
+      })
+      
+      responseText = response.text ?? "{}"
+      break
+    } catch (error: unknown) {
+      attempt++
+      console.error(`Falha na API do Gemini (tentativa ${attempt}/${maxAttempts}):`, error)
+      
+      if (attempt >= maxAttempts) {
+        // Fallback for safety filters or persistent errors
+        const isSafety = String(error).toLowerCase().includes("safety") || String(error).toLowerCase().includes("finishreason")
+        
+        responseText = JSON.stringify({
+          confidence: "Baixa",
+          confidenceReason: isSafety 
+            ? "O conteúdo violou nossas políticas de segurança e não pôde ser analisado." 
+            : "A inteligência artificial demorou muito para responder ou está indisponível, tente novamente.",
+          raw: isSafety 
+            ? "Desculpe, o conteúdo violou nossas políticas de segurança." 
+            : "A inteligência artificial está temporariamente indisponível. Por favor, tente novamente mais tarde.",
+          inputType: "conversation"
+        })
+      } else {
+        // Simple linear backoff
+        await new Promise(resolve => setTimeout(resolve, 1000 * attempt))
+      }
+    }
+  }
   
   let parsedData: {
     confidence: ConfidenceLevel;

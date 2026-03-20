@@ -1,6 +1,6 @@
 import { adminClient } from '@/lib/supabase/admin'
 import SudoClient from './SudoClient'
-import type { Expert } from '@/types'
+import type { Expert, ContactLink } from '@/types'
 
 export default async function SudoPage() {
   const today = new Date()
@@ -8,13 +8,13 @@ export default async function SudoPage() {
   const todayStart = today.toISOString()
 
   const [
-    { data: experts },
+    { data: expertsData },
     { data: clients },
     { data: usageToday },
   ] = await Promise.all([
     adminClient
       .from('experts')
-      .select('id, name, subdomain, plan, active, is_admin, created_at')
+      .select('*')
       .order('created_at', { ascending: false }),
     adminClient
       .from('clients')
@@ -25,6 +25,26 @@ export default async function SudoPage() {
       .gte('created_at', todayStart),
   ])
 
+  const experts: Expert[] = (expertsData ?? []).map(row => ({
+    id: row.id,
+    user_id: row.user_id,
+    subdomain: row.subdomain,
+    name: row.name,
+    specialty: row.specialty,
+    city: row.city,
+    photo_url: row.photo_url,
+    contact_links: Array.isArray(row.contact_links) 
+      ? row.contact_links.filter((link): link is { type: string, label: string, url: string } => 
+          typeof link === 'object' && link !== null && 'type' in link && 'label' in link && 'url' in link
+        ) as ContactLink[]
+      : [],
+    listed: row.listed,
+    system_prompt: row.system_prompt,
+    plan: row.plan,
+    active: row.active,
+    is_admin: row.is_admin
+  }))
+
   const clientCountByExpert: Record<string, number> = {}
   for (const c of clients ?? []) {
     if (!c.active) continue
@@ -33,7 +53,7 @@ export default async function SudoPage() {
 
   return (
     <SudoClient
-      experts={(experts ?? []) as unknown as Expert[]}
+      experts={experts}
       clientCountByExpert={clientCountByExpert}
       totalActiveClients={clients?.filter(c => c.active).length ?? 0}
       usageTodayCount={usageToday?.length ?? 0}

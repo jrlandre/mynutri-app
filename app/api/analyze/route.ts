@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from "next/server"
 import { analyzeMessage } from "@/lib/gemini/analyze"
+import { ai } from "@/lib/gemini/client"
+import { ThinkingLevel } from "@google/genai"
 import { createClient } from "@/lib/supabase/server"
 import { adminClient } from "@/lib/supabase/admin"
 import { checkAndIncrementUsage } from "@/lib/usage"
@@ -14,6 +16,7 @@ async function buildIpRatelimit() {
 }
 
 interface RequestBody {
+  sessionId?: string
   messages: Message[]
   newMessage: {
     contentType: ContentType
@@ -25,6 +28,28 @@ interface RequestBody {
 }
 
 export const maxDuration = 60;
+
+async function generateSessionTitle(sessionId: string, firstMessageContent: string) {
+  try {
+    const response = await ai.models.generateContent({
+      model: "gemini-3-flash-preview",
+      contents: [{ role: "user", parts: [{ text: `Gere um título curto e descritivo (máx 5 palavras) para uma conversa que começou assim: "${firstMessageContent.substring(0, 200)}"` }] }],
+      config: {
+        systemInstruction: "Você é um assistente que cria títulos curtos e diretos para conversas. Responda apenas com o título, sem aspas.",
+        thinkingConfig: { thinkingLevel: ThinkingLevel.MINIMAL } // Usar nível minimal para ser rápido
+      }
+    })
+    
+    let title = response.text?.trim()
+    if (title) {
+      // Remover aspas se houver
+      title = title.replace(/^["']|["']$/g, "")
+      await adminClient.from("chat_sessions").update({ title }).eq("id", sessionId)
+    }
+  } catch (error) {
+    console.error("[generateSessionTitle] Erro ao gerar título:", error)
+  }
+}
 
 export async function POST(request: NextRequest): Promise<NextResponse> {
   try {
@@ -144,6 +169,35 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       }
     }
 
+    let sessionId = body.sessionId
+    let isNewSession = false
+
+    // Historico DB
+    if (user) {
+      if (!sessionId) {
+        const { data: newSession } = await supabase
+          .from("chat_sessions")
+          .insert({ user_id: user.id })
+          .select("id")
+          .single()
+        
+        if (newSession) {
+          sessionId = newSession.id
+          isNewSession = true
+        }
+      }
+
+      if (sessionId) {
+        await supabase.from("chat_messages").insert({
+          session_id: sessionId,
+          role: "user",
+          content_type: contentType,
+          content: content,
+          mime_type: mimeType || null
+        })
+      }
+    }
+
     const { result, updatedMessages } = await analyzeMessage(
       body.messages ?? [],
       body.newMessage,
@@ -151,7 +205,22 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       tenantConfig
     )
 
-    return NextResponse.json({ result, updatedMessages })
+    if (user && sessionId) {
+      await supabase.from("chat_messages").insert({
+        session_id: sessionId,
+        role: "assistant",
+        content_type: "text",
+        content: JSON.stringify(result),
+        mime_type: null
+      })
+
+      if (isNewSession && contentType === "text") {
+        // Floating promise
+        generateSessionTitle(sessionId, content).catch(console.error)
+      }
+    }
+
+    return NextResponse.json({ result, updatedMessages, sessionId })
   } catch (error) {
     const message = error instanceof Error ? error.message : "Erro interno"
     return NextResponse.json({ error: message }, { status: 500 })

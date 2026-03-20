@@ -47,7 +47,7 @@ export default async function ExpertProfilePage({
     )
   }
 
-  const expert = data as ExpertProfile
+  const expert = data as unknown as ExpertProfile
   const colorClass = avatarColor(expert.name)
   const inits = initials(expert.name)
 

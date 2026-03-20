@@ -76,7 +76,7 @@ export default async function PainelPage() {
 
   return (
     <PainelClient
-      expert={expert as Expert}
+      expert={expert as unknown as Expert}
       initialClients={(clients ?? []) as Client[]}
     />
   )

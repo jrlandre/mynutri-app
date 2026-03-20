@@ -1,19 +1,25 @@
 "use client"
 
-import { useState, useRef } from "react"
+import { useState, useRef, useEffect } from "react"
 import { AnimatePresence, motion } from "framer-motion"
 import Link from "next/link"
-import { LogOut, LayoutDashboard, ShieldCheck } from "lucide-react"
+import { LogOut, LayoutDashboard, ShieldCheck, History, X, MessageSquare } from "lucide-react"
 import { createClient } from "@/lib/supabase/client"
 import SessionHistory from "@/components/SessionHistory"
 import PaywallScreen from "@/components/PaywallScreen"
 import LoginGateScreen from "@/components/LoginGateScreen"
 import { compressImage } from "@/lib/compress-image"
-import type { SessionState, AnalysisResult, InputType, UserProfile } from "@/types"
+import type { SessionState, AnalysisResult, InputType, UserProfile, Message } from "@/types"
 
 interface Props {
   tenantSubdomain?: string
   userProfile?: UserProfile | null
+}
+
+interface SessionMeta {
+  id: string
+  title: string | null
+  created_at: string
 }
 
 function PearIcon() {
@@ -85,6 +91,11 @@ function StopIcon({ className }: { className?: string }) {
 
 export default function HomeClient({ tenantSubdomain, userProfile }: Props) {
   const [session, setSession] = useState<SessionState>({ messages: [], analyses: [] })
+  const [sessionId, setSessionId] = useState<string | null>(null)
+  const [historyOpen, setHistoryOpen] = useState(false)
+  const [sessionsList, setSessionsList] = useState<SessionMeta[]>([])
+  const [loadingHistory, setLoadingHistory] = useState(false)
+
   const [loading, setLoading] = useState(false)
   const [inputText, setInputText] = useState("")
   const [error, setError] = useState<string | null>(null)
@@ -97,6 +108,98 @@ export default function HomeClient({ tenantSubdomain, userProfile }: Props) {
   const inputRef = useRef<HTMLInputElement>(null)
 
   const isEmpty = session.analyses.length === 0
+
+  useEffect(() => {
+    if (historyOpen && userProfile) {
+      void fetchSessions()
+    }
+  }, [historyOpen, userProfile])
+
+  async function fetchSessions() {
+    setLoadingHistory(true)
+    try {
+      const res = await fetch("/api/chat/sessions")
+      if (res.ok) {
+        const data = await res.json() as { sessions?: SessionMeta[] }
+        setSessionsList(data.sessions ?? [])
+      }
+    } catch (e) {
+      console.error(e)
+    } finally {
+      setLoadingHistory(false)
+    }
+  }
+
+  async function loadSession(id: string) {
+    setSessionId(id)
+    setHistoryOpen(false)
+    setSession({ messages: [], analyses: [] })
+    setLoading(true)
+    try {
+      const res = await fetch(`/api/chat/messages?sessionId=${id}`)
+      if (res.ok) {
+        const data = await res.json() as {
+          messages?: {
+            id: string
+            role: "user" | "assistant"
+            content_type: "text" | "image" | "audio"
+            content: string
+            mime_type: string | null
+            created_at: string
+          }[]
+        }
+        
+        const loadedMessages: Message[] = []
+        const loadedAnalyses: AnalysisResult[] = []
+
+        for (const m of (data.messages ?? [])) {
+          if (m.role === 'user') {
+            loadedMessages.push({
+              role: m.role,
+              contentType: m.content_type,
+              content: m.content,
+              mimeType: m.mime_type ?? undefined,
+              timestamp: new Date(m.created_at).getTime()
+            })
+          } else {
+            try {
+              const parsed = JSON.parse(m.content) as AnalysisResult
+              loadedAnalyses.push(parsed)
+              loadedMessages.push({
+                role: m.role,
+                contentType: m.content_type,
+                content: parsed.raw || m.content,
+                timestamp: new Date(m.created_at).getTime()
+              })
+            } catch {
+              loadedAnalyses.push({
+                inputType: 'conversation',
+                confidence: 'Média',
+                raw: m.content
+              })
+              loadedMessages.push({
+                role: m.role,
+                contentType: m.content_type,
+                content: m.content,
+                timestamp: new Date(m.created_at).getTime()
+              })
+            }
+          }
+        }
+        setSession({ messages: loadedMessages, analyses: loadedAnalyses })
+      }
+    } catch (e) {
+      console.error("Erro ao carregar sessão", e)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  function handleNewChat() {
+    setSession({ messages: [], analyses: [] })
+    setSessionId(null)
+    setHistoryOpen(false)
+  }
 
   async function handleLogout() {
     const supabase = createClient()
@@ -118,6 +221,7 @@ export default function HomeClient({ tenantSubdomain, userProfile }: Props) {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
+          sessionId,
           messages: session.messages,
           newMessage: { contentType, content, mimeType },
           inputTypeHint,
@@ -139,13 +243,19 @@ export default function HomeClient({ tenantSubdomain, userProfile }: Props) {
         }
         throw new Error(data.message ?? data.error ?? `Erro ${res.status}`)
       }
-      const { result, updatedMessages } = await res.json() as {
+      const data = await res.json() as {
         result: AnalysisResult
-        updatedMessages: typeof session.messages
+        updatedMessages: Message[]
+        sessionId?: string
       }
+      
+      if (data.sessionId && !sessionId) {
+        setSessionId(data.sessionId)
+      }
+
       setSession((prev) => ({
-        messages: updatedMessages,
-        analyses: [...prev.analyses, result],
+        messages: data.updatedMessages,
+        analyses: [...prev.analyses, data.result],
       }))
     } catch (e) {
       setError(e instanceof Error ? e.message : "Erro desconhecido")
@@ -167,6 +277,7 @@ export default function HomeClient({ tenantSubdomain, userProfile }: Props) {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
+          sessionId,
           messages: previousMessages,
           newMessage: {
             contentType: userMsg.contentType,
@@ -181,16 +292,16 @@ export default function HomeClient({ tenantSubdomain, userProfile }: Props) {
         const data = await res.json().catch(() => ({})) as { error?: string }
         throw new Error(data.error ?? `Erro ${res.status}`)
       }
-      const { result, updatedMessages } = await res.json() as {
+      const data = await res.json() as {
         result: AnalysisResult
-        updatedMessages: typeof session.messages
+        updatedMessages: Message[]
       }
-      result.inputType = newType
+      data.result.inputType = newType
       setSession((prev) => {
-        const analyses = prev.analyses.map((a, i) => (i === index ? result : a))
+        const analyses = prev.analyses.map((a, i) => (i === index ? data.result : a))
         const messages = [
           ...previousMessages,
-          ...updatedMessages.slice(previousMessages.length),
+          ...data.updatedMessages.slice(previousMessages.length),
           ...prev.messages.slice(userMsgIndex + 2),
         ]
         return { messages, analyses }
@@ -269,96 +380,177 @@ export default function HomeClient({ tenantSubdomain, userProfile }: Props) {
   }
 
   return (
-    <main className="h-dvh max-w-2xl mx-auto flex flex-col">
+    <main className="h-dvh max-w-2xl mx-auto flex flex-col relative overflow-hidden">
       {/* Header */}
-      <header className="px-4 pt-5 pb-3.5 flex-shrink-0 flex items-center justify-between border-b border-border">
+      <header className="px-4 pt-5 pb-3.5 flex-shrink-0 flex items-center justify-between border-b border-border bg-background z-10">
         <div>
           <h1 className="text-xl font-extrabold leading-tight tracking-tight">MyNutri</h1>
           <p className="text-xs text-muted-foreground leading-tight">Assistente de escolhas nutricionais</p>
         </div>
         
-        <div className="relative">
-          {userProfile ? (
-            <>
-              <button
-                onClick={() => setMenuOpen(!menuOpen)}
-                className="w-10 h-10 rounded-full bg-secondary border border-border flex items-center justify-center text-sm font-semibold text-secondary-foreground hover:bg-secondary/80 transition-colors"
-              >
-                {userProfile.name?.[0]?.toUpperCase() || userProfile.email[0].toUpperCase()}
-              </button>
-
-              <AnimatePresence>
-                {menuOpen && (
-                  <>
-                    <div
-                      className="fixed inset-0 z-40"
-                      onClick={() => setMenuOpen(false)}
-                    />
-                    <motion.div
-                      initial={{ opacity: 0, y: -8, scale: 0.95 }}
-                      animate={{ opacity: 1, y: 0, scale: 1 }}
-                      exit={{ opacity: 0, y: -8, scale: 0.95 }}
-                      transition={{ duration: 0.15 }}
-                      className="absolute right-0 top-full mt-2 w-64 bg-card rounded-xl border border-border shadow-lg z-50 overflow-hidden"
-                    >
-                      <div className="px-4 py-3 border-b border-border">
-                        <p className="text-sm font-medium truncate">
-                          {userProfile.name || "Usuário"}
-                        </p>
-                        <p className="text-xs text-muted-foreground truncate">
-                          {userProfile.email}
-                        </p>
-                        {userProfile.expertName && (
-                          <div className="mt-2 inline-flex items-center gap-1.5 px-2 py-1 rounded-md bg-primary/10 text-primary text-xs font-medium">
-                            <span className="w-1.5 h-1.5 rounded-full bg-primary" />
-                            Expert: {userProfile.expertName}
-                          </div>
-                        )}
-                      </div>
-                      <div className="p-1">
-                        {userProfile.hasPanel && (
-                          <Link
-                            href="/painel"
-                            className="w-full text-left px-3 py-2 text-sm hover:bg-muted rounded-lg transition-colors flex items-center gap-2"
-                            onClick={() => setMenuOpen(false)}
-                          >
-                            <LayoutDashboard size={16} className="text-muted-foreground" /> Acessar painel
-                          </Link>
-                        )}
-                        {userProfile.isSudo && (
-                          <Link
-                            href="/sudo"
-                            className="w-full text-left px-3 py-2 text-sm hover:bg-muted rounded-lg transition-colors flex items-center gap-2"
-                            onClick={() => setMenuOpen(false)}
-                          >
-                            <ShieldCheck size={16} className="text-muted-foreground" /> Sudo
-                          </Link>
-                        )}
-                        <button
-                          onClick={() => {
-                            setMenuOpen(false)
-                            handleLogout()
-                          }}
-                          className="w-full text-left px-3 py-2 text-sm text-destructive hover:bg-destructive/10 rounded-lg transition-colors flex items-center gap-2"
-                        >
-                          <LogOut size={16} /> Sair
-                        </button>
-                      </div>
-                    </motion.div>
-                  </>
-                )}
-              </AnimatePresence>
-            </>
-          ) : (
-            <Link
-              href="/auth"
-              className="text-sm font-medium px-4 py-2.5 rounded-xl bg-secondary border border-border hover:bg-secondary/80 transition-colors"
+        <div className="flex items-center gap-3">
+          {userProfile && (
+            <button
+              onClick={() => setHistoryOpen(true)}
+              className="w-10 h-10 rounded-full border border-border flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
+              aria-label="Ver histórico"
             >
-              Entrar
-            </Link>
+              <History size={18} />
+            </button>
           )}
+
+          <div className="relative">
+            {userProfile ? (
+              <>
+                <button
+                  onClick={() => setMenuOpen(!menuOpen)}
+                  className="w-10 h-10 rounded-full bg-secondary border border-border flex items-center justify-center text-sm font-semibold text-secondary-foreground hover:bg-secondary/80 transition-colors"
+                >
+                  {userProfile.name?.[0]?.toUpperCase() || userProfile.email[0].toUpperCase()}
+                </button>
+
+                <AnimatePresence>
+                  {menuOpen && (
+                    <>
+                      <div
+                        className="fixed inset-0 z-40"
+                        onClick={() => setMenuOpen(false)}
+                      />
+                      <motion.div
+                        initial={{ opacity: 0, y: -8, scale: 0.95 }}
+                        animate={{ opacity: 1, y: 0, scale: 1 }}
+                        exit={{ opacity: 0, y: -8, scale: 0.95 }}
+                        transition={{ duration: 0.15 }}
+                        className="absolute right-0 top-full mt-2 w-64 bg-card rounded-xl border border-border shadow-lg z-50 overflow-hidden"
+                      >
+                        <div className="px-4 py-3 border-b border-border">
+                          <p className="text-sm font-medium truncate">
+                            {userProfile.name || "Usuário"}
+                          </p>
+                          <p className="text-xs text-muted-foreground truncate">
+                            {userProfile.email}
+                          </p>
+                          {userProfile.expertName && (
+                            <div className="mt-2 inline-flex items-center gap-1.5 px-2 py-1 rounded-md bg-primary/10 text-primary text-xs font-medium">
+                              <span className="w-1.5 h-1.5 rounded-full bg-primary" />
+                              Expert: {userProfile.expertName}
+                            </div>
+                          )}
+                        </div>
+                        <div className="p-1">
+                          {userProfile.hasPanel && (
+                            <Link
+                              href="/painel"
+                              className="w-full text-left px-3 py-2 text-sm hover:bg-muted rounded-lg transition-colors flex items-center gap-2"
+                              onClick={() => setMenuOpen(false)}
+                            >
+                              <LayoutDashboard size={16} className="text-muted-foreground" /> Acessar painel
+                            </Link>
+                          )}
+                          {userProfile.isSudo && (
+                            <Link
+                              href="/sudo"
+                              className="w-full text-left px-3 py-2 text-sm hover:bg-muted rounded-lg transition-colors flex items-center gap-2"
+                              onClick={() => setMenuOpen(false)}
+                            >
+                              <ShieldCheck size={16} className="text-muted-foreground" /> Sudo
+                            </Link>
+                          )}
+                          <button
+                            onClick={() => {
+                              setMenuOpen(false)
+                              handleLogout()
+                            }}
+                            className="w-full text-left px-3 py-2 text-sm text-destructive hover:bg-destructive/10 rounded-lg transition-colors flex items-center gap-2"
+                          >
+                            <LogOut size={16} /> Sair
+                          </button>
+                        </div>
+                      </motion.div>
+                    </>
+                  )}
+                </AnimatePresence>
+              </>
+            ) : (
+              <Link
+                href="/auth"
+                className="text-sm font-medium px-4 py-2.5 rounded-xl bg-secondary border border-border hover:bg-secondary/80 transition-colors"
+              >
+                Entrar
+              </Link>
+            )}
+          </div>
         </div>
       </header>
+
+      {/* Drawer Histórico (estilo ChatGPT mobile) */}
+      <AnimatePresence>
+        {historyOpen && (
+          <>
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="absolute inset-0 bg-background/80 backdrop-blur-sm z-40"
+              onClick={() => setHistoryOpen(false)}
+            />
+            <motion.div
+              initial={{ x: "-100%" }}
+              animate={{ x: 0 }}
+              exit={{ x: "-100%" }}
+              transition={{ type: "spring", damping: 25, stiffness: 200 }}
+              className="absolute left-0 top-0 bottom-0 w-[85%] max-w-sm bg-card border-r border-border z-50 flex flex-col shadow-2xl"
+            >
+              <div className="p-4 border-b border-border flex items-center justify-between">
+                <h2 className="font-semibold">Histórico de Sessões</h2>
+                <button
+                  onClick={() => setHistoryOpen(false)}
+                  className="p-2 -mr-2 rounded-full hover:bg-muted text-muted-foreground"
+                >
+                  <X size={18} />
+                </button>
+              </div>
+              <div className="p-4">
+                <button
+                  onClick={handleNewChat}
+                  className="w-full flex items-center gap-2 px-4 py-3 rounded-xl bg-primary text-primary-foreground font-medium hover:opacity-90 transition-opacity"
+                >
+                  <MessageSquare size={16} />
+                  Nova conversa
+                </button>
+              </div>
+              <div className="flex-1 overflow-y-auto px-2 pb-4">
+                {loadingHistory ? (
+                  <div className="flex flex-col gap-2 p-2">
+                    {[1, 2, 3].map((i) => (
+                      <div key={i} className="h-12 bg-muted animate-pulse rounded-lg" />
+                    ))}
+                  </div>
+                ) : sessionsList.length > 0 ? (
+                  <div className="flex flex-col gap-1">
+                    {sessionsList.map((s) => (
+                      <button
+                        key={s.id}
+                        onClick={() => loadSession(s.id)}
+                        className={`text-left px-3 py-3 rounded-lg text-sm transition-colors ${s.id === sessionId ? 'bg-secondary text-foreground font-medium' : 'text-muted-foreground hover:bg-muted/50 hover:text-foreground'}`}
+                      >
+                        <div className="truncate">{s.title || "Nova Conversa"}</div>
+                        <div className="text-xs opacity-60 mt-1">
+                          {new Date(s.created_at).toLocaleDateString()}
+                        </div>
+                      </button>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="p-4 text-center text-sm text-muted-foreground">
+                    Nenhuma conversa anterior.
+                  </div>
+                )}
+              </div>
+            </motion.div>
+          </>
+        )}
+      </AnimatePresence>
 
       {/* Histórico / Estado vazio */}
       <section className="flex-1 overflow-y-auto px-4 py-3 flex flex-col">
@@ -515,7 +707,7 @@ export default function HomeClient({ tenantSubdomain, userProfile }: Props) {
         animate={{ y: 0, opacity: 1 }}
         exit={{ opacity: 0, y: 8 }}
         transition={{ duration: 0.25, ease: "easeOut" }}
-        className="flex-shrink-0 border-t border-border px-4 py-3 bg-background"
+        className="flex-shrink-0 border-t border-border px-4 py-3 bg-background z-10 relative"
       >
         <form
           onSubmit={handleText}

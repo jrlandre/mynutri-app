@@ -104,6 +104,12 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
         subject: `Boas-vindas ao MyNutri, ${name.split(' ')[0]}!`,
         react: ExpertWelcomeEmail({ name, panelUrl }),
       })
+
+      // Marcar o email de boas-vindas como enviado
+      await adminClient
+        .from("experts")
+        .update({ welcome_email_sent: true })
+        .eq("user_id", userId)
     } catch (err) {
       console.error('[stripe/webhook] Falha ao enviar email de boas-vindas:', err)
     }

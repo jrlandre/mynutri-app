@@ -28,7 +28,7 @@ export async function requireExpert(): Promise<GuardResult | Response> {
     return Response.json({ error: 'Acesso negado' }, { status: 403 })
   }
 
-  return { expert: expert as Expert }
+  return { expert: expert as unknown as Expert }
 }
 
 export function isResponse(v: GuardResult | Response): v is Response {
