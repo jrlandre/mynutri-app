@@ -51,4 +51,5 @@ dev.log
 
 # local config
 .mcp.json
+.envrc
 .gemini/
