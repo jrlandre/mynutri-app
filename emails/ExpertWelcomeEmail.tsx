@@ -13,13 +13,16 @@ export default function ExpertWelcomeEmail({ name, panelUrl }: Props) {
 
   return (
     <Html lang="pt-BR">
-      <Head />
+      <Head>
+        <style>{`@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');`}</style>
+      </Head>
       <Preview>Boas-vindas ao MyNutri, {firstName}! Seu painel está pronto.</Preview>
       <Body style={body}>
         <Container style={container}>
           <Section style={header}>
             <Text style={logo}>MyNutri</Text>
           </Section>
+          <Section style={accentLine}>&nbsp;</Section>
 
           <Section style={content}>
             <Heading style={h1}>Boas-vindas, {firstName}!</Heading>
@@ -59,29 +62,38 @@ export default function ExpertWelcomeEmail({ name, panelUrl }: Props) {
 }
 
 const body = {
-  backgroundColor: '#f4f4f5',
-  fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif',
+  backgroundColor: '#faf8f3',
+  fontFamily: '"Plus Jakarta Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif',
   margin: '0',
   padding: '40px 0',
 }
 
 const container = {
-  backgroundColor: '#ffffff',
+  backgroundColor: '#fffef8',
   borderRadius: '12px',
   maxWidth: '520px',
   margin: '0 auto',
   overflow: 'hidden' as const,
+  border: '1px solid #e4dfd7',
 }
 
 const header = {
-  backgroundColor: '#09090b',
+  backgroundColor: '#fffef8',
   padding: '24px 32px',
+  borderBottom: '1px solid #e4dfd7',
+}
+
+const accentLine = {
+  backgroundColor: '#4b8555',
+  height: '3px',
+  fontSize: '0',
+  lineHeight: '0',
 }
 
 const logo = {
-  color: '#ffffff',
+  color: '#2a2420',
   fontSize: '18px',
-  fontWeight: '700',
+  fontWeight: '800',
   margin: '0',
   letterSpacing: '-0.02em',
 }
@@ -91,7 +103,7 @@ const content = {
 }
 
 const h1 = {
-  color: '#09090b',
+  color: '#2a2420',
   fontSize: '22px',
   fontWeight: '700',
   margin: '0 0 16px',
@@ -99,21 +111,21 @@ const h1 = {
 }
 
 const text = {
-  color: '#52525b',
+  color: '#2a2420',
   fontSize: '15px',
   lineHeight: '1.6',
   margin: '0 0 16px',
 }
 
 const card = {
-  backgroundColor: '#f4f4f5',
+  backgroundColor: '#e8f2e6',
   borderRadius: '10px',
   padding: '16px 20px',
   margin: '8px 0',
 }
 
 const cardLabel = {
-  color: '#a1a1aa',
+  color: '#8b8680',
   fontSize: '11px',
   fontWeight: '600',
   textTransform: 'uppercase' as const,
@@ -122,7 +134,7 @@ const cardLabel = {
 }
 
 const cardUrl = {
-  color: '#16a34a',
+  color: '#4b8555',
   fontSize: '14px',
   fontWeight: '500',
   wordBreak: 'break-all' as const,
@@ -130,7 +142,7 @@ const cardUrl = {
 }
 
 const button = {
-  backgroundColor: '#16a34a',
+  backgroundColor: '#4b8555',
   borderRadius: '10px',
   color: '#ffffff',
   fontSize: '15px',
@@ -141,19 +153,19 @@ const button = {
 }
 
 const note = {
-  color: '#a1a1aa',
+  color: '#8b8680',
   fontSize: '13px',
   lineHeight: '1.5',
   margin: '0',
 }
 
 const hr = {
-  borderColor: '#f4f4f5',
+  borderColor: '#e4dfd7',
   margin: '0',
 }
 
 const footer = {
-  color: '#a1a1aa',
+  color: '#8b8680',
   fontSize: '12px',
   textAlign: 'center' as const,
   padding: '16px 32px',
