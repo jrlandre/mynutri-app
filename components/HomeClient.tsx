@@ -108,6 +108,16 @@ function MicIcon({ className }: { className?: string }) {
   )
 }
 
+function GalleryIcon() {
+  return (
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <rect x="3" y="3" width="18" height="18" rx="2" />
+      <circle cx="8.5" cy="8.5" r="1.5" />
+      <polyline points="21 15 16 10 5 21" />
+    </svg>
+  )
+}
+
 function StopIcon({ className }: { className?: string }) {
   return (
     <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" className={className} aria-hidden="true">
@@ -134,6 +144,7 @@ export default function HomeClient({ tenantSubdomain, userProfile }: Props) {
   const [paywalled, setPaywalled] = useState(false)
   const [loginGated, setLoginGated] = useState(false)
   const [menuOpen, setMenuOpen] = useState(false)
+  const [imagePickerOpen, setImagePickerOpen] = useState(false)
   const recorderRef = useRef<MediaRecorder | null>(null)
   const chunksRef = useRef<Blob[]>([])
   const inputRef = useRef<HTMLInputElement>(null)
@@ -391,11 +402,16 @@ export default function HomeClient({ tenantSubdomain, userProfile }: Props) {
     void submit("text", text)
   }
 
-  function handleCameraCapture() {
+  function handleOpenImagePicker() {
+    setImagePickerOpen(true)
+  }
+
+  function triggerImageInput(camera: boolean) {
+    setImagePickerOpen(false)
     const input = document.createElement("input")
     input.type = "file"
     input.accept = "image/*"
-    input.capture = "environment"
+    if (camera) input.capture = "environment"
     input.onchange = async () => {
       const file = input.files?.[0]
       if (!file) return
@@ -688,7 +704,7 @@ export default function HomeClient({ tenantSubdomain, userProfile }: Props) {
                 <div className="flex gap-3">
                   <button
                     type="button"
-                    onClick={handleCameraCapture}
+                    onClick={handleOpenImagePicker}
                     disabled={isRecording || isProcessingAudio || !!pendingAudio}
                     className="flex-1 flex items-center justify-center gap-2.5 px-5 py-3.5 rounded-xl bg-secondary border border-border text-secondary-foreground text-sm font-medium hover:bg-secondary/80 active:scale-[0.97] transition-all cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-secondary"
                   >
@@ -877,7 +893,7 @@ export default function HomeClient({ tenantSubdomain, userProfile }: Props) {
           {/* Botões à esquerda: câmera + mic/trash */}
           <button
             type="button"
-            onClick={handleCameraCapture}
+            onClick={handleOpenImagePicker}
             disabled={loading || isRecording || !!pendingAudio}
             aria-label="Adicionar imagem"
             className="w-8 h-8 flex items-center justify-center rounded-full text-muted-foreground hover:text-foreground hover:bg-muted disabled:opacity-40 transition-colors flex-shrink-0 my-0.5 ml-0.5 cursor-pointer disabled:cursor-not-allowed"
@@ -969,6 +985,66 @@ export default function HomeClient({ tenantSubdomain, userProfile }: Props) {
         </form>
       </motion.section>
       )}
+      </AnimatePresence>
+
+      {/* Image picker bottom sheet */}
+      <AnimatePresence>
+        {imagePickerOpen && (
+          <>
+            <motion.div
+              key="img-backdrop"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.2 }}
+              onClick={() => setImagePickerOpen(false)}
+              className="fixed inset-0 bg-black/40 z-50"
+            />
+            <motion.div
+              key="img-sheet"
+              initial={{ y: "100%" }}
+              animate={{ y: 0 }}
+              exit={{ y: "100%" }}
+              transition={{ type: "spring", damping: 32, stiffness: 320 }}
+              className="fixed bottom-0 left-0 right-0 z-50 bg-background rounded-t-2xl shadow-xl"
+            >
+              <div className="w-10 h-1 bg-muted rounded-full mx-auto mt-3 mb-2" />
+              <p className="text-center text-xs font-medium text-muted-foreground uppercase tracking-wide mb-3 px-6">Adicionar imagem</p>
+              <div className="flex flex-col px-4 pb-8 gap-2">
+                <button
+                  onClick={() => triggerImageInput(true)}
+                  className="flex items-center gap-4 px-4 py-3.5 rounded-xl bg-secondary hover:bg-secondary/80 active:scale-[0.98] transition-all text-left"
+                >
+                  <div className="w-10 h-10 rounded-full bg-primary/10 text-primary flex items-center justify-center flex-shrink-0">
+                    <CameraIcon />
+                  </div>
+                  <div>
+                    <div className="text-sm font-medium">Câmera</div>
+                    <div className="text-xs text-muted-foreground">Tirar uma foto agora</div>
+                  </div>
+                </button>
+                <button
+                  onClick={() => triggerImageInput(false)}
+                  className="flex items-center gap-4 px-4 py-3.5 rounded-xl bg-secondary hover:bg-secondary/80 active:scale-[0.98] transition-all text-left"
+                >
+                  <div className="w-10 h-10 rounded-full bg-primary/10 text-primary flex items-center justify-center flex-shrink-0">
+                    <GalleryIcon />
+                  </div>
+                  <div>
+                    <div className="text-sm font-medium">Galeria / Arquivos</div>
+                    <div className="text-xs text-muted-foreground">Escolher do dispositivo</div>
+                  </div>
+                </button>
+                <button
+                  onClick={() => setImagePickerOpen(false)}
+                  className="text-sm text-muted-foreground py-3 hover:text-foreground transition-colors"
+                >
+                  Cancelar
+                </button>
+              </div>
+            </motion.div>
+          </>
+        )}
       </AnimatePresence>
     </main>
   )
