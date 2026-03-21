@@ -29,22 +29,25 @@ interface RequestBody {
 
 export const maxDuration = 60;
 
-async function generateSessionTitle(sessionId: string, firstMessageContent: string) {
+async function generateSessionTitle(sessionId: string, userId: string, firstMessageContent: string) {
   try {
     const response = await ai.models.generateContent({
       model: "gemini-3-flash-preview",
       contents: [{ role: "user", parts: [{ text: `Gere um título curto e descritivo (máx 5 palavras) para uma conversa que começou assim: "${firstMessageContent.substring(0, 200)}"` }] }],
       config: {
         systemInstruction: "Você é um assistente que cria títulos curtos e diretos para conversas. Responda apenas com o título, sem aspas.",
-        thinkingConfig: { thinkingLevel: ThinkingLevel.MINIMAL } // Usar nível minimal para ser rápido
+        thinkingConfig: { thinkingLevel: ThinkingLevel.MINIMAL }
       }
     })
-    
+
     let title = response.text?.trim()
     if (title) {
-      // Remover aspas se houver
       title = title.replace(/^["']|["']$/g, "")
-      await adminClient.from("chat_sessions").update({ title }).eq("id", sessionId)
+      await adminClient
+        .from("chat_sessions")
+        .update({ title })
+        .eq("id", sessionId)
+        .eq("user_id", userId)
     }
   } catch (error) {
     console.error("[generateSessionTitle] Erro ao gerar título:", error)
@@ -175,13 +178,15 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     // Historico DB
     if (user) {
       if (!sessionId) {
-        const { data: newSession } = await supabase
+        const { data: newSession, error: sessionError } = await supabase
           .from("chat_sessions")
           .insert({ user_id: user.id })
           .select("id")
           .single()
-        
-        if (newSession) {
+
+        if (sessionError) {
+          console.error("[analyze] Falha ao criar sessão:", sessionError.message)
+        } else if (newSession) {
           sessionId = newSession.id
           isNewSession = true
         }
@@ -215,8 +220,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       })
 
       if (isNewSession && contentType === "text") {
-        // Floating promise
-        generateSessionTitle(sessionId, content).catch(console.error)
+        generateSessionTitle(sessionId, user.id, content).catch(console.error)
       }
     }
 
