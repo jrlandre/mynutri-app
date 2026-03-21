@@ -44,6 +44,7 @@ export default function ResultCard({ result, analysisIndex, onCorrectType, disab
 
   const cleanedRaw = result.raw
     .replace(/\*{0,2}CONFIANÇA:\*{0,2}[\s*]*(Alta|Média|Baixa)[^\n]*/gi, "")
+    .replace(/(\n)(\*\*)/g, "\n\n$2")
     .trim()
 
   return (

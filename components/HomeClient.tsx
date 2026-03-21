@@ -3,7 +3,7 @@
 import { useState, useRef, useEffect } from "react"
 import { AnimatePresence, motion } from "framer-motion"
 import Link from "next/link"
-import { LogOut, LayoutDashboard, ShieldCheck, History, X, MessageSquare } from "lucide-react"
+import { LogOut, LayoutDashboard, ShieldCheck, History, X, MessageSquare, Trash } from "lucide-react"
 import { createClient } from "@/lib/supabase/client"
 import SessionHistory from "@/components/SessionHistory"
 import PaywallScreen from "@/components/PaywallScreen"
@@ -100,6 +100,7 @@ export default function HomeClient({ tenantSubdomain, userProfile }: Props) {
   const [inputText, setInputText] = useState("")
   const [error, setError] = useState<string | null>(null)
   const [isRecording, setIsRecording] = useState(false)
+  const [pendingAudio, setPendingAudio] = useState<{ base64: string; mimeType: string } | null>(null)
   const [paywalled, setPaywalled] = useState(false)
   const [loginGated, setLoginGated] = useState(false)
   const [menuOpen, setMenuOpen] = useState(false)
@@ -326,7 +327,6 @@ export default function HomeClient({ tenantSubdomain, userProfile }: Props) {
     const input = document.createElement("input")
     input.type = "file"
     input.accept = "image/*"
-    input.capture = "environment"
     input.onchange = async () => {
       const file = input.files?.[0]
       if (!file) return
@@ -360,7 +360,7 @@ export default function HomeClient({ tenantSubdomain, userProfile }: Props) {
           const dataUrl = ev.target?.result as string
           const [prefix, base64] = dataUrl.split(",")
           const mimeType = prefix.replace("data:", "").replace(";base64", "")
-          void submit("audio", base64, mimeType)
+          setPendingAudio({ base64, mimeType })
         }
         reader.readAsDataURL(blob)
       }
@@ -377,6 +377,16 @@ export default function HomeClient({ tenantSubdomain, userProfile }: Props) {
     recorderRef.current?.stop()
     recorderRef.current = null
     setIsRecording(false)
+  }
+
+  function handleSendAudio() {
+    if (!pendingAudio) return
+    void submit("audio", pendingAudio.base64, pendingAudio.mimeType)
+    setPendingAudio(null)
+  }
+
+  function handleDiscardAudio() {
+    setPendingAudio(null)
   }
 
   return (
@@ -570,42 +580,67 @@ export default function HomeClient({ tenantSubdomain, userProfile }: Props) {
             >
               <div className="flex flex-col gap-5 w-full max-w-sm">
                 <div className="flex gap-3">
-                  <button
-                    type="button"
-                    onClick={handleCameraCapture}
-                    className="flex-1 flex items-center justify-center gap-2.5 px-5 py-3.5 rounded-xl bg-secondary border border-border text-secondary-foreground text-sm font-medium hover:bg-secondary/80 active:scale-[0.97] transition-all cursor-pointer"
-                  >
-                    <CameraIcon className="opacity-70 flex-shrink-0" />
-                    Imagem
-                  </button>
-                  <button
-                    type="button"
-                    onClick={isRecording ? handleStopRecording : handleStartRecording}
-                    className={`flex-1 flex items-center justify-center gap-2.5 px-5 py-3.5 rounded-xl border text-sm font-medium active:scale-[0.97] transition-all cursor-pointer ${
-                      isRecording
-                        ? "bg-destructive/10 border-destructive/30 text-destructive"
-                        : "bg-secondary border-border text-secondary-foreground hover:bg-secondary/80"
-                    }`}
-                  >
-                    {isRecording ? (
-                      <><StopIcon className="flex-shrink-0" />Parar gravação</>
-                    ) : (
-                      <><MicIcon className="opacity-70 flex-shrink-0" />Áudio</>
-                    )}
-                  </button>
+                  {pendingAudio ? (
+                    <>
+                      <button
+                        type="button"
+                        onClick={handleDiscardAudio}
+                        className="flex-1 flex items-center justify-center gap-2.5 px-5 py-3.5 rounded-xl bg-destructive/10 border border-destructive/30 text-destructive text-sm font-medium active:scale-[0.97] transition-all cursor-pointer hover:bg-destructive/20"
+                      >
+                        <Trash size={16} className="flex-shrink-0" />
+                        Descartar
+                      </button>
+                      <button
+                        type="button"
+                        onClick={handleSendAudio}
+                        className="flex-1 flex items-center justify-center gap-2.5 px-5 py-3.5 rounded-xl bg-primary border border-primary text-primary-foreground text-sm font-medium active:scale-[0.97] transition-all cursor-pointer hover:opacity-90"
+                      >
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" className="flex-shrink-0">
+                          <path d="M22 2L11 13" /><path d="M22 2L15 22 11 13 2 9l20-7z" />
+                        </svg>
+                        Enviar áudio
+                      </button>
+                    </>
+                  ) : (
+                    <>
+                      <button
+                        type="button"
+                        onClick={handleCameraCapture}
+                        className="flex-1 flex items-center justify-center gap-2.5 px-5 py-3.5 rounded-xl bg-secondary border border-border text-secondary-foreground text-sm font-medium hover:bg-secondary/80 active:scale-[0.97] transition-all cursor-pointer"
+                      >
+                        <CameraIcon className="opacity-70 flex-shrink-0" />
+                        Imagem
+                      </button>
+                      <button
+                        type="button"
+                        onClick={isRecording ? handleStopRecording : handleStartRecording}
+                        className={`flex-1 flex items-center justify-center gap-2.5 px-5 py-3.5 rounded-xl border text-sm font-medium active:scale-[0.97] transition-all cursor-pointer ${
+                          isRecording
+                            ? "bg-destructive/10 border-destructive/30 text-destructive"
+                            : "bg-secondary border-border text-secondary-foreground hover:bg-secondary/80"
+                        }`}
+                      >
+                        {isRecording ? (
+                          <><StopIcon className="flex-shrink-0" />Parar gravação</>
+                        ) : (
+                          <><MicIcon className="opacity-70 flex-shrink-0" />Áudio</>
+                        )}
+                      </button>
+                    </>
+                  )}
                 </div>
 
                 <form
-                  onSubmit={handleText}
+                  onSubmit={pendingAudio ? (e) => { e.preventDefault(); handleSendAudio() } : handleText}
                   className="flex items-center border border-border rounded-xl bg-card px-4 pr-1.5 focus-within:ring-2 focus-within:ring-ring/40 transition-shadow"
                 >
                   <input
                     ref={inputRef}
                     type="text"
-                    value={isRecording ? "" : inputText}
-                    onChange={(e) => { if (!isRecording) setInputText(e.target.value) }}
-                    placeholder={isRecording ? "Gravando áudio..." : "Escreva sua dúvida..."}
-                    disabled={loading || isRecording}
+                    value={isRecording || pendingAudio ? "" : inputText}
+                    onChange={(e) => { if (!isRecording && !pendingAudio) setInputText(e.target.value) }}
+                    placeholder={isRecording ? "Gravando áudio..." : pendingAudio ? "Áudio pronto — enviar ou descartar" : "Escreva sua dúvida..."}
+                    disabled={loading || isRecording || !!pendingAudio}
                     className="flex-1 py-3 text-sm bg-transparent focus:outline-none disabled:opacity-50 min-w-0 placeholder:text-muted-foreground"
                   />
                   {isRecording ? (
@@ -620,8 +655,8 @@ export default function HomeClient({ tenantSubdomain, userProfile }: Props) {
                   ) : (
                     <button
                       type="submit"
-                      disabled={loading || !inputText.trim()}
-                      aria-label="Enviar mensagem"
+                      disabled={loading || (!pendingAudio && !inputText.trim())}
+                      aria-label={pendingAudio ? "Enviar áudio" : "Enviar mensagem"}
                       className="w-8 h-8 flex items-center justify-center rounded-full bg-primary text-primary-foreground disabled:opacity-40 transition-opacity flex-shrink-0 my-1 hover:opacity-90 cursor-pointer disabled:cursor-not-allowed"
                     >
                       <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
@@ -713,34 +748,38 @@ export default function HomeClient({ tenantSubdomain, userProfile }: Props) {
           onSubmit={handleText}
           className="flex items-center border border-border rounded-full bg-card pl-1 pr-1 focus-within:ring-2 focus-within:ring-ring/40 transition-shadow"
         >
-          {/* Botões à esquerda: câmera + mic */}
+          {/* Botões à esquerda: câmera + mic/trash */}
           <button
             type="button"
             onClick={handleCameraCapture}
-            disabled={loading || isRecording}
-            aria-label="Fotografar alimento"
+            disabled={loading || isRecording || !!pendingAudio}
+            aria-label="Adicionar imagem"
             className="w-8 h-8 flex items-center justify-center rounded-full text-muted-foreground hover:text-foreground hover:bg-muted disabled:opacity-40 transition-colors flex-shrink-0 my-0.5 ml-0.5 cursor-pointer disabled:cursor-not-allowed"
           >
             <CameraIcon />
           </button>
           <button
             type="button"
-            onClick={handleStartRecording}
+            onClick={pendingAudio ? handleDiscardAudio : handleStartRecording}
             disabled={loading || isRecording}
-            aria-label="Gravar áudio"
-            className="w-8 h-8 flex items-center justify-center rounded-full text-muted-foreground hover:text-foreground hover:bg-muted disabled:opacity-40 transition-colors flex-shrink-0 my-0.5 cursor-pointer disabled:cursor-not-allowed"
+            aria-label={pendingAudio ? "Descartar áudio" : "Gravar áudio"}
+            className={`w-8 h-8 flex items-center justify-center rounded-full disabled:opacity-40 transition-colors flex-shrink-0 my-0.5 cursor-pointer disabled:cursor-not-allowed ${
+              pendingAudio
+                ? "text-destructive hover:text-destructive hover:bg-destructive/10"
+                : "text-muted-foreground hover:text-foreground hover:bg-muted"
+            }`}
           >
-            <MicIcon />
+            {pendingAudio ? <Trash size={16} /> : <MicIcon />}
           </button>
 
           {/* Campo de texto */}
           <input
             ref={inputRef}
             type="text"
-            value={isRecording ? "" : inputText}
-            onChange={(e) => { if (!isRecording) setInputText(e.target.value) }}
-            placeholder={isRecording ? "Gravando áudio..." : "Escreva sua dúvida..."}
-            disabled={loading || isRecording}
+            value={isRecording || pendingAudio ? "" : inputText}
+            onChange={(e) => { if (!isRecording && !pendingAudio) setInputText(e.target.value) }}
+            placeholder={isRecording ? "Gravando áudio..." : pendingAudio ? "Áudio pronto — enviar ou descartar" : "Escreva sua dúvida..."}
+            disabled={loading || isRecording || !!pendingAudio}
             className="flex-1 py-2.5 px-2 text-sm bg-transparent focus:outline-none disabled:opacity-50 min-w-0 placeholder:text-muted-foreground"
           />
 
@@ -753,6 +792,18 @@ export default function HomeClient({ tenantSubdomain, userProfile }: Props) {
               className="w-8 h-8 flex items-center justify-center rounded-full bg-destructive text-white flex-shrink-0 my-0.5 mr-0.5 hover:opacity-90 cursor-pointer transition-opacity"
             >
               <StopIcon />
+            </button>
+          ) : pendingAudio ? (
+            <button
+              type="button"
+              onClick={handleSendAudio}
+              aria-label="Enviar áudio"
+              className="w-8 h-8 flex items-center justify-center rounded-full bg-primary text-primary-foreground flex-shrink-0 my-0.5 mr-0.5 hover:opacity-90 cursor-pointer transition-opacity"
+            >
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                <path d="M22 2L11 13" />
+                <path d="M22 2L15 22 11 13 2 9l20-7z" />
+              </svg>
             </button>
           ) : (
             <button
