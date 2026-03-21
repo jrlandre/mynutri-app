@@ -211,13 +211,16 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     )
 
     if (user && sessionId) {
-      await supabase.from("chat_messages").insert({
-        session_id: sessionId,
-        role: "assistant",
-        content_type: "text",
-        content: JSON.stringify(result),
-        mime_type: null
-      })
+      await Promise.all([
+        supabase.from("chat_messages").insert({
+          session_id: sessionId,
+          role: "assistant",
+          content_type: "text",
+          content: JSON.stringify(result),
+          mime_type: null
+        }),
+        supabase.from("chat_sessions").update({ updated_at: new Date().toISOString() }).eq("id", sessionId),
+      ])
 
       if (isNewSession) {
         const titleContent = contentType === "text" ? content : result.raw

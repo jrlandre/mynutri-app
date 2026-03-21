@@ -19,7 +19,34 @@ interface Props {
 interface SessionMeta {
   id: string
   title: string | null
-  created_at: string
+  updated_at: string
+}
+
+function groupSessions(sessions: SessionMeta[]): { label: string; items: SessionMeta[] }[] {
+  const now = new Date()
+  const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate())
+  const startOfYesterday = new Date(startOfToday.getTime() - 86400000)
+  const startOf7Days = new Date(startOfToday.getTime() - 6 * 86400000)
+  const startOf30Days = new Date(startOfToday.getTime() - 29 * 86400000)
+
+  const buckets: { label: string; items: SessionMeta[] }[] = [
+    { label: "Hoje", items: [] },
+    { label: "Ontem", items: [] },
+    { label: "Últimos 7 dias", items: [] },
+    { label: "Últimos 30 dias", items: [] },
+    { label: "Mais antigo", items: [] },
+  ]
+
+  for (const s of sessions) {
+    const d = new Date(s.updated_at)
+    if (d >= startOfToday) buckets[0].items.push(s)
+    else if (d >= startOfYesterday) buckets[1].items.push(s)
+    else if (d >= startOf7Days) buckets[2].items.push(s)
+    else if (d >= startOf30Days) buckets[3].items.push(s)
+    else buckets[4].items.push(s)
+  }
+
+  return buckets.filter(b => b.items.length > 0)
 }
 
 function PearIcon() {
@@ -610,18 +637,22 @@ export default function HomeClient({ tenantSubdomain, userProfile }: Props) {
                     ))}
                   </div>
                 ) : sessionsList.length > 0 ? (
-                  <div className="flex flex-col gap-1">
-                    {sessionsList.map((s) => (
-                      <button
-                        key={s.id}
-                        onClick={() => loadSession(s.id)}
-                        className={`text-left px-3 py-3 rounded-lg text-sm transition-colors ${s.id === sessionId ? 'bg-secondary text-foreground font-medium' : 'text-muted-foreground hover:bg-muted/50 hover:text-foreground'}`}
-                      >
-                        <div className="truncate">{s.title || "Nova Conversa"}</div>
-                        <div className="text-xs opacity-60 mt-1">
-                          Data de criação: {new Date(s.created_at).toLocaleDateString("pt-BR")}
+                  <div className="flex flex-col gap-4 py-1">
+                    {groupSessions(sessionsList).map((group) => (
+                      <div key={group.label}>
+                        <p className="px-3 mb-1 text-xs font-medium text-muted-foreground/60 uppercase tracking-wide">{group.label}</p>
+                        <div className="flex flex-col gap-0.5">
+                          {group.items.map((s) => (
+                            <button
+                              key={s.id}
+                              onClick={() => loadSession(s.id)}
+                              className={`text-left px-3 py-2 rounded-lg text-sm transition-colors truncate ${s.id === sessionId ? 'bg-secondary text-foreground font-medium' : 'text-muted-foreground hover:bg-muted/50 hover:text-foreground'}`}
+                            >
+                              {s.title || "Nova Conversa"}
+                            </button>
+                          ))}
                         </div>
-                      </button>
+                      </div>
                     ))}
                   </div>
                 ) : (

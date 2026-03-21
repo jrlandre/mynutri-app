@@ -11,8 +11,8 @@ export async function GET() {
 
   const { data, error } = await supabase
     .from("chat_sessions")
-    .select("id, title, created_at")
-    .order("created_at", { ascending: false })
+    .select("id, title, updated_at")
+    .order("updated_at", { ascending: false })
 
   if (error) {
     return NextResponse.json({ error: error.message }, { status: 500 })
