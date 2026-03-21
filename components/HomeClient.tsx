@@ -698,7 +698,7 @@ export default function HomeClient({ tenantSubdomain, userProfile }: Props) {
                       aria-label={audioPlayer.isPlaying ? "Pausar" : "Reproduzir"}
                       className="w-7 h-7 flex items-center justify-center rounded-full bg-primary/10 text-primary hover:bg-primary/20 transition-colors flex-shrink-0 ml-1 cursor-pointer"
                     >
-                      {audioPlayer.isPlaying ? <Pause size={13} /> : <Play size={13} className="translate-x-px" />}
+                      {audioPlayer.isPlaying ? <Pause size={13} /> : <Play size={13} />}
                     </button>
                     <div
                       className="flex-1 relative h-1.5 bg-muted rounded-full overflow-hidden mx-3 cursor-pointer"
@@ -875,7 +875,7 @@ export default function HomeClient({ tenantSubdomain, userProfile }: Props) {
                 aria-label={audioPlayer.isPlaying ? "Pausar" : "Reproduzir"}
                 className="w-7 h-7 flex items-center justify-center rounded-full bg-primary/10 text-primary hover:bg-primary/20 transition-colors flex-shrink-0 cursor-pointer"
               >
-                {audioPlayer.isPlaying ? <Pause size={13} /> : <Play size={13} className="translate-x-px" />}
+                {audioPlayer.isPlaying ? <Pause size={13} /> : <Play size={13} />}
               </button>
               <div className="flex-1 relative h-1.5 bg-muted rounded-full overflow-hidden cursor-pointer" onClick={handleSeek}>
                 <div
