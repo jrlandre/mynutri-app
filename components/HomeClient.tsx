@@ -3,7 +3,7 @@
 import { useState, useRef, useEffect } from "react"
 import { AnimatePresence, motion } from "framer-motion"
 import Link from "next/link"
-import { LogOut, LayoutDashboard, ShieldCheck, History, X, MessageSquare, Trash } from "lucide-react"
+import { LogOut, LayoutDashboard, ShieldCheck, History, X, MessageSquare, Trash, Play, Pause } from "lucide-react"
 import { createClient } from "@/lib/supabase/client"
 import SessionHistory from "@/components/SessionHistory"
 import PaywallScreen from "@/components/PaywallScreen"
@@ -101,12 +101,14 @@ export default function HomeClient({ tenantSubdomain, userProfile }: Props) {
   const [error, setError] = useState<string | null>(null)
   const [isRecording, setIsRecording] = useState(false)
   const [pendingAudio, setPendingAudio] = useState<{ base64: string; mimeType: string } | null>(null)
+  const [audioPlayer, setAudioPlayer] = useState<{ isPlaying: boolean; currentTime: number; duration: number }>({ isPlaying: false, currentTime: 0, duration: 0 })
   const [paywalled, setPaywalled] = useState(false)
   const [loginGated, setLoginGated] = useState(false)
   const [menuOpen, setMenuOpen] = useState(false)
   const recorderRef = useRef<MediaRecorder | null>(null)
   const chunksRef = useRef<Blob[]>([])
   const inputRef = useRef<HTMLInputElement>(null)
+  const audioRef = useRef<HTMLAudioElement | null>(null)
 
   const isEmpty = session.analyses.length === 0
 
@@ -115,6 +117,39 @@ export default function HomeClient({ tenantSubdomain, userProfile }: Props) {
       void fetchSessions()
     }
   }, [historyOpen, userProfile])
+
+  useEffect(() => {
+    if (!pendingAudio) {
+      audioRef.current?.pause()
+      audioRef.current = null
+      setAudioPlayer({ isPlaying: false, currentTime: 0, duration: 0 })
+      return
+    }
+    const audio = new Audio(`data:${pendingAudio.mimeType};base64,${pendingAudio.base64}`)
+    audio.onloadedmetadata = () => setAudioPlayer(s => ({ ...s, duration: audio.duration }))
+    audio.ontimeupdate = () => setAudioPlayer(s => ({ ...s, currentTime: audio.currentTime }))
+    audio.onended = () => setAudioPlayer(s => ({ ...s, isPlaying: false, currentTime: 0 }))
+    audioRef.current = audio
+    return () => { audio.pause() }
+  }, [pendingAudio])
+
+  function handleTogglePlayback() {
+    const audio = audioRef.current
+    if (!audio) return
+    if (audioPlayer.isPlaying) {
+      audio.pause()
+      setAudioPlayer(s => ({ ...s, isPlaying: false }))
+    } else {
+      void audio.play()
+      setAudioPlayer(s => ({ ...s, isPlaying: true }))
+    }
+  }
+
+  function formatAudioTime(seconds: number) {
+    const m = Math.floor(seconds / 60)
+    const s = Math.floor(seconds % 60)
+    return `${m}:${s.toString().padStart(2, "0")}`
+  }
 
   async function fetchSessions() {
     setLoadingHistory(true)
@@ -580,53 +615,55 @@ export default function HomeClient({ tenantSubdomain, userProfile }: Props) {
             >
               <div className="flex flex-col gap-5 w-full max-w-sm">
                 <div className="flex gap-3">
+                  {/* Botão de imagem — sempre visível, desabilitado quando há áudio pendente */}
+                  <button
+                    type="button"
+                    onClick={handleCameraCapture}
+                    disabled={!!pendingAudio || isRecording}
+                    className="flex-1 flex items-center justify-center gap-2.5 px-5 py-3.5 rounded-xl bg-secondary border border-border text-secondary-foreground text-sm font-medium hover:bg-secondary/80 active:scale-[0.97] transition-all cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-secondary"
+                  >
+                    <CameraIcon className="opacity-70 flex-shrink-0" />
+                    Imagem
+                  </button>
+
+                  {/* Slot do áudio — se tiver pendingAudio, divide em Descartar + Enviar */}
                   {pendingAudio ? (
-                    <>
+                    <div className="flex-1 flex gap-1.5">
                       <button
                         type="button"
                         onClick={handleDiscardAudio}
-                        className="flex-1 flex items-center justify-center gap-2.5 px-5 py-3.5 rounded-xl bg-destructive/10 border border-destructive/30 text-destructive text-sm font-medium active:scale-[0.97] transition-all cursor-pointer hover:bg-destructive/20"
+                        className="flex-1 flex items-center justify-center gap-1.5 px-3 py-3.5 rounded-xl bg-destructive/10 border border-destructive/30 text-destructive text-sm font-medium active:scale-[0.97] transition-all cursor-pointer hover:bg-destructive/20"
                       >
-                        <Trash size={16} className="flex-shrink-0" />
+                        <Trash size={14} className="flex-shrink-0" />
                         Descartar
                       </button>
                       <button
                         type="button"
                         onClick={handleSendAudio}
-                        className="flex-1 flex items-center justify-center gap-2.5 px-5 py-3.5 rounded-xl bg-primary border border-primary text-primary-foreground text-sm font-medium active:scale-[0.97] transition-all cursor-pointer hover:opacity-90"
+                        className="flex-1 flex items-center justify-center gap-1.5 px-3 py-3.5 rounded-xl bg-primary border border-primary text-primary-foreground text-sm font-medium active:scale-[0.97] transition-all cursor-pointer hover:opacity-90"
                       >
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" className="flex-shrink-0">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" className="flex-shrink-0">
                           <path d="M22 2L11 13" /><path d="M22 2L15 22 11 13 2 9l20-7z" />
                         </svg>
-                        Enviar áudio
+                        Enviar
                       </button>
-                    </>
+                    </div>
                   ) : (
-                    <>
-                      <button
-                        type="button"
-                        onClick={handleCameraCapture}
-                        className="flex-1 flex items-center justify-center gap-2.5 px-5 py-3.5 rounded-xl bg-secondary border border-border text-secondary-foreground text-sm font-medium hover:bg-secondary/80 active:scale-[0.97] transition-all cursor-pointer"
-                      >
-                        <CameraIcon className="opacity-70 flex-shrink-0" />
-                        Imagem
-                      </button>
-                      <button
-                        type="button"
-                        onClick={isRecording ? handleStopRecording : handleStartRecording}
-                        className={`flex-1 flex items-center justify-center gap-2.5 px-5 py-3.5 rounded-xl border text-sm font-medium active:scale-[0.97] transition-all cursor-pointer ${
-                          isRecording
-                            ? "bg-destructive/10 border-destructive/30 text-destructive"
-                            : "bg-secondary border-border text-secondary-foreground hover:bg-secondary/80"
-                        }`}
-                      >
-                        {isRecording ? (
-                          <><StopIcon className="flex-shrink-0" />Parar gravação</>
-                        ) : (
-                          <><MicIcon className="opacity-70 flex-shrink-0" />Áudio</>
-                        )}
-                      </button>
-                    </>
+                    <button
+                      type="button"
+                      onClick={isRecording ? handleStopRecording : handleStartRecording}
+                      className={`flex-1 flex items-center justify-center gap-2.5 px-5 py-3.5 rounded-xl border text-sm font-medium active:scale-[0.97] transition-all cursor-pointer ${
+                        isRecording
+                          ? "bg-destructive/10 border-destructive/30 text-destructive"
+                          : "bg-secondary border-border text-secondary-foreground hover:bg-secondary/80"
+                      }`}
+                    >
+                      {isRecording ? (
+                        <><StopIcon className="flex-shrink-0" />Parar gravação</>
+                      ) : (
+                        <><MicIcon className="opacity-70 flex-shrink-0" />Áudio</>
+                      )}
+                    </button>
                   )}
                 </div>
 
@@ -772,16 +809,38 @@ export default function HomeClient({ tenantSubdomain, userProfile }: Props) {
             {pendingAudio ? <Trash size={16} /> : <MicIcon />}
           </button>
 
-          {/* Campo de texto */}
-          <input
-            ref={inputRef}
-            type="text"
-            value={isRecording || pendingAudio ? "" : inputText}
-            onChange={(e) => { if (!isRecording && !pendingAudio) setInputText(e.target.value) }}
-            placeholder={isRecording ? "Gravando áudio..." : pendingAudio ? "Áudio pronto — enviar ou descartar" : "Escreva sua dúvida..."}
-            disabled={loading || isRecording || !!pendingAudio}
-            className="flex-1 py-2.5 px-2 text-sm bg-transparent focus:outline-none disabled:opacity-50 min-w-0 placeholder:text-muted-foreground"
-          />
+          {/* Campo de texto / player de áudio */}
+          {pendingAudio ? (
+            <div className="flex-1 flex items-center gap-2 px-2 py-2">
+              <button
+                type="button"
+                onClick={handleTogglePlayback}
+                aria-label={audioPlayer.isPlaying ? "Pausar" : "Reproduzir"}
+                className="w-7 h-7 flex items-center justify-center rounded-full bg-primary/10 text-primary hover:bg-primary/20 transition-colors flex-shrink-0 cursor-pointer"
+              >
+                {audioPlayer.isPlaying ? <Pause size={13} /> : <Play size={13} className="translate-x-px" />}
+              </button>
+              <div className="flex-1 relative h-1.5 bg-muted rounded-full overflow-hidden">
+                <div
+                  className="absolute left-0 top-0 h-full bg-primary rounded-full transition-none"
+                  style={{ width: `${audioPlayer.duration > 0 ? (audioPlayer.currentTime / audioPlayer.duration) * 100 : 0}%` }}
+                />
+              </div>
+              <span className="text-xs text-muted-foreground tabular-nums flex-shrink-0 w-8 text-right">
+                {formatAudioTime(audioPlayer.isPlaying ? audioPlayer.currentTime : audioPlayer.duration)}
+              </span>
+            </div>
+          ) : (
+            <input
+              ref={inputRef}
+              type="text"
+              value={isRecording ? "" : inputText}
+              onChange={(e) => { if (!isRecording) setInputText(e.target.value) }}
+              placeholder={isRecording ? "Gravando áudio..." : "Escreva sua dúvida..."}
+              disabled={loading || isRecording}
+              className="flex-1 py-2.5 px-2 text-sm bg-transparent focus:outline-none disabled:opacity-50 min-w-0 placeholder:text-muted-foreground"
+            />
+          )}
 
           {/* Botão direito: enviar / parar gravação */}
           {isRecording ? (
