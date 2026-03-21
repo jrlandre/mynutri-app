@@ -619,7 +619,7 @@ export default function HomeClient({ tenantSubdomain, userProfile }: Props) {
                       >
                         <div className="truncate">{s.title || "Nova Conversa"}</div>
                         <div className="text-xs opacity-60 mt-1">
-                          {new Date(s.created_at).toLocaleDateString()}
+                          Data de criação: {new Date(s.created_at).toLocaleDateString("pt-BR")}
                         </div>
                       </button>
                     ))}

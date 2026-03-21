@@ -219,8 +219,9 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
         mime_type: null
       })
 
-      if (isNewSession && contentType === "text") {
-        generateSessionTitle(sessionId, user.id, content).catch(console.error)
+      if (isNewSession) {
+        const titleContent = contentType === "text" ? content : result.raw
+        generateSessionTitle(sessionId, user.id, titleContent).catch(console.error)
       }
     }
 
