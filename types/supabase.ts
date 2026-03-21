@@ -14,6 +14,60 @@ export type Database = {
   }
   public: {
     Tables: {
+      chat_sessions: {
+        Row: {
+          id: string
+          user_id: string
+          title: string | null
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          user_id: string
+          title?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          user_id?: string
+          title?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      chat_messages: {
+        Row: {
+          id: string
+          session_id: string
+          role: 'user' | 'assistant'
+          content_type: 'text' | 'image' | 'audio'
+          content: string
+          mime_type: string | null
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          session_id: string
+          role: 'user' | 'assistant'
+          content_type: 'text' | 'image' | 'audio'
+          content: string
+          mime_type?: string | null
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          session_id?: string
+          role?: 'user' | 'assistant'
+          content_type?: 'text' | 'image' | 'audio'
+          content?: string
+          mime_type?: string | null
+          created_at?: string
+        }
+        Relationships: []
+      }
       clients: {
         Row: {
           activated_at: string | null
@@ -112,6 +166,7 @@ export type Database = {
           subscription_period: string | null
           system_prompt: string | null
           user_id: string | null
+          welcome_email_sent: boolean
         }
         Insert: {
           active?: boolean
@@ -134,6 +189,7 @@ export type Database = {
           subscription_period?: string | null
           system_prompt?: string | null
           user_id?: string | null
+          welcome_email_sent?: boolean
         }
         Update: {
           active?: boolean
@@ -156,6 +212,7 @@ export type Database = {
           subscription_period?: string | null
           system_prompt?: string | null
           user_id?: string | null
+          welcome_email_sent?: boolean
         }
         Relationships: []
       }

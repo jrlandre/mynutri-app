@@ -302,7 +302,8 @@ async function handleSubscriptionDeleted(subscription: Stripe.Subscription) {
 async function handleRecurringInvoice(invoice: Stripe.Invoice) {
   if (invoice.billing_reason === "subscription_create") return
 
-  const subscriptionId = typeof invoice.subscription === "string" ? invoice.subscription : null
+  const rawSub = invoice.parent?.subscription_details?.subscription
+  const subscriptionId = typeof rawSub === "string" ? rawSub : null
   if (!subscriptionId) return
 
   const { data: expert } = await adminClient

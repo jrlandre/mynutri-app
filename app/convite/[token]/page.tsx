@@ -39,7 +39,7 @@ export default async function ConvitePage({ params }: Props) {
   const { data: expert } = await adminClient
     .from('experts')
     .select('name')
-    .eq('id', client.expert_id)
+    .eq('id', client.expert_id ?? '')
     .maybeSingle()
 
   return (

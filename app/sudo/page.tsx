@@ -80,7 +80,7 @@ export default async function SudoPage() {
       : [],
     listed: row.listed,
     system_prompt: row.system_prompt,
-    plan: row.plan,
+    plan: row.plan as 'standard' | 'enterprise',
     active: row.active,
     is_admin: row.is_admin,
     is_promoter: row.is_promoter,
@@ -91,7 +91,7 @@ export default async function SudoPage() {
 
   const clientCountByExpert: Record<string, number> = {}
   for (const c of clients ?? []) {
-    if (!c.active) continue
+    if (!c.active || !c.expert_id) continue
     clientCountByExpert[c.expert_id] = (clientCountByExpert[c.expert_id] ?? 0) + 1
   }
 

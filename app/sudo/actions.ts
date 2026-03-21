@@ -46,7 +46,7 @@ export async function generateImpersonationLink(expertId: string): Promise<strin
     .eq('id', expertId)
     .maybeSingle()
 
-  if (!expert) throw new Error('Expert não encontrado')
+  if (!expert?.user_id) throw new Error('Expert não encontrado')
 
   const { data: userData } = await adminClient.auth.admin.getUserById(expert.user_id)
   if (!userData.user?.email) throw new Error('Email do usuário não encontrado')
@@ -56,6 +56,7 @@ export async function generateImpersonationLink(expertId: string): Promise<strin
     email: userData.user.email,
   })
 
+  if (!data?.properties?.action_link) throw new Error('Link de impersonation não gerado')
   return data.properties.action_link
 }
 
@@ -72,7 +73,7 @@ export async function resendWelcomeEmail(expertId: string): Promise<void> {
     .eq('id', expertId)
     .maybeSingle()
 
-  if (!expert) throw new Error('Expert não encontrado')
+  if (!expert?.user_id) throw new Error('Expert não encontrado')
 
   const { data: userData } = await adminClient.auth.admin.getUserById(expert.user_id)
   const email = userData.user?.email
@@ -221,7 +222,7 @@ export async function createStripeCoupon(data: {
   })
 
   const promoCode = await stripe.promotionCodes.create({
-    coupon: coupon.id,
+    promotion: { type: 'coupon', coupon: coupon.id },
     code: data.code,
   })
 
