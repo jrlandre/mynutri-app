@@ -3,7 +3,7 @@ import { adminClient } from '@/lib/supabase/admin'
 const FREE_DAILY_LIMIT = 3
 const ANON_DAILY_LIMIT = 1
 
-export type UsageTier = 'anon' | 'free' | 'client'
+export type UsageTier = 'anon' | 'free' | 'client' | 'expert'
 
 export interface UsageCheck {
   allowed: boolean
@@ -68,6 +68,18 @@ export async function checkAndIncrementUsage(
 
   if (client) {
     return { allowed: true, tier: 'client', count: 0, limit: Infinity }
+  }
+
+  // Verificar se é expert ativo ou sudo — sem limite
+  const { data: expert } = await adminClient
+    .from('experts')
+    .select('id')
+    .eq('user_id', userId)
+    .or('active.eq.true,is_admin.eq.true')
+    .maybeSingle()
+
+  if (expert) {
+    return { allowed: true, tier: 'expert', count: 0, limit: Infinity }
   }
 
   // Usuário free — verificar e incrementar contagem diária
