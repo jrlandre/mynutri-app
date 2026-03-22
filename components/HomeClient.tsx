@@ -145,6 +145,12 @@ export default function HomeClient({ tenantSubdomain, userProfile }: Props) {
   const [loginGated, setLoginGated] = useState(false)
   const [menuOpen, setMenuOpen] = useState(false)
   const [imagePickerOpen, setImagePickerOpen] = useState(false)
+  const [hasPassword, setHasPassword] = useState<boolean | null>(null)
+  const [setupPasswordOpen, setSetupPasswordOpen] = useState(false)
+  const [setupPasswordValue, setSetupPasswordValue] = useState("")
+  const [setupPasswordLoading, setSetupPasswordLoading] = useState(false)
+  const [setupPasswordError, setSetupPasswordError] = useState<string | null>(null)
+  const [setupPasswordDone, setSetupPasswordDone] = useState(false)
   const recorderRef = useRef<MediaRecorder | null>(null)
   const chunksRef = useRef<Blob[]>([])
   const inputRef = useRef<HTMLInputElement>(null)
@@ -161,6 +167,16 @@ export default function HomeClient({ tenantSubdomain, userProfile }: Props) {
       void fetchSessions()
     }
   }, [historyOpen, userProfile])
+
+  useEffect(() => {
+    if (!userProfile) return
+    fetch('/api/auth/has-password')
+      .then(r => r.ok ? r.json() : null)
+      .then((d: { hasPassword?: boolean } | null) => {
+        if (d && typeof d.hasPassword === 'boolean') setHasPassword(d.hasPassword)
+      })
+      .catch(() => {})
+  }, [userProfile])
 
   useEffect(() => {
     if (!pendingAudio) {
@@ -273,6 +289,21 @@ export default function HomeClient({ tenantSubdomain, userProfile }: Props) {
     } finally {
       setLoading(false)
     }
+  }
+
+  async function handleSetPassword(e: React.FormEvent) {
+    e.preventDefault()
+    setSetupPasswordLoading(true)
+    setSetupPasswordError(null)
+    const supabase = createClient()
+    const { error } = await supabase.auth.updateUser({ password: setupPasswordValue })
+    if (error) {
+      setSetupPasswordError('Não foi possível definir a senha. Tente novamente.')
+    } else {
+      setSetupPasswordDone(true)
+      setHasPassword(true)
+    }
+    setSetupPasswordLoading(false)
   }
 
   function handleNewChat() {
@@ -700,6 +731,73 @@ export default function HomeClient({ tenantSubdomain, userProfile }: Props) {
               className="flex-1 flex flex-col items-center justify-center px-8"
             >
               <div className="flex flex-col gap-3 w-full max-w-sm">
+                {/* Banner: definir senha (só para usuários sem senha) */}
+                <AnimatePresence>
+                  {hasPassword === false && !setupPasswordDone && (
+                    <motion.div
+                      initial={{ opacity: 0, y: -6 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: -6 }}
+                      className="rounded-xl border border-border bg-card px-4 py-3 flex flex-col gap-2"
+                    >
+                      {setupPasswordDone ? null : !setupPasswordOpen ? (
+                        <div className="flex items-center justify-between gap-3">
+                          <p className="text-xs text-muted-foreground leading-relaxed">
+                            Quer definir uma senha para acessar sem link no e-mail?
+                          </p>
+                          <div className="flex gap-2 shrink-0">
+                            <button
+                              onClick={() => setHasPassword(true)}
+                              className="text-xs text-muted-foreground hover:text-foreground transition-colors"
+                            >
+                              Agora não
+                            </button>
+                            <button
+                              onClick={() => setSetupPasswordOpen(true)}
+                              className="text-xs font-medium text-primary hover:opacity-70 transition-opacity"
+                            >
+                              Definir
+                            </button>
+                          </div>
+                        </div>
+                      ) : (
+                        <form onSubmit={handleSetPassword} className="flex flex-col gap-2">
+                          <p className="text-xs font-medium">Crie sua senha</p>
+                          <input
+                            type="password"
+                            value={setupPasswordValue}
+                            onChange={e => setSetupPasswordValue(e.target.value)}
+                            placeholder="Mínimo 6 caracteres"
+                            minLength={6}
+                            required
+                            autoFocus
+                            className="w-full px-3 py-2 rounded-lg border border-border bg-background text-sm focus:outline-none focus:ring-2 focus:ring-ring/40"
+                          />
+                          {setupPasswordError && (
+                            <p className="text-xs text-destructive">{setupPasswordError}</p>
+                          )}
+                          <div className="flex gap-2">
+                            <button
+                              type="button"
+                              onClick={() => setSetupPasswordOpen(false)}
+                              className="flex-1 py-2 rounded-lg border border-border text-xs font-medium hover:bg-muted transition-colors"
+                            >
+                              Cancelar
+                            </button>
+                            <button
+                              type="submit"
+                              disabled={setupPasswordLoading || setupPasswordValue.length < 6}
+                              className="flex-1 py-2 rounded-lg bg-primary text-primary-foreground text-xs font-medium hover:opacity-90 transition-opacity disabled:opacity-50"
+                            >
+                              {setupPasswordLoading ? 'Salvando...' : 'Salvar senha'}
+                            </button>
+                          </div>
+                        </form>
+                      )}
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+
                 {/* Linha 1: câmera + áudio — altura fixa, sempre visível */}
                 <div className="flex gap-3">
                   <button
