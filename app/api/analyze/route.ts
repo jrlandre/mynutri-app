@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from "next/server"
+import { NextRequest, NextResponse, after } from "next/server"
 import { analyzeMessage } from "@/lib/gemini/analyze"
 import { ai } from "@/lib/gemini/client"
 import { ThinkingLevel } from "@google/genai"
@@ -224,7 +224,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
 
       if (isNewSession) {
         const titleContent = contentType === "text" ? content : result.raw
-        generateSessionTitle(sessionId, user.id, titleContent).catch(console.error)
+        after(generateSessionTitle(sessionId, user.id, titleContent))
       }
     }
 
