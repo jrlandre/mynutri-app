@@ -68,7 +68,7 @@ export default function ConviteClient({ token, email: initialEmail, expertName }
             {expertName} te convidou para o MyNutri
           </h1>
           <p className="text-sm text-muted-foreground leading-relaxed text-balance">
-            Clientes de Experts parceiros têm acesso ilimitado ao assistente de análise de saúde e performance.
+            Clientes de Experts parceiros têm acesso ilimitado ao assistente de análise nutricional.
           </p>
         </div>
 
