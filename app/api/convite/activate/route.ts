@@ -34,12 +34,17 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
     // Buscar client pelo token
     const { data: client, error } = await adminClient
       .from('clients')
-      .select('id, activated_at')
+      .select('id, activated_at, email')
       .eq('magic_link_token', token)
       .maybeSingle()
 
     if (error || !client) {
       return NextResponse.redirect(`${origin}/?invite_error=token_invalid`)
+    }
+
+    // Validar que o email do convite pertence ao usuário autenticado
+    if (client.email && user.email?.toLowerCase() !== client.email.toLowerCase()) {
+      return NextResponse.redirect(`${origin}/convite/${token}?error=email_mismatch`)
     }
 
     if (!client.activated_at) {

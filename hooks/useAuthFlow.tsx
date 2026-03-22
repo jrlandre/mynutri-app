@@ -10,7 +10,7 @@ function getNextUrl(): string {
   return raw.startsWith('/') && !raw.startsWith('//') ? raw : '/'
 }
 
-export type AuthStep = 'email' | 'login' | 'magic' | 'signup' | 'verify'
+export type AuthStep = 'email' | 'login' | 'magic' | 'signup' | 'verify' | 'google'
 export type OAuthProvider = 'google'
 
 interface State {
@@ -19,6 +19,7 @@ interface State {
   loading: boolean
   error: string | null
   flowId: string | null
+  isNewUser: boolean
 }
 
 export function useAuthFlow() {
@@ -28,6 +29,7 @@ export function useAuthFlow() {
     loading: false,
     error: null,
     flowId: null,
+    isNewUser: false,
   })
   const router = useRouter()
   const supabase = useMemo(() => createClient(), [])
@@ -62,26 +64,33 @@ export function useAuthFlow() {
     set({ loading: true, error: null })
     try {
       const flowRes = await fetch('/api/auth/flow', { method: 'POST' })
+      if (flowRes.status === 429) {
+        set({ loading: false, error: 'Muitas tentativas. Tente novamente mais tarde.' })
+        return
+      }
       const flowData = await flowRes.json()
       const flowId: string | null = flowData.flowId ?? null
 
       const res = await fetch('/api/auth/check-email', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, flowId }),
+        body: JSON.stringify({ email }),
       })
-      const data = await res.json()
 
       if (res.status === 429) {
         set({ loading: false, error: 'Muitas tentativas. Tente novamente mais tarde.' })
         return
       }
 
+      const data = await res.json()
+
       let step: AuthStep
       if (!data.exists) {
         step = 'signup'
       } else if (!data.confirmed) {
         step = 'verify'
+      } else if (data.provider === 'google') {
+        step = 'google'
       } else if (data.provider === 'email' && data.hasPassword === false) {
         step = 'magic'
       } else {
@@ -126,7 +135,7 @@ export function useAuthFlow() {
       if (data.session) {
         router.push(getNextUrl())
       } else {
-        set({ loading: false, step: 'verify' })
+        set({ loading: false, step: 'verify', isNewUser: true })
       }
     } catch (err: unknown) {
       set({ loading: false, error: translateError(err) })
@@ -167,7 +176,7 @@ export function useAuthFlow() {
         },
       })
       if (error) throw error
-      set({ loading: false, step: 'verify' })
+      set({ loading: false, step: 'verify', isNewUser: false })
     } catch (err: unknown) {
       set({ loading: false, error: translateError(err) })
     }
@@ -192,6 +201,7 @@ export function useAuthFlow() {
     handleResend,
     handleBack,
     handleOAuth,
+    isNewUser: state.isNewUser,
   }
 }
 

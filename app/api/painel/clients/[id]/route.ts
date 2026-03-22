@@ -13,13 +13,17 @@ export async function DELETE(
     const { expert } = guard
     const { id } = await params
 
-    const { error } = await adminClient
+    const { data, error } = await adminClient
       .from('clients')
       .update({ active: false })
       .eq('id', id)
       .eq('expert_id', expert.id)
+      .select('id')
 
     if (error) throw new Error(error.message)
+    if (!data || data.length === 0) {
+      return NextResponse.json({ error: 'Cliente não encontrado' }, { status: 404 })
+    }
 
     return NextResponse.json({ success: true })
   } catch (e) {

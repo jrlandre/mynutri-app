@@ -13,7 +13,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     const { expert } = guard
     const { email } = await request.json() as { email?: string }
 
-    if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+    if (!email || typeof email !== 'string' || !/^[^\s@]+@[^\s@]{2,}\.[^\s@]{2,}$/.test(email.trim())) {
       return NextResponse.json({ error: 'E-mail inválido' }, { status: 400 })
     }
 

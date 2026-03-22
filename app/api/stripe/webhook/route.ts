@@ -141,12 +141,12 @@ async function createReferralRecords(
   }
 
   let couponPromoter: { id: string } | null = null
-  // total_details.breakdown requires expand on checkout session, use session discount data
-  const sessionAny = session as unknown as Record<string, unknown>
-  const breakdown = (sessionAny.total_details as Record<string, unknown> | null)
-    ?.breakdown as Record<string, unknown> | undefined
-  const discounts = breakdown?.discounts as Array<{ discount: { coupon: { id: string } } }> | undefined
-  const appliedCouponId = discounts?.[0]?.discount?.coupon?.id
+  // session.discounts está disponível sem expansão no evento do webhook
+  const sessionDiscount = session.discounts?.[0]
+  const sessionCoupon = sessionDiscount?.coupon
+  const appliedCouponId = sessionCoupon
+    ? (typeof sessionCoupon === 'string' ? sessionCoupon : sessionCoupon.id)
+    : undefined
   if (appliedCouponId) {
     const { data } = await adminClient
       .from("experts")
@@ -187,8 +187,9 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
   const stripe_customer_id = typeof session.customer === "string" ? session.customer : null
   const stripe_subscription_id = typeof session.subscription === "string" ? session.subscription : null
 
-  if (!subdomain || !name || !email) {
-    console.error("[stripe/webhook] Metadata incompleta:", session.metadata)
+  const SUBDOMAIN_REGEX = /^[a-z0-9][a-z0-9-]{1,28}[a-z0-9]$/
+  if (!subdomain || !name || !email || !SUBDOMAIN_REGEX.test(subdomain)) {
+    console.error("[stripe/webhook] Metadata inválida:", session.metadata)
     return
   }
 

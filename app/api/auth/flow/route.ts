@@ -14,7 +14,7 @@ export async function POST(request: NextRequest) {
       const count = await kv.incr(countKey)
       if (count === 1) await kv.expire(countKey, 3600)
 
-      if (count > 20) {
+      if (count > 20 && ip !== 'unknown') {
         await new Promise(r => setTimeout(r, 2000))
         return NextResponse.json({ error: 'too_many_requests' }, { status: 429 })
       }

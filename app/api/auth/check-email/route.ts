@@ -27,34 +27,11 @@ export async function POST(request: NextRequest) {
   const delay = Math.floor(Math.random() * 500) + 200
 
   try {
-    const { email, flowId } = await request.json()
+    const { email } = await request.json()
 
     if (!email || typeof email !== 'string') {
       await new Promise(r => setTimeout(r, delay))
       return NextResponse.json({ error: 'email_required' }, { status: 400 })
-    }
-
-    // Validar flow + rate limit por flow (se KV disponível)
-    try {
-      const hasKV = !!(process.env.KV_REST_API_URL && process.env.KV_REST_API_TOKEN)
-      if (hasKV && flowId) {
-        const { kv } = await import('@vercel/kv')
-        const flow = await kv.get<{ ip: string; emailChecks: number }>(`auth_flow_${flowId}`)
-
-        if (!flow) {
-          await new Promise(r => setTimeout(r, delay))
-          return NextResponse.json({ error: 'flow_inválido' }, { status: 400 })
-        }
-
-        if (flow.emailChecks >= 3) {
-          await new Promise(r => setTimeout(r, delay))
-          return NextResponse.json({ error: 'too_many_checks' }, { status: 429 })
-        }
-
-        await kv.set(`auth_flow_${flowId}`, { ...flow, emailChecks: flow.emailChecks + 1 }, { keepTtl: true })
-      }
-    } catch {
-      // KV indisponível — continua sem validação de flow
     }
 
     // Buscar usuário pelo e-mail
@@ -62,11 +39,11 @@ export async function POST(request: NextRequest) {
 
     const user = await findUserByEmail(email)
     if (user) {
-      const identities = (user.identities ?? []) as Array<{ provider: string }>
+      const providers = (user.app_metadata?.providers ?? []) as string[]
       let provider: Provider = 'email'
-      if (identities.some(i => i.provider === 'google')) provider = 'google'
-      else if (identities.some(i => i.provider === 'apple')) provider = 'apple'
-      else if (identities.some(i => i.provider === 'azure')) provider = 'azure'
+      if (providers.includes('google')) provider = 'google'
+      else if (providers.includes('apple')) provider = 'apple'
+      else if (providers.includes('azure')) provider = 'azure'
 
       let hasPassword: boolean | undefined
       if (provider === 'email') {

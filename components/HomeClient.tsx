@@ -146,11 +146,15 @@ export default function HomeClient({ tenantSubdomain, userProfile }: Props) {
   const [menuOpen, setMenuOpen] = useState(false)
   const [imagePickerOpen, setImagePickerOpen] = useState(false)
   const [hasPassword, setHasPassword] = useState<boolean | null>(null)
+  const [hasGoogleLinked, setHasGoogleLinked] = useState<boolean | null>(null)
+  const [dismissedPasswordBanner, setDismissedPasswordBanner] = useState(true) // começa oculto até checar localStorage
   const [setupPasswordOpen, setSetupPasswordOpen] = useState(false)
+  const [setupPasswordFromMenu, setSetupPasswordFromMenu] = useState(false)
   const [setupPasswordValue, setSetupPasswordValue] = useState("")
   const [setupPasswordLoading, setSetupPasswordLoading] = useState(false)
   const [setupPasswordError, setSetupPasswordError] = useState<string | null>(null)
   const [setupPasswordDone, setSetupPasswordDone] = useState(false)
+  const isLoggingOutRef = useRef(false)
   const recorderRef = useRef<MediaRecorder | null>(null)
   const chunksRef = useRef<Blob[]>([])
   const inputRef = useRef<HTMLInputElement>(null)
@@ -172,11 +176,56 @@ export default function HomeClient({ tenantSubdomain, userProfile }: Props) {
     if (!userProfile) return
     fetch('/api/auth/has-password')
       .then(r => r.ok ? r.json() : null)
-      .then((d: { hasPassword?: boolean } | null) => {
-        if (d && typeof d.hasPassword === 'boolean') setHasPassword(d.hasPassword)
+      .then((d: { hasPassword?: boolean; hasGoogleLinked?: boolean } | null) => {
+        if (d && typeof d.hasPassword === 'boolean') {
+          setHasPassword(d.hasPassword)
+          if (typeof d.hasGoogleLinked === 'boolean') setHasGoogleLinked(d.hasGoogleLinked)
+          if (d.hasPassword === false && d.hasGoogleLinked !== true) {
+            // Lógica de frequência: chave no localStorage por usuário
+            const key = `pwbanner_${userProfile.email}`
+            try {
+              const raw = localStorage.getItem(key)
+              const state: { count: number; nextShow: number } = raw
+                ? JSON.parse(raw)
+                : { count: 0, nextShow: 0 }
+              // Para de mostrar após 3 dispensas
+              if (state.count >= 3) return
+              // Respeita cooldown
+              if (Date.now() < state.nextShow) return
+              setDismissedPasswordBanner(false)
+            } catch {
+              setDismissedPasswordBanner(false)
+            }
+          }
+        }
       })
       .catch(() => {})
   }, [userProfile])
+
+  useEffect(() => {
+    if (!userProfile) return
+    const supabase = createClient()
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event) => {
+      if (event === 'SIGNED_OUT' && !isLoggingOutRef.current) {
+        // Sessão expirada involuntariamente (ex: refresh token inválido)
+        window.location.href = '/auth'
+      }
+    })
+    return () => subscription.unsubscribe()
+  }, [userProfile])
+
+  // Limpa params de erro do OAuth (ex: identity_already_exists) sem recarregar a página
+  useEffect(() => {
+    if (typeof window === 'undefined') return
+    const params = new URLSearchParams(window.location.search)
+    const errorCode = params.get('error_code')
+    if (errorCode === 'identity_already_exists') {
+      setHasGoogleLinked(true) // já estava linkado — atualiza estado local
+    }
+    if (params.has('error') || params.has('error_code')) {
+      window.history.replaceState({}, '', window.location.pathname)
+    }
+  }, [])
 
   useEffect(() => {
     if (!pendingAudio) {
@@ -306,6 +355,18 @@ export default function HomeClient({ tenantSubdomain, userProfile }: Props) {
     setSetupPasswordLoading(false)
   }
 
+  async function handleLinkGoogle() {
+    setMenuOpen(false)
+    const supabase = createClient()
+    const { error } = await supabase.auth.linkIdentity({ provider: 'google' })
+    if (error?.message?.includes('Refresh Token Not Found') || error?.message?.includes('Invalid Refresh Token')) {
+      // Sessão expirada — força re-login para renovar o token
+      await supabase.auth.signOut()
+      window.location.href = '/auth'
+    }
+    // se OK, redireciona para OAuth (supabase cuida)
+  }
+
   function handleNewChat() {
     setSession({ messages: [], analyses: [] })
     setSessionId(null)
@@ -313,6 +374,7 @@ export default function HomeClient({ tenantSubdomain, userProfile }: Props) {
   }
 
   async function handleLogout() {
+    isLoggingOutRef.current = true
     const supabase = createClient()
     await supabase.auth.signOut()
     setSession({ messages: [], analyses: [] })
@@ -614,6 +676,29 @@ export default function HomeClient({ tenantSubdomain, userProfile }: Props) {
                               <ShieldCheck size={16} className="text-muted-foreground" /> Sudo
                             </Link>
                           )}
+                          {hasPassword === false && !setupPasswordDone && hasGoogleLinked !== true && (
+                            <button
+                              onClick={() => { setMenuOpen(false); setDismissedPasswordBanner(false); setSetupPasswordFromMenu(true); setSetupPasswordOpen(true) }}
+                              className="w-full text-left px-3 py-2 text-sm hover:bg-muted rounded-lg transition-colors flex items-center gap-2"
+                            >
+                              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-muted-foreground flex-shrink-0"><rect width="18" height="11" x="3" y="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+                              Definir senha
+                            </button>
+                          )}
+                          {hasPassword === false && !setupPasswordDone && hasGoogleLinked === false && (
+                            <button
+                              onClick={handleLinkGoogle}
+                              className="w-full text-left px-3 py-2 text-sm hover:bg-muted rounded-lg transition-colors flex items-center gap-2"
+                            >
+                              <svg width="16" height="16" viewBox="0 0 24 24" aria-hidden="true" className="flex-shrink-0">
+                                <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/>
+                                <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/>
+                                <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05"/>
+                                <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/>
+                              </svg>
+                              Conectar com Google
+                            </button>
+                          )}
                           <button
                             onClick={() => {
                               setMenuOpen(false)
@@ -714,6 +799,92 @@ export default function HomeClient({ tenantSubdomain, userProfile }: Props) {
         )}
       </AnimatePresence>
 
+      {/* Banner: definir senha (topo do layout, visível em qualquer estado) */}
+      <AnimatePresence>
+        {hasPassword === false && !setupPasswordDone && !dismissedPasswordBanner && hasGoogleLinked !== true && (
+          <motion.div
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: 'auto' }}
+            exit={{ opacity: 0, height: 0 }}
+            transition={{ duration: 0.2 }}
+            className="overflow-hidden flex-shrink-0 px-4 py-2"
+          >
+            <div className="rounded-xl border border-border bg-card px-4 py-3">
+              {!setupPasswordOpen ? (
+                <div className="flex items-center justify-between gap-3">
+                  <p className="text-xs text-muted-foreground leading-relaxed">
+                    Quer definir uma senha para acessar sem link no e-mail?
+                  </p>
+                  <div className="flex gap-3 shrink-0">
+                    <button
+                      onClick={() => {
+                        setDismissedPasswordBanner(true)
+                        if (userProfile?.email) {
+                          const key = `pwbanner_${userProfile.email}`
+                          try {
+                            const raw = localStorage.getItem(key)
+                            const prev: { count: number; nextShow: number } = raw
+                              ? JSON.parse(raw)
+                              : { count: 0, nextShow: 0 }
+                            const count = prev.count + 1
+                            // Cooldown cresce: 3d → 7d → para sempre
+                            const days = count === 1 ? 3 : count === 2 ? 7 : Infinity
+                            const nextShow = days === Infinity ? Infinity : Date.now() + days * 86400000
+                            localStorage.setItem(key, JSON.stringify({ count, nextShow }))
+                          } catch { /* ignore */ }
+                        }
+                      }}
+                      className="text-xs text-muted-foreground hover:text-foreground transition-colors"
+                    >
+                      Agora não
+                    </button>
+                    <button
+                      onClick={() => { setSetupPasswordFromMenu(false); setSetupPasswordOpen(true) }}
+                      className="text-xs font-medium text-primary hover:opacity-70 transition-opacity"
+                    >
+                      Definir
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <form onSubmit={handleSetPassword} className="flex items-center gap-2">
+                  <p className="text-xs font-medium shrink-0">Criar senha:</p>
+                  <input
+                    type="password"
+                    value={setupPasswordValue}
+                    onChange={e => setSetupPasswordValue(e.target.value)}
+                    placeholder="Mínimo 6 caracteres"
+                    minLength={6}
+                    required
+                    autoFocus
+                    className="flex-1 min-w-0 px-3 py-1.5 rounded-lg border border-border bg-background text-sm focus:outline-none focus:ring-2 focus:ring-ring/40"
+                  />
+                  {setupPasswordError && (
+                    <p className="text-xs text-destructive shrink-0">{setupPasswordError}</p>
+                  )}
+                  <div className="flex gap-1.5 shrink-0">
+                    <button
+                      type="button"
+                      onClick={() => { setSetupPasswordOpen(false); if (setupPasswordFromMenu) setDismissedPasswordBanner(true) }}
+                      className="px-3 py-1.5 rounded-lg border border-border text-xs font-medium hover:bg-muted transition-colors"
+                    >
+                      Cancelar
+                    </button>
+                    <button
+                      type="submit"
+                      disabled={setupPasswordLoading || setupPasswordValue.length < 6}
+                      className="px-3 py-1.5 rounded-lg bg-primary text-primary-foreground text-xs font-medium hover:opacity-90 transition-opacity disabled:opacity-50"
+                    >
+                      {setupPasswordLoading ? 'Salvando...' : 'Salvar'}
+                    </button>
+                  </div>
+                </form>
+              )}
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       {/* Histórico / Estado vazio */}
       <section className="flex-1 overflow-y-auto px-4 py-3 flex flex-col">
         <AnimatePresence mode="wait">
@@ -731,73 +902,6 @@ export default function HomeClient({ tenantSubdomain, userProfile }: Props) {
               className="flex-1 flex flex-col items-center justify-center px-8"
             >
               <div className="flex flex-col gap-3 w-full max-w-sm">
-                {/* Banner: definir senha (só para usuários sem senha) */}
-                <AnimatePresence>
-                  {hasPassword === false && !setupPasswordDone && (
-                    <motion.div
-                      initial={{ opacity: 0, y: -6 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      exit={{ opacity: 0, y: -6 }}
-                      className="rounded-xl border border-border bg-card px-4 py-3 flex flex-col gap-2"
-                    >
-                      {setupPasswordDone ? null : !setupPasswordOpen ? (
-                        <div className="flex items-center justify-between gap-3">
-                          <p className="text-xs text-muted-foreground leading-relaxed">
-                            Quer definir uma senha para acessar sem link no e-mail?
-                          </p>
-                          <div className="flex gap-2 shrink-0">
-                            <button
-                              onClick={() => setHasPassword(true)}
-                              className="text-xs text-muted-foreground hover:text-foreground transition-colors"
-                            >
-                              Agora não
-                            </button>
-                            <button
-                              onClick={() => setSetupPasswordOpen(true)}
-                              className="text-xs font-medium text-primary hover:opacity-70 transition-opacity"
-                            >
-                              Definir
-                            </button>
-                          </div>
-                        </div>
-                      ) : (
-                        <form onSubmit={handleSetPassword} className="flex flex-col gap-2">
-                          <p className="text-xs font-medium">Crie sua senha</p>
-                          <input
-                            type="password"
-                            value={setupPasswordValue}
-                            onChange={e => setSetupPasswordValue(e.target.value)}
-                            placeholder="Mínimo 6 caracteres"
-                            minLength={6}
-                            required
-                            autoFocus
-                            className="w-full px-3 py-2 rounded-lg border border-border bg-background text-sm focus:outline-none focus:ring-2 focus:ring-ring/40"
-                          />
-                          {setupPasswordError && (
-                            <p className="text-xs text-destructive">{setupPasswordError}</p>
-                          )}
-                          <div className="flex gap-2">
-                            <button
-                              type="button"
-                              onClick={() => setSetupPasswordOpen(false)}
-                              className="flex-1 py-2 rounded-lg border border-border text-xs font-medium hover:bg-muted transition-colors"
-                            >
-                              Cancelar
-                            </button>
-                            <button
-                              type="submit"
-                              disabled={setupPasswordLoading || setupPasswordValue.length < 6}
-                              className="flex-1 py-2 rounded-lg bg-primary text-primary-foreground text-xs font-medium hover:opacity-90 transition-opacity disabled:opacity-50"
-                            >
-                              {setupPasswordLoading ? 'Salvando...' : 'Salvar senha'}
-                            </button>
-                          </div>
-                        </form>
-                      )}
-                    </motion.div>
-                  )}
-                </AnimatePresence>
-
                 {/* Linha 1: câmera + áudio — altura fixa, sempre visível */}
                 <div className="flex gap-3">
                   <button

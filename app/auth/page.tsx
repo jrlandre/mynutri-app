@@ -29,6 +29,9 @@ export default function AuthPage() {
         {flow.step === 'signup' && (
           <SignupStep key="signup" flow={flow} />
         )}
+        {flow.step === 'google' && (
+          <GoogleStep key="google" flow={flow} />
+        )}
         {flow.step === 'magic' && (
           <MagicStep key="magic" flow={flow} />
         )}
@@ -185,6 +188,45 @@ function LoginStep({ flow }: { flow: ReturnType<typeof useAuthFlow> }) {
   )
 }
 
+// ── Google step ───────────────────────────────────────────────────────────────
+
+function GoogleStep({ flow }: { flow: ReturnType<typeof useAuthFlow> }) {
+  return (
+    <motion.div
+      variants={variants} initial="enter" animate="center" exit="exit"
+      transition={{ duration: 0.2 }}
+      className="flex flex-col gap-6 w-full"
+    >
+      <div className="flex flex-col gap-1">
+        <button
+          onClick={flow.handleBack}
+          className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition w-fit"
+        >
+          <ChevronLeft />
+          Voltar
+        </button>
+        <h2 className="text-xl font-extrabold tracking-tight mt-2">Bem-vindo de volta</h2>
+        <p className="text-sm text-muted-foreground truncate">{flow.email}</p>
+      </div>
+
+      <div className="flex flex-col gap-3">
+        {flow.error && (
+          <p className="text-sm text-destructive text-center">{flow.error}</p>
+        )}
+
+        <button
+          onClick={() => flow.handleOAuth('google')}
+          disabled={flow.loading}
+          className="w-full flex items-center justify-center gap-3 py-3 rounded-xl bg-primary text-primary-foreground text-sm font-semibold hover:opacity-90 transition disabled:opacity-50"
+        >
+          <GoogleIcon />
+          Continuar com Google
+        </button>
+      </div>
+    </motion.div>
+  )
+}
+
 // ── Magic step ────────────────────────────────────────────────────────────────
 
 function MagicStep({ flow }: { flow: ReturnType<typeof useAuthFlow> }) {
@@ -306,7 +348,7 @@ function VerifyStep({ flow }: { flow: ReturnType<typeof useAuthFlow> }) {
         <p className="text-sm text-muted-foreground">
           Enviamos um link para <strong className="text-foreground">{flow.email}</strong>.
           <br />
-          Clique nele para ativar sua conta.
+          {flow.isNewUser ? 'Clique nele para ativar sua conta.' : 'Clique nele para entrar na sua conta.'}
         </p>
       </div>
 

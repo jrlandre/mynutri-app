@@ -13,5 +13,8 @@ export async function GET() {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const { data } = await (adminClient as any).rpc('check_user_has_password', { p_email: user.email })
 
-  return NextResponse.json({ hasPassword: data === true })
+  const providers = (user.app_metadata?.providers ?? []) as string[]
+  const hasGoogleLinked = providers.includes('google')
+
+  return NextResponse.json({ hasPassword: data === true, hasGoogleLinked })
 }
