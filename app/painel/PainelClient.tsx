@@ -30,6 +30,7 @@ function TabInicio({ expert, clients, onInvite, onDeactivate }: {
   const [inviteResult, setInviteResult] = useState<{ url?: string; error?: string } | null>(null)
   const [showInvite, setShowInvite] = useState(false)
   const [deactivating, setDeactivating] = useState<string | null>(null)
+  const [copiedInvite, setCopiedInvite] = useState(false)
 
   async function handleInvite(e: React.FormEvent) {
     e.preventDefault()
@@ -123,10 +124,10 @@ function TabInicio({ expert, clients, onInvite, onDeactivate }: {
                 <Link2 size={14} className="text-muted-foreground shrink-0" />
                 <p className="text-xs truncate flex-1 font-mono">{inviteResult.url}</p>
                 <button
-                  onClick={() => navigator.clipboard.writeText(inviteResult.url!)}
-                  className="text-xs text-primary font-medium hover:opacity-70 shrink-0"
+                  onClick={() => { navigator.clipboard.writeText(inviteResult.url!); setCopiedInvite(true); setTimeout(() => setCopiedInvite(false), 2000) }}
+                  className="text-xs text-primary font-medium hover:opacity-70 shrink-0 flex items-center gap-1"
                 >
-                  Copiar
+                  {copiedInvite ? <><Check size={12} /> Copiado</> : <><Copy size={12} /> Copiar</>}
                 </button>
               </div>
             )}
