@@ -10,7 +10,7 @@ function getNextUrl(): string {
   return raw.startsWith('/') && !raw.startsWith('//') ? raw : '/'
 }
 
-export type AuthStep = 'email' | 'login' | 'signup' | 'verify'
+export type AuthStep = 'email' | 'login' | 'magic' | 'signup' | 'verify'
 export type OAuthProvider = 'google'
 
 interface State {
@@ -82,6 +82,8 @@ export function useAuthFlow() {
         step = 'signup'
       } else if (!data.confirmed) {
         step = 'verify'
+      } else if (data.provider === 'email' && data.hasPassword === false) {
+        step = 'magic'
       } else {
         step = 'login'
       }
@@ -153,6 +155,24 @@ export function useAuthFlow() {
     set({ step: 'email', error: null })
   }, [])
 
+  const handleMagicLogin = useCallback(async () => {
+    set({ loading: true, error: null })
+    try {
+      const next = getNextUrl()
+      const { error } = await supabase.auth.signInWithOtp({
+        email: state.email,
+        options: {
+          shouldCreateUser: false,
+          emailRedirectTo: `${window.location.origin}/auth/callback?next=${encodeURIComponent(next)}`,
+        },
+      })
+      if (error) throw error
+      set({ loading: false, step: 'verify' })
+    } catch (err: unknown) {
+      set({ loading: false, error: translateError(err) })
+    }
+  }, [state.email, supabase])
+
   const handleOAuth = useCallback(async (provider: OAuthProvider) => {
     const next = getNextUrl()
     await supabase.auth.signInWithOAuth({
@@ -167,6 +187,7 @@ export function useAuthFlow() {
     ...state,
     handleEmailSubmit,
     handleLogin,
+    handleMagicLogin,
     handleSignup,
     handleResend,
     handleBack,

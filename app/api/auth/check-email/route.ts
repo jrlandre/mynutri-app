@@ -7,6 +7,7 @@ interface CheckEmailResponse {
   exists: boolean
   provider?: Provider
   confirmed?: boolean
+  hasPassword?: boolean
 }
 
 async function findUserByEmail(email: string) {
@@ -67,10 +68,18 @@ export async function POST(request: NextRequest) {
       else if (identities.some(i => i.provider === 'apple')) provider = 'apple'
       else if (identities.some(i => i.provider === 'azure')) provider = 'azure'
 
+      let hasPassword: boolean | undefined
+      if (provider === 'email') {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const { data } = await (adminClient as any).rpc('check_user_has_password', { p_email: email })
+        hasPassword = data === true
+      }
+
       result = {
         exists: true,
         provider,
         confirmed: !!user.email_confirmed_at,
+        hasPassword,
       }
     }
 

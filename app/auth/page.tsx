@@ -29,6 +29,9 @@ export default function AuthPage() {
         {flow.step === 'signup' && (
           <SignupStep key="signup" flow={flow} />
         )}
+        {flow.step === 'magic' && (
+          <MagicStep key="magic" flow={flow} />
+        )}
         {flow.step === 'verify' && (
           <VerifyStep key="verify" flow={flow} />
         )}
@@ -168,7 +171,58 @@ function LoginStep({ flow }: { flow: ReturnType<typeof useAuthFlow> }) {
         >
           Esqueceu a senha?
         </Link>
+
+        <button
+          type="button"
+          onClick={flow.handleMagicLogin}
+          disabled={flow.loading}
+          className="text-sm text-muted-foreground hover:text-foreground transition text-center disabled:opacity-50"
+        >
+          Prefiro receber um link no e-mail
+        </button>
       </form>
+    </motion.div>
+  )
+}
+
+// ── Magic step ────────────────────────────────────────────────────────────────
+
+function MagicStep({ flow }: { flow: ReturnType<typeof useAuthFlow> }) {
+  return (
+    <motion.div
+      variants={variants} initial="enter" animate="center" exit="exit"
+      transition={{ duration: 0.2 }}
+      className="flex flex-col gap-6 w-full"
+    >
+      <div className="flex flex-col gap-1">
+        <button
+          onClick={flow.handleBack}
+          className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition w-fit"
+        >
+          <ChevronLeft />
+          Voltar
+        </button>
+        <h2 className="text-xl font-extrabold tracking-tight mt-2">Bem-vindo de volta</h2>
+        <p className="text-sm text-muted-foreground truncate">{flow.email}</p>
+      </div>
+
+      <div className="flex flex-col gap-3">
+        <p className="text-sm text-muted-foreground leading-relaxed">
+          Sua conta usa link de acesso por e-mail. Vamos te enviar um link para entrar.
+        </p>
+
+        {flow.error && (
+          <p className="text-sm text-destructive text-center">{flow.error}</p>
+        )}
+
+        <button
+          onClick={flow.handleMagicLogin}
+          disabled={flow.loading}
+          className="w-full py-3 rounded-xl bg-primary text-primary-foreground text-sm font-semibold hover:opacity-90 transition disabled:opacity-50"
+        >
+          {flow.loading ? 'Enviando...' : 'Enviar link de acesso'}
+        </button>
+      </div>
     </motion.div>
   )
 }
