@@ -407,7 +407,7 @@ function TabVitrine({ expert, onSave, onPhotoChange }: {
                     </div>
                   </div>
                   <div className="flex flex-col gap-1.5">
-                    <label className="text-[10px] font-bold text-muted-foreground uppercase ml-1">Rótulo</label>
+                    <label className="text-[10px] font-bold text-muted-foreground uppercase ml-1">Rótulo (opcional)</label>
                     <input
                       value={link.label}
                       onChange={e => updateLink(i, "label", e.target.value)}
