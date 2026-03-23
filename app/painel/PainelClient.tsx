@@ -183,19 +183,6 @@ function TabVitrine({ expert, onSave, onPhotoChange }: {
   const [links, setLinks] = useState<ContactLink[]>(expert.contact_links ?? [])
   const [saving, setSaving] = useState(false)
   const [saved, setSaved] = useState(false)
-  const [cityOptions, setCityOptions] = useState<string[]>([])
-
-  useEffect(() => {
-    fetch('https://servicodados.ibge.gov.br/api/v1/localidades/municipios?orderBy=nome')
-      .then(r => r.json())
-      .then(data => {
-        if (Array.isArray(data)) {
-          const formatted = data.map((m: any) => `${m.nome} - ${m.microrregiao.mesorregiao.UF.sigla}`)
-          setCityOptions(formatted)
-        }
-      })
-      .catch(() => {})
-  }, [])
 
   // Photo
   const fileRef = useRef<HTMLInputElement>(null)
@@ -254,7 +241,7 @@ function TabVitrine({ expert, onSave, onPhotoChange }: {
   }
 
   return (
-    <form onSubmit={handleSave} className="flex flex-col gap-5">
+    <form onSubmit={handleSave} className="flex flex-col gap-6">
       {/* Foto */}
       <div className="flex flex-col gap-2">
         <p className="text-sm font-semibold">Foto de perfil</p>
@@ -288,21 +275,7 @@ function TabVitrine({ expert, onSave, onPhotoChange }: {
       {/* Campos */}
       <Field label="Nome" value={name} onChange={setName} required />
       <Field label="Especialidade" value={specialty} onChange={setSpecialty} placeholder="Ex: Nutrição Esportiva" />
-      
-      <div className="flex flex-col gap-1.5">
-        <label className="text-sm font-medium">Cidade</label>
-        <input
-          type="text"
-          value={city}
-          onChange={e => setCity(e.target.value)}
-          placeholder="Ex: São Paulo - SP"
-          list="city-options"
-          className="px-4 py-3 rounded-xl border border-border bg-card text-sm focus:outline-none focus:ring-2 focus:ring-ring/40"
-        />
-        <datalist id="city-options">
-          {cityOptions.map(c => <option key={c} value={c} />)}
-        </datalist>
-      </div>
+      <Field label="Cidade" value={city} onChange={setCity} placeholder="Ex: São Paulo - SP" />
 
       {/* Vitrine toggle */}
       <div className="flex items-center justify-between py-1">
@@ -320,49 +293,74 @@ function TabVitrine({ expert, onSave, onPhotoChange }: {
       </div>
 
       {/* Links de contato */}
-      <div className="flex flex-col gap-2">
+      <div className="flex flex-col gap-3">
         <div className="flex items-center justify-between">
           <p className="text-sm font-semibold">Links de contato</p>
-          <button type="button" onClick={addLink} className="text-xs text-primary font-medium hover:opacity-70">
-            + Adicionar
+          <button type="button" onClick={addLink} className="text-xs text-primary font-medium hover:opacity-70 flex items-center gap-1">
+            <Plus size={14} /> Adicionar
           </button>
         </div>
-        {links.map((link, i) => (
-          <div key={i} className="flex gap-2 items-start">
-            <div className="flex flex-col gap-1.5 flex-1">
-              <select
-                value={link.type}
-                onChange={e => updateLink(i, "type", e.target.value)}
-                className="px-3 py-2 rounded-xl border border-border bg-card text-sm focus:outline-none focus:ring-2 focus:ring-ring/40"
-              >
-                {CONTACT_TYPES.map(t => <option key={t} value={t}>{t}</option>)}
-              </select>
-              <input
-                value={link.label}
-                onChange={e => updateLink(i, "label", e.target.value)}
-                placeholder="Rótulo"
-                className="px-3 py-2 rounded-xl border border-border bg-card text-sm focus:outline-none focus:ring-2 focus:ring-ring/40"
-              />
-              <input
-                value={link.url}
-                onChange={e => updateLink(i, "url", e.target.value)}
-                placeholder="URL"
-                className="px-3 py-2 rounded-xl border border-border bg-card text-sm focus:outline-none focus:ring-2 focus:ring-ring/40"
-              />
-            </div>
-            <button type="button" onClick={() => removeLink(i)} className="p-2 text-muted-foreground hover:text-destructive transition-colors mt-1">
-              <X size={16} />
-            </button>
+        
+        {links.length === 0 ? (
+          <div className="py-4 text-center border-2 border-dashed border-border rounded-2xl">
+            <p className="text-xs text-muted-foreground">Nenhum link adicionado</p>
           </div>
-        ))}
+        ) : (
+          <div className="flex flex-col gap-3">
+            {links.map((link, i) => (
+              <div key={i} className="relative p-4 rounded-2xl bg-muted/30 border border-border flex flex-col gap-3 group">
+                <button 
+                  type="button" 
+                  onClick={() => removeLink(i)} 
+                  className="absolute top-3 right-3 p-1.5 text-muted-foreground hover:text-destructive hover:bg-destructive/10 rounded-lg transition-all opacity-0 group-hover:opacity-100"
+                  aria-label="Remover link"
+                >
+                  <Trash2 size={14} />
+                </button>
+
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="flex flex-col gap-1.5">
+                    <label className="text-[10px] font-bold text-muted-foreground uppercase ml-1">Tipo</label>
+                    <select
+                      value={link.type}
+                      onChange={e => updateLink(i, "type", e.target.value)}
+                      className="px-3 py-2 rounded-xl border border-border bg-card text-sm focus:outline-none focus:ring-2 focus:ring-ring/40"
+                    >
+                      {CONTACT_TYPES.map(t => <option key={t} value={t}>{t}</option>)}
+                    </select>
+                  </div>
+                  <div className="flex flex-col gap-1.5">
+                    <label className="text-[10px] font-bold text-muted-foreground uppercase ml-1">Rótulo</label>
+                    <input
+                      value={link.label}
+                      onChange={e => updateLink(i, "label", e.target.value)}
+                      placeholder="Ex: WhatsApp"
+                      className="px-3 py-2 rounded-xl border border-border bg-card text-sm focus:outline-none focus:ring-2 focus:ring-ring/40"
+                    />
+                  </div>
+                </div>
+
+                <div className="flex flex-col gap-1.5">
+                  <label className="text-[10px] font-bold text-muted-foreground uppercase ml-1">URL / Link</label>
+                  <input
+                    value={link.url}
+                    onChange={e => updateLink(i, "url", e.target.value)}
+                    placeholder="https://..."
+                    className="px-3 py-2 rounded-xl border border-border bg-card text-sm focus:outline-none focus:ring-2 focus:ring-ring/40"
+                  />
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
       </div>
 
       <button
         type="submit"
         disabled={saving || !name.trim()}
-        className="w-full py-3 rounded-xl bg-primary text-primary-foreground text-sm font-medium hover:opacity-90 active:scale-[0.97] transition-all disabled:opacity-50 flex items-center justify-center gap-2"
+        className="w-full py-3.5 rounded-xl bg-primary text-primary-foreground text-sm font-semibold hover:opacity-90 active:scale-[0.97] transition-all disabled:opacity-50 flex items-center justify-center gap-2"
       >
-        {saved ? <><Check size={16} /> Salvo</> : saving ? "Salvando..." : "Salvar vitrine"}
+        {saved ? <><Check size={18} /> Salvo com sucesso</> : saving ? "Salvando..." : "Salvar vitrine"}
       </button>
     </form>
   )
