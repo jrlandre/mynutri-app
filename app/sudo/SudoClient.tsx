@@ -2,7 +2,7 @@
 
 import { useState, useTransition } from "react"
 import { motion, AnimatePresence } from "framer-motion"
-import { ShieldCheck, Users, Brain, ChevronRight, ExternalLink, Copy, Check, X } from "lucide-react"
+import { ShieldCheck, Users, Brain, ChevronRight, ExternalLink, Copy, Check, X, Pencil } from "lucide-react"
 import type { Expert } from "@/types"
 import {
   toggleExpertStatus,
@@ -461,9 +461,20 @@ function TabPromoters({ experts, promoters, allReferrals }: {
               <div>
                 <p className="text-sm font-semibold">{p.name}</p>
                 {p.referral_code && (
-                  <p className="text-xs text-muted-foreground font-mono">
-                    {appDomain}/r/{p.referral_code}
-                  </p>
+                  <div className="flex items-center gap-1.5">
+                    <p className="text-xs text-muted-foreground font-mono">
+                      {appDomain}/r/{p.referral_code}
+                    </p>
+                    <button
+                      onClick={() => {
+                        setShowSetPromoter(p.id)
+                        setPromoterForm({ referral_code: p.referral_code || "", is_promoter: true })
+                      }}
+                      className="p-1 rounded-md text-muted-foreground hover:text-primary hover:bg-primary/5 transition-colors"
+                    >
+                      <Pencil size={10} />
+                    </button>
+                  </div>
                 )}
               </div>
               <span className="text-sm font-bold text-primary">{currentPct}%</span>
@@ -555,32 +566,43 @@ function TabPromoters({ experts, promoters, allReferrals }: {
         )}
       </AnimatePresence>
 
-      {/* Modal ativar promoter */}
+      {/* Modal ativar/editar promoter */}
       <AnimatePresence>
         {showSetPromoter && (
-          <Modal title="Ativar promoter" onClose={() => setShowSetPromoter(null)}>
+          <Modal title={promoters.find(p => p.id === showSetPromoter) ? "Editar promoter" : "Ativar promoter"} onClose={() => setShowSetPromoter(null)}>
             <form onSubmit={handleSetPromoterSubmit} className="flex flex-col gap-3">
-              <select
-                value={showSetPromoter}
-                onChange={e => setShowSetPromoter(e.target.value)}
-                className="px-3 py-2.5 rounded-xl border border-border bg-background text-sm focus:outline-none focus:ring-2 focus:ring-ring/40"
-              >
-                {nonPromoterExperts.map(e => (
-                  <option key={e.id} value={e.id}>{e.name} ({e.subdomain})</option>
-                ))}
-              </select>
-              <input
-                type="text"
-                placeholder="Código de referral (ex: ana)"
-                value={promoterForm.referral_code}
-                onChange={e => setPromoterForm(p => ({ ...p, referral_code: e.target.value }))}
-                className="px-3 py-2.5 rounded-xl border border-border bg-background text-sm focus:outline-none focus:ring-2 focus:ring-ring/40"
-              />
+              {!promoters.find(p => p.id === showSetPromoter) && (
+                <select
+                  value={showSetPromoter}
+                  onChange={e => setShowSetPromoter(e.target.value)}
+                  className="px-3 py-2.5 rounded-xl border border-border bg-background text-sm focus:outline-none focus:ring-2 focus:ring-ring/40"
+                >
+                  {nonPromoterExperts.map(e => (
+                    <option key={e.id} value={e.id}>{e.name} ({e.subdomain})</option>
+                  ))}
+                </select>
+              )}
+              
+              {promoters.find(p => p.id === showSetPromoter) && (
+                <p className="text-sm font-medium px-1">{promoters.find(p => p.id === showSetPromoter)?.name}</p>
+              )}
+
+              <div className="flex flex-col gap-1">
+                <label className="text-xs text-muted-foreground ml-1">Código de referral</label>
+                <input
+                  type="text"
+                  placeholder="Ex: ana"
+                  value={promoterForm.referral_code}
+                  onChange={e => setPromoterForm(p => ({ ...p, referral_code: e.target.value }))}
+                  className="px-3 py-2.5 rounded-xl border border-border bg-background text-sm focus:outline-none focus:ring-2 focus:ring-ring/40"
+                />
+              </div>
+
               <button
                 type="submit"
                 className="w-full py-2.5 rounded-xl bg-primary text-primary-foreground text-sm font-medium hover:opacity-90 transition-opacity"
               >
-                Ativar
+                Salvar
               </button>
             </form>
           </Modal>
