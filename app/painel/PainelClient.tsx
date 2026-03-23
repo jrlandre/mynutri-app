@@ -315,6 +315,13 @@ function TabVitrine({ expert, onSave, onPhotoChange }: {
     setTimeout(() => setSaved(false), 2000)
   }
 
+  const hasChanges = 
+    name !== expert.name ||
+    specialty !== (expert.specialty ?? "") ||
+    city !== (expert.city ?? "") ||
+    listed !== expert.listed ||
+    JSON.stringify(links) !== JSON.stringify(expert.contact_links ?? [])
+
   return (
     <form onSubmit={handleSave} className="flex flex-col gap-6">
       {/* Foto */}
@@ -434,8 +441,8 @@ function TabVitrine({ expert, onSave, onPhotoChange }: {
 
       <button
         type="submit"
-        disabled={saving || !name.trim()}
-        className="w-full py-3.5 rounded-xl bg-primary text-primary-foreground text-sm font-semibold hover:opacity-90 active:scale-[0.97] transition-all disabled:opacity-50 flex items-center justify-center gap-2"
+        disabled={saving || !hasChanges || !name.trim()}
+        className="w-full py-3.5 rounded-xl bg-primary text-primary-foreground text-sm font-semibold hover:opacity-90 active:scale-[0.97] transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
       >
         {saved ? <><Check size={18} /> Salvo com sucesso</> : saving ? "Salvando..." : "Salvar alterações"}
       </button>
@@ -462,6 +469,8 @@ function TabIA({ expert, onSave }: {
     setTimeout(() => setSaved(false), 2000)
   }
 
+  const hasChanges = prompt !== (expert.system_prompt ?? "")
+
   return (
     <form onSubmit={handleSave} className="flex flex-col gap-4">
       <div className="flex flex-col gap-1.5">
@@ -479,10 +488,10 @@ function TabIA({ expert, onSave }: {
       />
       <button
         type="submit"
-        disabled={saving}
-        className="w-full py-3 rounded-xl bg-primary text-primary-foreground text-sm font-medium hover:opacity-90 active:scale-[0.97] transition-all disabled:opacity-50 flex items-center justify-center gap-2"
+        disabled={saving || !hasChanges}
+        className="w-full py-3.5 rounded-xl bg-primary text-primary-foreground text-sm font-semibold hover:opacity-90 active:scale-[0.97] transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
       >
-        {saved ? <><Check size={16} /> Salvo</> : saving ? "Salvando..." : "Salvar prompt"}
+        {saved ? <><Check size={18} /> Salvo com sucesso</> : saving ? "Salvando..." : "Salvar alterações"}
       </button>
     </form>
   )
