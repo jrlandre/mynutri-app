@@ -141,9 +141,9 @@ function TabInicio({ expert, clients, onInvite, onToggleActive }: {
       <div className="flex flex-col gap-8">
         {/* Ativos */}
         <div className="flex flex-col gap-3">
-          <div className="flex items-center justify-between px-1">
+          <div className="flex items-baseline gap-2 px-1">
             <p className="text-sm font-bold uppercase tracking-wider text-muted-foreground/70">Ativos</p>
-            <span className="text-xs font-medium text-muted-foreground">{activeClients.length}</span>
+            <span className="text-xs font-medium text-muted-foreground/50">{activeClients.length}</span>
           </div>
           {activeClients.length === 0 ? (
             <p className="text-sm text-muted-foreground py-6 text-center border-2 border-dashed border-border rounded-2xl">
@@ -179,9 +179,9 @@ function TabInicio({ expert, clients, onInvite, onToggleActive }: {
         {/* Inativos */}
         {inactiveClients.length > 0 && (
           <div className="flex flex-col gap-3">
-            <div className="flex items-center justify-between px-1">
+            <div className="flex items-baseline gap-2 px-1">
               <p className="text-sm font-bold uppercase tracking-wider text-muted-foreground/70">Pausados</p>
-              <span className="text-xs font-medium text-muted-foreground">{inactiveClients.length}</span>
+              <span className="text-xs font-medium text-muted-foreground/50">{inactiveClients.length}</span>
             </div>
             <div className="flex flex-col gap-2">
               {inactiveClients.map(p => (
