@@ -360,7 +360,7 @@ function TabVitrine({ expert, onSave, onPhotoChange }: {
         disabled={saving || !name.trim()}
         className="w-full py-3.5 rounded-xl bg-primary text-primary-foreground text-sm font-semibold hover:opacity-90 active:scale-[0.97] transition-all disabled:opacity-50 flex items-center justify-center gap-2"
       >
-        {saved ? <><Check size={18} /> Salvo com sucesso</> : saving ? "Salvando..." : "Salvar vitrine"}
+        {saved ? <><Check size={18} /> Salvo com sucesso</> : saving ? "Salvando..." : "Salvar alterações"}
       </button>
     </form>
   )
