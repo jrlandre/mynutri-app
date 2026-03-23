@@ -281,7 +281,7 @@ function TabVitrine({ expert, onSave, onPhotoChange }: {
       <div className="flex items-center justify-between py-1">
         <div>
           <p className="text-sm font-medium">Exibir perfil</p>
-          <p className="text-xs text-muted-foreground">Exibir perfil na página /experts para novos clientes</p>
+          <p className="text-xs text-muted-foreground">Aparecer na página /experts para novos clientes</p>
         </div>
         <button
           type="button"
