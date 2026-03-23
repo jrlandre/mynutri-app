@@ -36,6 +36,7 @@ interface Props {
   clientCountByExpert: Record<string, number>
   totalActiveClients: number
   usageTodayCount: number
+  totalAnalyses: number
   mrrCents: number
   totalToPayCents: number
   promoters: PromoterRow[]
@@ -50,20 +51,27 @@ function formatBRL(cents: number) {
 
 // ─── StatCard ─────────────────────────────────────────────────────────────────
 
-function StatCard({ label, value, icon, highlight }: {
+function StatCard({ label, value, icon, highlight, onClick }: {
   label: string
   value: string
   icon: React.ReactNode
   highlight?: boolean
+  onClick?: () => void
 }) {
   return (
-    <div className={`rounded-2xl border px-5 py-4 flex flex-col gap-2 ${highlight ? "border-primary/30 bg-primary/5" : "border-border bg-card"}`}>
+    <button
+      onClick={onClick}
+      disabled={!onClick}
+      className={`rounded-2xl border px-5 py-4 flex flex-col gap-2 text-left transition-all ${
+        highlight ? "border-primary/30 bg-primary/5" : "border-border bg-card"
+      } ${onClick ? "hover:border-primary/50 active:scale-[0.98] cursor-pointer" : "cursor-default"}`}
+    >
       <div className="flex items-center justify-between">
         <p className="text-xs text-muted-foreground">{label}</p>
-        {icon}
+        {onClick ? <ChevronRight size={14} className="text-muted-foreground/50" /> : icon}
       </div>
       <p className={`text-2xl font-bold tracking-tight ${highlight ? "text-primary" : ""}`}>{value}</p>
-    </div>
+    </button>
   )
 }
 
@@ -96,12 +104,14 @@ function Modal({ title, onClose, children }: {
 
 // ─── Tab Visão Geral ──────────────────────────────────────────────────────────
 
-function TabVisaoGeral({ experts, totalActiveClients, usageTodayCount, mrrCents, totalToPayCents }: {
+function TabVisaoGeral({ experts, totalActiveClients, usageTodayCount, totalAnalyses, mrrCents, totalToPayCents, onTabChange }: {
   experts: Expert[]
   totalActiveClients: number
   usageTodayCount: number
+  totalAnalyses: number
   mrrCents: number
   totalToPayCents: number
+  onTabChange: (tab: Tab) => void
 }) {
   const activeExperts = experts.filter(e => e.active).length
 
@@ -118,6 +128,7 @@ function TabVisaoGeral({ experts, totalActiveClients, usageTodayCount, mrrCents,
           label="Experts ativos"
           value={String(activeExperts)}
           icon={<ChevronRight size={18} className="text-primary" />}
+          onClick={() => onTabChange("Experts")}
         />
         <StatCard
           label="Clientes totais"
@@ -130,14 +141,15 @@ function TabVisaoGeral({ experts, totalActiveClients, usageTodayCount, mrrCents,
           icon={<Brain size={18} className="text-primary" />}
         />
         <StatCard
-          label="God Mode"
-          value="Ativo"
+          label="Total de análises"
+          value={String(totalAnalyses)}
           icon={<ShieldCheck size={18} className="text-primary" />}
         />
         <StatCard
           label="Comissões a pagar"
           value={formatBRL(totalToPayCents)}
           icon={<ChevronRight size={18} className="text-primary" />}
+          onClick={() => onTabChange("Promoters")}
         />
       </div>
     </div>
@@ -741,8 +753,10 @@ export default function SudoClient({
               experts={experts}
               totalActiveClients={totalActiveClients}
               usageTodayCount={usageTodayCount}
+              totalAnalyses={totalAnalyses}
               mrrCents={mrrCents}
               totalToPayCents={totalToPayCents}
+              onTabChange={setTab}
             />
           )}
           {tab === "Experts" && (

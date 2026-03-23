@@ -14,6 +14,7 @@ export default async function SudoPage() {
     { data: promotersData },
     { data: allReferrals },
     { data: pendingCommissions },
+    { data: allUsage },
   ] = await Promise.all([
     adminClient
       .from('experts')
@@ -38,6 +39,9 @@ export default async function SudoPage() {
       .from('referrals')
       .select('commission_cents')
       .eq('status', 'cleared'),
+    adminClient
+      .from('usage')
+      .select('analysis_count'),
   ])
 
   // MRR from Stripe
@@ -63,6 +67,7 @@ export default async function SudoPage() {
   }
 
   const totalToPayCents = pendingCommissions?.reduce((s, r) => s + r.commission_cents, 0) ?? 0
+  const totalAnalyses = allUsage?.reduce((sum, r) => sum + r.analysis_count, 0) ?? 0
 
   const experts: Expert[] = (expertsData ?? []).map(row => ({
     id: row.id,
@@ -101,6 +106,7 @@ export default async function SudoPage() {
       clientCountByExpert={clientCountByExpert}
       totalActiveClients={clients?.filter(c => c.active).length ?? 0}
       usageTodayCount={usageToday?.reduce((sum, r) => sum + r.analysis_count, 0) ?? 0}
+      totalAnalyses={totalAnalyses}
       mrrCents={mrrCents}
       totalToPayCents={totalToPayCents}
       promoters={promotersData ?? []}
