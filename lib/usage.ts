@@ -18,42 +18,21 @@ export async function checkAndIncrementUsage(
 ): Promise<UsageCheck> {
   const today = new Date().toISOString().split('T')[0]
 
-  // Não autenticado — rastrear por IP
+  // Não autenticado — rastrear por IP via RPC atômica
   if (!userId) {
     if (!ip) {
       return { allowed: true, tier: 'anon', count: 0, limit: ANON_DAILY_LIMIT }
     }
 
-    const { data: usage, error } = await adminClient
-      .from('usage')
-      .select('id, analysis_count')
-      .is('user_id', null)
-      .eq('ip', ip)
-      .eq('date', today)
-      .maybeSingle()
-
+    const { data, error } = await adminClient.rpc('check_and_increment_usage', {
+      p_user_id: null,
+      p_ip: ip,
+      p_date: today,
+      p_limit: ANON_DAILY_LIMIT,
+    })
     if (error) throw new Error(`usage check failed: ${error.message}`)
-
-    const currentCount = usage?.analysis_count ?? 0
-
-    if (currentCount >= ANON_DAILY_LIMIT) {
-      return { allowed: false, tier: 'anon', count: currentCount, limit: ANON_DAILY_LIMIT }
-    }
-
-    if (usage) {
-      const { error: updateErr } = await adminClient
-        .from('usage')
-        .update({ analysis_count: currentCount + 1 })
-        .eq('id', usage.id)
-      if (updateErr) throw new Error(`usage update failed: ${updateErr.message}`)
-    } else {
-      const { error: insertErr } = await adminClient
-        .from('usage')
-        .insert({ user_id: null, ip, date: today, analysis_count: 1 })
-      if (insertErr) throw new Error(`usage insert failed: ${insertErr.message}`)
-    }
-
-    return { allowed: true, tier: 'anon', count: currentCount + 1, limit: ANON_DAILY_LIMIT }
+    const result = data as { allowed: boolean; count: number }
+    return { allowed: result.allowed, tier: 'anon', count: result.count, limit: ANON_DAILY_LIMIT }
   }
 
   // Verificar se é cliente B2B (sem limite)
@@ -82,45 +61,14 @@ export async function checkAndIncrementUsage(
     return { allowed: true, tier: 'expert', count: 0, limit: Infinity }
   }
 
-  // Usuário free — verificar e incrementar contagem diária
-  const { data: usage, error: usageErr } = await adminClient
-    .from('usage')
-    .select('id, analysis_count')
-    .eq('user_id', userId)
-    .eq('date', today)
-    .maybeSingle()
-
-  if (usageErr) throw new Error(`usage check failed: ${usageErr.message}`)
-
-  const currentCount = usage?.analysis_count ?? 0
-
-  if (currentCount >= FREE_DAILY_LIMIT) {
-    return {
-      allowed: false,
-      tier: 'free',
-      count: currentCount,
-      limit: FREE_DAILY_LIMIT,
-    }
-  }
-
-  // Incrementar
-  if (usage) {
-    const { error: updateErr } = await adminClient
-      .from('usage')
-      .update({ analysis_count: currentCount + 1 })
-      .eq('id', usage.id)
-    if (updateErr) throw new Error(`usage update failed: ${updateErr.message}`)
-  } else {
-    const { error: insertErr } = await adminClient
-      .from('usage')
-      .insert({ user_id: userId, date: today, analysis_count: 1 })
-    if (insertErr) throw new Error(`usage insert failed: ${insertErr.message}`)
-  }
-
-  return {
-    allowed: true,
-    tier: 'free',
-    count: currentCount + 1,
-    limit: FREE_DAILY_LIMIT,
-  }
+  // Usuário free — check e incremento atômico via RPC
+  const { data, error } = await adminClient.rpc('check_and_increment_usage', {
+    p_user_id: userId,
+    p_ip: null,
+    p_date: today,
+    p_limit: FREE_DAILY_LIMIT,
+  })
+  if (error) throw new Error(`usage check failed: ${error.message}`)
+  const result = data as { allowed: boolean; count: number }
+  return { allowed: result.allowed, tier: 'free', count: result.count, limit: FREE_DAILY_LIMIT }
 }

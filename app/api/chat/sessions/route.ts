@@ -12,7 +12,9 @@ export async function GET() {
   const { data, error } = await supabase
     .from("chat_sessions")
     .select("id, title, updated_at")
+    .eq("user_id", user.id)
     .order("updated_at", { ascending: false })
+    .limit(100)
 
   if (error) {
     return NextResponse.json({ error: error.message }, { status: 500 })

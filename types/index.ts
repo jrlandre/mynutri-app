@@ -85,6 +85,7 @@ interface UserProfile {
   expertName?: string | null
   hasPanel?: boolean
   isSudo?: boolean
+  photoUrl?: string | null
 }
 
 interface Referral {

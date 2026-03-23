@@ -171,9 +171,10 @@ function TabInicio({ expert, clients, onInvite, onDeactivate }: {
 
 // ─── Aba Vitrine ──────────────────────────────────────────────────────────────
 
-function TabVitrine({ expert, onSave }: {
+function TabVitrine({ expert, onSave, onPhotoChange }: {
   expert: Expert
   onSave: (data: Partial<Expert>) => Promise<void>
+  onPhotoChange: (url: string) => void
 }) {
   const [name, setName] = useState(expert.name)
   const [specialty, setSpecialty] = useState(expert.specialty ?? "")
@@ -200,7 +201,13 @@ function TabVitrine({ expert, onSave }: {
     formData.append("photo", file)
     const res = await fetch("/api/painel/photo", { method: "POST", body: formData })
     const data = await res.json() as { photo_url?: string; error?: string }
-    if (data.error) { setPhotoError(data.error); setPhotoPreview(expert.photo_url) }
+    if (data.error) {
+      setPhotoError(data.error)
+      setPhotoPreview(expert.photo_url)
+    } else if (data.photo_url) {
+      setPhotoPreview(data.photo_url)
+      onPhotoChange(data.photo_url)
+    }
     setUploadingPhoto(false)
   }
 
@@ -631,7 +638,11 @@ export default function PainelClient({ expert: initialExpert, initialClients, in
             />
           )}
           {tab === "Vitrine" && (
-            <TabVitrine expert={expert} onSave={handleSaveProfile} />
+            <TabVitrine
+              expert={expert}
+              onSave={handleSaveProfile}
+              onPhotoChange={(url) => setExpert(prev => ({ ...prev, photo_url: url }))}
+            />
           )}
           {tab === "IA" && (
             <TabIA expert={expert} onSave={handleSaveProfile} />

@@ -14,6 +14,7 @@ export async function GET(): Promise<NextResponse> {
       .select('id, user_id, email, active, invited_at, activated_at')
       .eq('expert_id', expert.id)
       .order('invited_at', { ascending: false })
+      .limit(500)
 
     if (error) throw new Error(error.message)
 

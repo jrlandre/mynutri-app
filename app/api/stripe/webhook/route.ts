@@ -193,6 +193,17 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
     return
   }
 
+  // Idempotência: evento já processado se expert com esse subdomain existir
+  const { data: existingExpert } = await adminClient
+    .from("experts")
+    .select("id")
+    .eq("subdomain", subdomain)
+    .maybeSingle()
+  if (existingExpert) {
+    console.log(`[stripe/webhook] Expert ${subdomain} já existe — evento duplicado, ignorando`)
+    return
+  }
+
   const appDomain = (process.env.NEXT_PUBLIC_APP_URL ?? "").replace(/^https?:\/\//, "").replace(/\/$/, "")
   const panelUrl = `https://${subdomain}.${appDomain}/painel`
 
@@ -315,6 +326,15 @@ async function handleRecurringInvoice(invoice: Stripe.Invoice) {
     .maybeSingle()
 
   if (!expert) return
+
+  // Idempotência: já existe referral para esta invoice?
+  const { data: alreadyRecorded } = await adminClient
+    .from("referrals")
+    .select("id")
+    .eq("stripe_invoice_id", invoice.id)
+    .limit(1)
+    .maybeSingle()
+  if (alreadyRecorded) return
 
   const { data: prev } = await adminClient
     .from("referrals")

@@ -624,9 +624,13 @@ export default function HomeClient({ tenantSubdomain, userProfile }: Props) {
               <>
                 <button
                   onClick={() => setMenuOpen(!menuOpen)}
-                  className="w-10 h-10 rounded-full bg-secondary border border-border flex items-center justify-center text-sm font-semibold text-secondary-foreground hover:bg-secondary/80 transition-colors"
+                  className="w-10 h-10 rounded-full bg-secondary border border-border flex items-center justify-center text-sm font-semibold text-secondary-foreground hover:bg-secondary/80 transition-colors overflow-hidden"
                 >
-                  {userProfile.name?.[0]?.toUpperCase() || userProfile.email[0].toUpperCase()}
+                  {userProfile.photoUrl ? (
+                    <img src={userProfile.photoUrl} alt="" className="w-full h-full object-cover" />
+                  ) : (
+                    userProfile.name?.[0]?.toUpperCase() || userProfile.email[0].toUpperCase()
+                  )}
                 </button>
 
                 <AnimatePresence>

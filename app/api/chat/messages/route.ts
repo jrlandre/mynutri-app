@@ -21,6 +21,7 @@ export async function GET(request: NextRequest) {
     .select("id, role, content_type, content, mime_type, created_at")
     .eq("session_id", sessionId)
     .order("created_at", { ascending: true })
+    .limit(500)
 
   if (error) {
     return NextResponse.json({ error: error.message }, { status: 500 })

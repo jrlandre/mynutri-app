@@ -89,9 +89,15 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
 
     // Resolver tenant config (multi-tenant)
     const tenantHeader = request.headers.get('x-tenant-config')
-    let tenantConfig: TenantConfig | null = tenantHeader
-      ? JSON.parse(tenantHeader)
-      : null
+    let tenantConfig: TenantConfig | null = null
+    if (tenantHeader) {
+      try {
+        tenantConfig = JSON.parse(tenantHeader)
+      } catch (err) {
+        console.error('[analyze] x-tenant-config JSON inválido:', err)
+        return NextResponse.json({ error: 'x-tenant-config inválido' }, { status: 400 })
+      }
+    }
 
     const body: RequestBody = await request.json()
 

@@ -39,7 +39,7 @@ export default async function Home() {
         .maybeSingle(),
       adminClient
         .from('experts')
-        .select('id')
+        .select('id, photo_url')
         .eq('user_id', user.id)
         .eq('active', true)
         .limit(1)
@@ -67,6 +67,7 @@ export default async function Home() {
       expertName,
       hasPanel,
       isSudo: adminCheck?.is_admin === true,
+      photoUrl: expert?.photo_url ?? null,
     }
   }
 
