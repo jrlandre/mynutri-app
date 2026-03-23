@@ -153,6 +153,7 @@ export type Database = {
           id: string
           is_admin: boolean
           is_promoter: boolean
+          lifetime: boolean
           listed: boolean
           name: string
           photo_url: string | null
@@ -176,6 +177,7 @@ export type Database = {
           id?: string
           is_admin?: boolean
           is_promoter?: boolean
+          lifetime?: boolean
           listed?: boolean
           name: string
           photo_url?: string | null
@@ -199,6 +201,7 @@ export type Database = {
           id?: string
           is_admin?: boolean
           is_promoter?: boolean
+          lifetime?: boolean
           listed?: boolean
           name?: string
           photo_url?: string | null

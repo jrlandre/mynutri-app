@@ -315,10 +315,12 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
 // ─── handleSubscriptionDeleted ────────────────────────────────────────────────
 
 async function handleSubscriptionDeleted(subscription: Stripe.Subscription) {
+  // Experts lifetime não são desativados por cancelamento de assinatura Stripe
   const { error } = await adminClient
     .from("experts")
     .update({ active: false })
     .eq("stripe_subscription_id", subscription.id)
+    .eq("lifetime", false)
 
   if (error) {
     console.error("[stripe/webhook] Erro ao desativar expert:", error.message)
@@ -349,11 +351,12 @@ async function handleSubscriptionUpdated(
     if (error) console.error("[stripe/webhook] Erro ao reativar expert:", error.message)
     else console.log(`[stripe/webhook] Expert reativado (${previousStatus} → active): ${subscription.id}`)
   } else if (status === "unpaid" || status === "incomplete_expired") {
-    // Stripe esgotou as tentativas — desativa
+    // Stripe esgotou as tentativas — desativa (exceto lifetime)
     const { error } = await adminClient
       .from("experts")
       .update({ active: false })
       .eq("stripe_subscription_id", subscription.id)
+      .eq("lifetime", false)
     if (error) console.error("[stripe/webhook] Erro ao desativar expert:", error.message)
     else console.log(`[stripe/webhook] Expert desativado (${status}): ${subscription.id}`)
   }
@@ -373,11 +376,12 @@ async function handlePaymentFailed(invoice: Stripe.Invoice) {
 
   const { data: expert } = await adminClient
     .from("experts")
-    .select("id, name, user_id, subdomain, stripe_customer_id")
+    .select("id, name, user_id, subdomain, stripe_customer_id, lifetime")
     .eq("stripe_subscription_id", subscriptionId)
     .maybeSingle()
 
   if (!expert?.user_id) return
+  if (expert.lifetime) return  // lifetime: sem cobranças, sem emails de falha
 
   const { data: userData } = await adminClient.auth.admin.getUserById(expert.user_id)
   const email = userData.user?.email

@@ -269,6 +269,11 @@ function TabExperts({ experts, clientCountByExpert }: {
             >
               {loadingId === expert.id + "-plan" ? "..." : expert.plan}
             </button>
+            {expert.lifetime && (
+              <span className="px-2 py-0.5 rounded-md text-xs font-medium bg-amber-50 border border-amber-200 text-amber-700 dark:bg-amber-900/20 dark:border-amber-800 dark:text-amber-400">
+                lifetime
+              </span>
+            )}
 
             <span className="text-xs text-muted-foreground">
               {clientCountByExpert[expert.id] ?? 0} clientes

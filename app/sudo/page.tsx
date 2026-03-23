@@ -5,8 +5,7 @@ import type { Expert, ContactLink } from '@/types'
 
 export default async function SudoPage() {
   const today = new Date()
-  today.setHours(0, 0, 0, 0)
-  const todayStart = today.toISOString()
+  const todayDate = today.toISOString().split('T')[0]
 
   const [
     { data: expertsData },
@@ -25,8 +24,8 @@ export default async function SudoPage() {
       .select('id, expert_id, active'),
     adminClient
       .from('usage')
-      .select('id')
-      .gte('created_at', todayStart),
+      .select('analysis_count')
+      .eq('date', todayDate),
     adminClient
       .from('experts')
       .select('id, name, referral_code, stripe_coupon_id, commissions(percentage, valid_from, valid_until)')
@@ -81,6 +80,7 @@ export default async function SudoPage() {
     listed: row.listed,
     system_prompt: row.system_prompt,
     plan: row.plan as 'standard' | 'enterprise',
+    lifetime: row.lifetime ?? false,
     active: row.active,
     is_admin: row.is_admin,
     is_promoter: row.is_promoter,
@@ -100,7 +100,7 @@ export default async function SudoPage() {
       experts={experts}
       clientCountByExpert={clientCountByExpert}
       totalActiveClients={clients?.filter(c => c.active).length ?? 0}
-      usageTodayCount={usageToday?.length ?? 0}
+      usageTodayCount={usageToday?.reduce((sum, r) => sum + r.analysis_count, 0) ?? 0}
       mrrCents={mrrCents}
       totalToPayCents={totalToPayCents}
       promoters={promotersData ?? []}

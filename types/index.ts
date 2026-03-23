@@ -59,6 +59,7 @@ interface Expert {
   listed: boolean
   system_prompt: string | null
   plan: 'standard' | 'enterprise'
+  lifetime: boolean
   active: boolean
   is_admin?: boolean
   is_promoter?: boolean
