@@ -241,13 +241,19 @@ function TabVitrine({ expert, onSave, onPhotoChange }: {
   async function handleSave(e: React.FormEvent) {
     e.preventDefault()
     setSaving(true)
+    
+    // Fallback: se o rótulo estiver vazio, usa o tipo (capitalizado)
+    const processedLinks = links.map(link => ({
+      ...link,
+      label: link.label.trim() || (link.type.charAt(0).toUpperCase() + link.type.slice(1))
+    }))
       
     await onSave({ 
       name, 
       specialty: specialty || null, 
       city: city || null, 
       listed, 
-      contact_links: links
+      contact_links: processedLinks
     })
     
     setSaving(false)
