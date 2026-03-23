@@ -2,7 +2,7 @@
 
 import { useState, useRef, useEffect } from "react"
 import { motion, AnimatePresence } from "framer-motion"
-import { Plus, X, Trash2, Check, Upload, Link2, ChevronLeft, Copy } from "lucide-react"
+import { Plus, X, Trash2, Check, Upload, Link2, ChevronLeft, Copy, Pause, Play } from "lucide-react"
 import { useRouter } from "next/navigation"
 import { createClient } from "@/lib/supabase/client"
 import type { Expert, Client, ContactLink, Referral } from "@/types"
@@ -17,19 +17,20 @@ interface Props {
 
 // ─── Aba Início ──────────────────────────────────────────────────────────────
 
-function TabInicio({ expert, clients, onInvite, onDeactivate }: {
+function TabInicio({ expert, clients, onInvite, onToggleActive }: {
   expert: Expert
   clients: Client[]
   onInvite: (email: string) => Promise<{ invite_url?: string; error?: string }>
-  onDeactivate: (id: string) => Promise<void>
+  onToggleActive: (id: string, active: boolean) => Promise<void>
 }) {
   const limit = PLAN_LIMIT[expert.plan] ?? 50
-  const active = clients.filter(p => p.active)
+  const activeClients = clients.filter(p => p.active)
+  const inactiveClients = clients.filter(p => !p.active)
   const [inviteEmail, setInviteEmail] = useState("")
   const [inviteLoading, setInviteLoading] = useState(false)
   const [inviteResult, setInviteResult] = useState<{ url?: string; error?: string } | null>(null)
   const [showInvite, setShowInvite] = useState(false)
-  const [deactivating, setDeactivating] = useState<string | null>(null)
+  const [toggling, setToggling] = useState<string | null>(null)
   const [copiedInvite, setCopiedInvite] = useState(false)
 
   async function handleInvite(e: React.FormEvent) {
@@ -42,10 +43,10 @@ function TabInicio({ expert, clients, onInvite, onDeactivate }: {
     setInviteLoading(false)
   }
 
-  async function handleDeactivate(id: string) {
-    setDeactivating(id)
-    await onDeactivate(id)
-    setDeactivating(null)
+  async function handleToggle(id: string, currentStatus: boolean) {
+    setToggling(id)
+    await onToggleActive(id, !currentStatus)
+    setToggling(null)
   }
 
   return (
@@ -55,7 +56,7 @@ function TabInicio({ expert, clients, onInvite, onDeactivate }: {
         <div>
           <p className="text-sm text-muted-foreground">Clientes ativos</p>
           <p className="text-2xl font-bold tracking-tight mt-0.5">
-            {active.length}
+            {activeClients.length}
             <span className="text-base font-normal text-muted-foreground">
               {" "}/ {isFinite(limit) ? limit : "∞"}
             </span>
@@ -63,7 +64,7 @@ function TabInicio({ expert, clients, onInvite, onDeactivate }: {
         </div>
         <button
           onClick={() => { setShowInvite(true); setInviteResult(null) }}
-          disabled={isFinite(limit) && active.length >= limit}
+          disabled={isFinite(limit) && activeClients.length >= limit}
           className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-primary text-primary-foreground text-sm font-medium hover:opacity-90 active:scale-[0.97] transition-all disabled:opacity-50 disabled:cursor-not-allowed"
         >
           <Plus size={16} /> Gerar convite
@@ -135,34 +136,74 @@ function TabInicio({ expert, clients, onInvite, onDeactivate }: {
         )}
       </AnimatePresence>
 
-      {/* Lista de clientes */}
-      <div className="flex flex-col gap-2">
-        <p className="text-sm font-semibold">Clientes</p>
-        {clients.length === 0 ? (
-          <p className="text-sm text-muted-foreground py-6 text-center">Nenhum cliente ainda. Gere o primeiro convite!</p>
-        ) : (
-          clients.map(p => (
-            <div key={p.id} className="flex items-center gap-3 px-4 py-3 rounded-xl border border-border bg-card">
-              <div className="w-8 h-8 rounded-full bg-muted flex items-center justify-center text-xs font-semibold shrink-0 text-muted-foreground">
-                {(p.email ?? "?")[0].toUpperCase()}
-              </div>
-              <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium truncate">{p.email ?? "—"}</p>
-                <p className="text-xs text-muted-foreground">
-                  {p.activated_at ? "Ativo" : "Convite pendente"}
-                </p>
-              </div>
-              {p.active && (
-                <button
-                  onClick={() => handleDeactivate(p.id)}
-                  disabled={deactivating === p.id}
-                  className="p-1.5 rounded-lg text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors disabled:opacity-40"
-                >
-                  <Trash2 size={15} />
-                </button>
-              )}
+      {/* Listas de clientes */}
+      <div className="flex flex-col gap-8">
+        {/* Ativos */}
+        <div className="flex flex-col gap-3">
+          <div className="flex items-center justify-between px-1">
+            <p className="text-sm font-bold uppercase tracking-wider text-muted-foreground/70">Ativos</p>
+            <span className="text-xs font-medium text-muted-foreground">{activeClients.length}</span>
+          </div>
+          {activeClients.length === 0 ? (
+            <p className="text-sm text-muted-foreground py-6 text-center border-2 border-dashed border-border rounded-2xl">
+              Nenhum cliente ativo.
+            </p>
+          ) : (
+            <div className="flex flex-col gap-2">
+              {activeClients.map(p => (
+                <div key={p.id} className="flex items-center gap-3 px-4 py-3 rounded-xl border border-border bg-card">
+                  <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center text-xs font-bold shrink-0 text-primary">
+                    {(p.email ?? "?")[0].toUpperCase()}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium truncate">{p.email ?? "—"}</p>
+                    <p className="text-xs text-muted-foreground">
+                      {p.activated_at ? "Ativo" : "Convite pendente"}
+                    </p>
+                  </div>
+                  <button
+                    onClick={() => handleToggle(p.id, true)}
+                    disabled={toggling === p.id}
+                    title="Pausar acesso"
+                    className="p-2 rounded-lg text-muted-foreground hover:text-amber-600 hover:bg-amber-50 transition-colors disabled:opacity-40"
+                  >
+                    <Pause size={16} />
+                  </button>
+                </div>
+              ))}
             </div>
-          ))
+          )}
+        </div>
+
+        {/* Inativos */}
+        {inactiveClients.length > 0 && (
+          <div className="flex flex-col gap-3">
+            <div className="flex items-center justify-between px-1">
+              <p className="text-sm font-bold uppercase tracking-wider text-muted-foreground/70">Pausados</p>
+              <span className="text-xs font-medium text-muted-foreground">{inactiveClients.length}</span>
+            </div>
+            <div className="flex flex-col gap-2">
+              {inactiveClients.map(p => (
+                <div key={p.id} className="flex items-center gap-3 px-4 py-3 rounded-xl border border-border bg-card opacity-60">
+                  <div className="w-8 h-8 rounded-full bg-muted flex items-center justify-center text-xs font-medium shrink-0 text-muted-foreground">
+                    {(p.email ?? "?")[0].toUpperCase()}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium truncate">{p.email ?? "—"}</p>
+                    <p className="text-xs text-muted-foreground">Acesso desativado</p>
+                  </div>
+                  <button
+                    onClick={() => handleToggle(p.id, false)}
+                    disabled={toggling === p.id}
+                    title="Reativar acesso"
+                    className="p-2 rounded-lg text-muted-foreground hover:text-primary hover:bg-primary/5 transition-colors disabled:opacity-40"
+                  >
+                    <Play size={16} />
+                  </button>
+                </div>
+              ))}
+            </div>
+          </div>
         )}
       </div>
     </div>
@@ -615,9 +656,13 @@ export default function PainelClient({ expert: initialExpert, initialClients, in
     return data
   }
 
-  async function handleDeactivate(id: string) {
-    await fetch(`/api/painel/clients/${id}`, { method: "DELETE" })
-    setClients(prev => prev.map(p => p.id === id ? { ...p, active: false } : p))
+  async function handleToggleActive(id: string, active: boolean) {
+    await fetch(`/api/painel/clients/${id}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ active }),
+    })
+    setClients(prev => prev.map(p => p.id === id ? { ...p, active } : p))
   }
 
   async function handleSaveProfile(data: Partial<Expert>) {
@@ -688,7 +733,7 @@ export default function PainelClient({ expert: initialExpert, initialClients, in
               expert={expert}
               clients={clients}
               onInvite={handleInvite}
-              onDeactivate={handleDeactivate}
+              onToggleActive={handleToggleActive}
             />
           )}
           {tab === "Exibição" && (
