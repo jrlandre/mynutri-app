@@ -10,9 +10,10 @@ type SubdomainStatus = "idle" | "checking" | "available" | "unavailable" | "inva
 interface Props {
   appDomain: string
   defaultEmail?: string
+  defaultRef?: string
 }
 
-export default function AssinarClient({ appDomain, defaultEmail = "" }: Props) {
+export default function AssinarClient({ appDomain, defaultEmail = "", defaultRef = "" }: Props) {
   const [subdomain, setSubdomain] = useState("")
   const [name, setName] = useState("")
   const [email, setEmail] = useState(defaultEmail)
@@ -64,10 +65,9 @@ export default function AssinarClient({ appDomain, defaultEmail = "" }: Props) {
     setError("")
 
     try {
-      const refCode = document.cookie
-        .split('; ')
-        .find(r => r.startsWith('ref_code='))
-        ?.split('=')[1] ?? ''
+      const refCode = defaultRef
+        || document.cookie.split('; ').find(r => r.startsWith('ref_code='))?.split('=')[1]
+        || ''
 
       const res = await fetch("/api/assinar", {
         method: "POST",

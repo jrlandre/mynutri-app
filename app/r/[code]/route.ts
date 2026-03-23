@@ -12,7 +12,8 @@ export async function GET(req: Request, { params }: { params: Promise<{ code: st
     .eq("active", true)
     .maybeSingle()
 
-  const response = NextResponse.redirect(new URL("/", req.url))
+  const dest = data ? `/assinar?ref=${encodeURIComponent(code)}` : "/"
+  const response = NextResponse.redirect(new URL(dest, req.url))
 
   if (data) {
     response.cookies.set("ref_code", code, {
