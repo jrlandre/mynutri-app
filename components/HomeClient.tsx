@@ -148,6 +148,7 @@ export default function HomeClient({ tenantSubdomain, userProfile }: Props) {
   const [webcamOpen, setWebcamOpen] = useState(false)
   const [webcamError, setWebcamError] = useState<string | null>(null)
   const [isFrontCamera, setIsFrontCamera] = useState(false)
+  const [isStartingCamera, setIsStartingCamera] = useState(false)
   const [hasPassword, setHasPassword] = useState<boolean | null>(null)
   const [hasGoogleLinked, setHasGoogleLinked] = useState<boolean | null>(null)
   const [dismissedPasswordBanner, setDismissedPasswordBanner] = useState(true) // começa oculto até checar localStorage
@@ -544,7 +545,7 @@ export default function HomeClient({ tenantSubdomain, userProfile }: Props) {
         const base64 = await compressImage(file)
         void submit("image", base64, "image/jpeg")
       } catch {
-        // silenciosamente ignora
+        setError("Não foi possível processar a imagem. Tente outra.")
       }
     }
     input.click()
@@ -553,11 +554,16 @@ export default function HomeClient({ tenantSubdomain, userProfile }: Props) {
   async function handleOpenWebcam() {
     if (isRequestingCamera.current) return
     isRequestingCamera.current = true
+    setIsStartingCamera(true)
     setWebcamError(null)
     webcamStreamRef.current?.getTracks().forEach(t => t.stop())
     try {
       const stream = await navigator.mediaDevices.getUserMedia({
-        video: { facingMode: { ideal: "environment" } },
+        video: {
+          facingMode: { ideal: "environment" },
+          width: { ideal: 1920 },
+          height: { ideal: 1080 },
+        },
       })
       webcamStreamRef.current = stream
       const settings = stream.getVideoTracks()[0]?.getSettings()
@@ -567,10 +573,12 @@ export default function HomeClient({ tenantSubdomain, userProfile }: Props) {
       const name = err instanceof Error ? err.name : ''
       if (name === 'NotAllowedError') setWebcamError('Permissão de câmera negada.')
       else if (name === 'NotFoundError') setWebcamError('Nenhuma câmera encontrada.')
+      else if (name === 'NotReadableError') setWebcamError('Câmera em uso por outro app.')
       else setWebcamError('Não foi possível acessar a câmera.')
       setWebcamOpen(true)
     } finally {
       isRequestingCamera.current = false
+      setIsStartingCamera(false)
     }
   }
 
@@ -580,6 +588,7 @@ export default function HomeClient({ tenantSubdomain, userProfile }: Props) {
     setWebcamOpen(false)
     setWebcamError(null)
     setIsFrontCamera(false)
+    setIsStartingCamera(false)
   }
 
   function handleWebcamCapture() {
@@ -1299,14 +1308,17 @@ export default function HomeClient({ tenantSubdomain, userProfile }: Props) {
               <div className="flex flex-col px-4 pb-8 gap-2">
                 <button
                   onClick={() => triggerImageInput(true)}
-                  className="flex items-center gap-4 px-4 py-3.5 rounded-xl bg-secondary hover:bg-secondary/80 active:scale-[0.98] transition-all text-left"
+                  disabled={isStartingCamera}
+                  className="flex items-center gap-4 px-4 py-3.5 rounded-xl bg-secondary hover:bg-secondary/80 active:scale-[0.98] transition-all text-left disabled:opacity-60 disabled:cursor-not-allowed"
                 >
                   <div className="w-10 h-10 rounded-full bg-primary/10 text-primary flex items-center justify-center flex-shrink-0">
                     <CameraIcon />
                   </div>
                   <div>
                     <div className="text-sm font-medium">Câmera</div>
-                    <div className="text-xs text-muted-foreground">Tirar uma foto agora</div>
+                    <div className="text-xs text-muted-foreground">
+                      {isStartingCamera ? "Iniciando câmera…" : "Tirar uma foto agora"}
+                    </div>
                   </div>
                 </button>
                 <button
