@@ -308,6 +308,19 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      get_user_auth_data_by_email: {
+        Args: { p_email: string }
+        Returns: {
+          id: string
+          providers: string[]
+          confirmed: boolean
+          has_password: boolean
+        } | null
+      }
+      check_user_has_password: {
+        Args: { p_email: string }
+        Returns: boolean | null
+      }
       get_user_id_by_email: {
         Args: { p_email: string }
         Returns: string | null
