@@ -1,9 +1,29 @@
 import Stripe from 'stripe'
+import { redirect } from 'next/navigation'
+import { createClient } from '@/lib/supabase/server'
 import { adminClient } from '@/lib/supabase/admin'
 import SudoClient from './SudoClient'
 import type { Expert, ContactLink } from '@/types'
 
 export default async function SudoPage() {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+
+  if (!user) {
+    redirect('/')
+  }
+
+  // Verifica se é sudo (is_admin na tabela experts)
+  const { data: profile } = await adminClient
+    .from('experts')
+    .select('is_admin')
+    .eq('user_id', user.id)
+    .maybeSingle()
+
+  if (!profile?.is_admin) {
+    redirect('/')
+  }
+
   const today = new Date()
   const todayDate = today.toISOString().split('T')[0]
 
