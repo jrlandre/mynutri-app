@@ -13,7 +13,9 @@ export async function POST(request: Request) {
     .from('experts')
     .select('stripe_customer_id')
     .eq('user_id', user.id)
-    .single()
+    .eq('active', true)
+    .limit(1)
+    .maybeSingle()
 
   if (!expert?.stripe_customer_id) {
     return NextResponse.json({ url: '/assinar' })

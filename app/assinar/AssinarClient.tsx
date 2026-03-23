@@ -64,10 +64,15 @@ export default function AssinarClient({ appDomain, defaultEmail = "" }: Props) {
     setError("")
 
     try {
+      const refCode = document.cookie
+        .split('; ')
+        .find(r => r.startsWith('ref_code='))
+        ?.split('=')[1] ?? ''
+
       const res = await fetch("/api/assinar", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ subdomain, name, email, plan }),
+        body: JSON.stringify({ subdomain, name, email, plan, ref: refCode }),
       })
       const data = await res.json() as { url?: string; error?: string }
 
@@ -135,7 +140,7 @@ export default function AssinarClient({ appDomain, defaultEmail = "" }: Props) {
 
           {/* Nome */}
           <div className="flex flex-col gap-1.5">
-            <label className="text-sm font-medium">Nome completo</label>
+            <label className="text-sm font-medium">Nome</label>
             <input
               type="text"
               value={name}

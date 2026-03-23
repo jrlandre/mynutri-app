@@ -265,11 +265,11 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
 
   console.log(`[stripe/webhook] Expert criado: ${subdomain} (${email})`)
 
-  // Referral attribution
+  // Referral attribution — usar subdomain (único) para garantir o expert correto
   const { data: newExpert } = await adminClient
     .from("experts")
     .select("id")
-    .eq("user_id", userId)
+    .eq("subdomain", subdomain)
     .maybeSingle()
 
   if (newExpert) {
@@ -293,7 +293,7 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
       await adminClient
         .from("experts")
         .update({ welcome_email_sent: true })
-        .eq("user_id", userId)
+        .eq("subdomain", subdomain)
     } catch (err) {
       console.error("[stripe/webhook] Falha ao enviar email de boas-vindas:", err)
     }
