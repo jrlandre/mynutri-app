@@ -3,7 +3,6 @@ import { adminClient } from '@/lib/supabase/admin'
 import { createClient } from '@/lib/supabase/server'
 import { requireExpert, isResponse } from '@/lib/painel/guard'
 
-const MAX_BYTES = 2 * 1024 * 1024 // 2 MB
 const ALLOWED_TYPES = ['image/jpeg', 'image/png', 'image/webp']
 
 export async function POST(request: NextRequest): Promise<NextResponse> {
@@ -13,26 +12,22 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
 
     const { expert } = guard
 
-    const formData = await request.formData()
-    const file = formData.get('photo') as File | null
+    const { photo, mimeType } = await request.json()
 
-    if (!file) return NextResponse.json({ error: 'Arquivo não enviado' }, { status: 400 })
-    if (!ALLOWED_TYPES.includes(file.type)) {
+    if (!photo) return NextResponse.json({ error: 'Arquivo não enviado' }, { status: 400 })
+    if (!ALLOWED_TYPES.includes(mimeType)) {
       return NextResponse.json({ error: 'Formato inválido. Use JPEG, PNG ou WebP.' }, { status: 400 })
     }
-    if (file.size > MAX_BYTES) {
-      return NextResponse.json({ error: 'Imagem deve ter menos de 2 MB.' }, { status: 400 })
-    }
 
-    const ext = file.type.split('/')[1].replace('jpeg', 'jpg')
+    const ext = mimeType.split('/')[1].replace('jpeg', 'jpg')
     const path = `${expert.user_id}/avatar.${ext}`
-    const buffer = Buffer.from(await file.arrayBuffer())
+    const buffer = Buffer.from(photo, 'base64')
 
     // Upload usando o client do usuário autenticado (respeita RLS de storage)
     const supabase = await createClient()
     const { error: uploadError } = await supabase.storage
       .from('avatars')
-      .upload(path, buffer, { contentType: file.type, upsert: true })
+      .upload(path, buffer, { contentType: mimeType, upsert: true })
 
     if (uploadError) throw new Error(uploadError.message)
 

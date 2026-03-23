@@ -5,6 +5,7 @@ import { motion, AnimatePresence } from "framer-motion"
 import { Plus, X, Trash2, Check, Upload, Link2, ChevronLeft, Copy, Pause, Play } from "lucide-react"
 import { useRouter } from "next/navigation"
 import { createClient } from "@/lib/supabase/client"
+import { compressImage } from "@/lib/compress-image"
 import type { Expert, Client, ContactLink, Referral } from "@/types"
 import { CLIENT_LIMIT as PLAN_LIMIT } from "@/lib/plans"
 const CONTACT_TYPES = ["WhatsApp", "Instagram", "E-mail", "Website"] as const
@@ -251,20 +252,32 @@ function TabVitrine({ expert, onSave, onPhotoChange }: {
     if (!file) return
     setPhotoError(null)
     setUploadingPhoto(true)
-    const preview = URL.createObjectURL(file)
-    setPhotoPreview(preview)
-    const formData = new FormData()
-    formData.append("photo", file)
-    const res = await fetch("/api/painel/photo", { method: "POST", body: formData })
-    const data = await res.json() as { photo_url?: string; error?: string }
-    if (data.error) {
-      setPhotoError(data.error)
+    
+    try {
+      const preview = URL.createObjectURL(file)
+      setPhotoPreview(preview)
+      
+      const base64 = await compressImage(file)
+      const res = await fetch("/api/painel/photo", { 
+        method: "POST", 
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ photo: base64, mimeType: "image/jpeg" })
+      })
+      const data = await res.json() as { photo_url?: string; error?: string }
+      
+      if (data.error) {
+        setPhotoError(data.error)
+        setPhotoPreview(expert.photo_url)
+      } else if (data.photo_url) {
+        setPhotoPreview(data.photo_url)
+        onPhotoChange(data.photo_url)
+      }
+    } catch (err) {
+      setPhotoError("Erro ao processar imagem")
       setPhotoPreview(expert.photo_url)
-    } else if (data.photo_url) {
-      setPhotoPreview(data.photo_url)
-      onPhotoChange(data.photo_url)
+    } finally {
+      setUploadingPhoto(false)
     }
-    setUploadingPhoto(false)
   }
 
   function addLink() {
@@ -327,7 +340,6 @@ function TabVitrine({ expert, onSave, onPhotoChange }: {
             >
               {uploadingPhoto ? "Enviando..." : "Alterar foto"}
             </button>
-            <p className="text-xs text-muted-foreground">JPEG, PNG ou WebP · Máx. 2 MB</p>
             {photoError && <p className="text-xs text-destructive">{photoError}</p>}
           </div>
         </div>
