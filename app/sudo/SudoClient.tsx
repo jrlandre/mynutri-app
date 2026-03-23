@@ -713,6 +713,7 @@ export default function SudoClient({
   clientCountByExpert,
   totalActiveClients,
   usageTodayCount,
+  totalAnalyses,
   mrrCents,
   totalToPayCents,
   promoters,
