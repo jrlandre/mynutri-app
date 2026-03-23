@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useRef, useEffect } from "react"
+import { useState, useRef, useEffect, useCallback } from "react"
 import { AnimatePresence, motion } from "framer-motion"
 import Link from "next/link"
 import { LogOut, LayoutDashboard, ShieldCheck, History, X, MessageSquare, Trash, Play, Pause } from "lucide-react"
@@ -146,8 +146,8 @@ export default function HomeClient({ tenantSubdomain, userProfile }: Props) {
   const [menuOpen, setMenuOpen] = useState(false)
   const [imagePickerOpen, setImagePickerOpen] = useState(false)
   const [webcamOpen, setWebcamOpen] = useState(false)
-  const [webcamStream, setWebcamStream] = useState<MediaStream | null>(null)
   const [webcamError, setWebcamError] = useState<string | null>(null)
+  const [isFrontCamera, setIsFrontCamera] = useState(false)
   const [hasPassword, setHasPassword] = useState<boolean | null>(null)
   const [hasGoogleLinked, setHasGoogleLinked] = useState<boolean | null>(null)
   const [dismissedPasswordBanner, setDismissedPasswordBanner] = useState(true) // começa oculto até checar localStorage
@@ -164,8 +164,9 @@ export default function HomeClient({ tenantSubdomain, userProfile }: Props) {
   const audioRef = useRef<HTMLAudioElement | null>(null)
   const recordingIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null)
   const maxRecordingTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
-  const webcamVideoRef = useRef<HTMLVideoElement>(null)
-  const webcamCanvasRef = useRef<HTMLCanvasElement>(null)
+  const webcamStreamRef = useRef<MediaStream | null>(null)
+  const webcamVideoNodeRef = useRef<HTMLVideoElement | null>(null)
+  const isRequestingCamera = useRef(false)
 
   const MAX_RECORDING_SECONDS = 90
 
@@ -232,13 +233,19 @@ export default function HomeClient({ tenantSubdomain, userProfile }: Props) {
     }
   }, [])
 
-  // Liga o stream da webcam ao elemento <video> assim que o DOM estiver pronto
+  // Para o stream ao desmontar o componente (ex: navegar para outra página com overlay aberto)
   useEffect(() => {
-    if (webcamVideoRef.current && webcamStream) {
-      webcamVideoRef.current.srcObject = webcamStream
-      webcamVideoRef.current.play().catch(() => {})
+    return () => { webcamStreamRef.current?.getTracks().forEach(t => t.stop()) }
+  }, [])
+
+  // Callback ref: garante que o stream é ligado ao <video> apenas quando o nó DOM existe
+  const webcamVideoCallbackRef = useCallback((node: HTMLVideoElement | null) => {
+    webcamVideoNodeRef.current = node
+    if (node && webcamStreamRef.current) {
+      node.srcObject = webcamStreamRef.current
+      node.play().catch(() => {})
     }
-  }, [webcamStream])
+  }, [])
 
   useEffect(() => {
     if (!pendingAudio) {
@@ -540,47 +547,57 @@ export default function HomeClient({ tenantSubdomain, userProfile }: Props) {
         // silenciosamente ignora
       }
     }
-    document.body.appendChild(input)
     input.click()
-    document.body.removeChild(input)
   }
 
   async function handleOpenWebcam() {
+    if (isRequestingCamera.current) return
+    isRequestingCamera.current = true
     setWebcamError(null)
+    webcamStreamRef.current?.getTracks().forEach(t => t.stop())
     try {
       const stream = await navigator.mediaDevices.getUserMedia({
         video: { facingMode: { ideal: "environment" } },
       })
-      setWebcamStream(stream)
+      webcamStreamRef.current = stream
+      const settings = stream.getVideoTracks()[0]?.getSettings()
+      setIsFrontCamera(settings?.facingMode === 'user')
       setWebcamOpen(true)
     } catch (err) {
       const name = err instanceof Error ? err.name : ''
       if (name === 'NotAllowedError') setWebcamError('Permissão de câmera negada.')
       else if (name === 'NotFoundError') setWebcamError('Nenhuma câmera encontrada.')
       else setWebcamError('Não foi possível acessar a câmera.')
-      setWebcamOpen(true) // abre overlay para mostrar o erro
+      setWebcamOpen(true)
+    } finally {
+      isRequestingCamera.current = false
     }
   }
 
   function handleCloseWebcam() {
-    webcamStream?.getTracks().forEach(t => t.stop())
-    setWebcamStream(null)
+    webcamStreamRef.current?.getTracks().forEach(t => t.stop())
+    webcamStreamRef.current = null
     setWebcamOpen(false)
     setWebcamError(null)
+    setIsFrontCamera(false)
   }
 
   function handleWebcamCapture() {
-    const video = webcamVideoRef.current
-    const canvas = webcamCanvasRef.current
-    if (!video || !canvas) return
+    const video = webcamVideoNodeRef.current
+    if (!video || video.videoWidth === 0) return
+    const canvas = document.createElement("canvas")
     canvas.width = video.videoWidth
     canvas.height = video.videoHeight
-    canvas.getContext("2d")?.drawImage(video, 0, 0)
-    const dataUrl = canvas.toDataURL("image/jpeg", 0.85)
-    const [prefix, base64] = dataUrl.split(",")
-    const mimeType = prefix.replace("data:", "").replace(";base64", "")
+    const ctx = canvas.getContext("2d")
+    if (!ctx) return
+    if (isFrontCamera) {
+      ctx.translate(canvas.width, 0)
+      ctx.scale(-1, 1)
+    }
+    ctx.drawImage(video, 0, 0)
+    const base64 = canvas.toDataURL("image/jpeg", 0.85).split(",")[1]
     handleCloseWebcam()
-    void submit("image", base64, mimeType)
+    void submit("image", base64, "image/jpeg")
   }
 
   async function handleStartRecording() {
@@ -1340,13 +1357,13 @@ export default function HomeClient({ tenantSubdomain, userProfile }: Props) {
             ) : (
               <>
                 <video
-                  ref={webcamVideoRef}
+                  ref={webcamVideoCallbackRef}
                   autoPlay
                   playsInline
                   muted
-                  className="w-full max-w-2xl max-h-[70dvh] object-cover rounded-xl"
+                  className="w-full max-w-2xl max-h-[70dvh] rounded-xl"
+                  style={{ objectFit: "contain", transform: isFrontCamera ? "scaleX(-1)" : "none" }}
                 />
-                <canvas ref={webcamCanvasRef} className="hidden" />
                 <div className="flex gap-4 mt-6">
                   <button
                     onClick={handleCloseWebcam}
