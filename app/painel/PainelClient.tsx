@@ -277,10 +277,10 @@ function TabVitrine({ expert, onSave, onPhotoChange }: {
       <Field label="Especialidade" value={specialty} onChange={setSpecialty} placeholder="Ex: Nutrição Esportiva" />
       <Field label="Cidade" value={city} onChange={setCity} placeholder="Ex: São Paulo - SP" />
 
-      {/* Listagem toggle */}
+      {/* Perfil toggle */}
       <div className="flex items-center justify-between py-1">
         <div>
-          <p className="text-sm font-medium">Aparecer na listagem</p>
+          <p className="text-sm font-medium">Exibir perfil</p>
           <p className="text-xs text-muted-foreground">Exibir perfil na página /experts para novos clientes</p>
         </div>
         <button
