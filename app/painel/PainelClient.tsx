@@ -7,7 +7,7 @@ import { useRouter } from "next/navigation"
 import { createClient } from "@/lib/supabase/client"
 import type { Expert, Client, ContactLink, Referral } from "@/types"
 import { CLIENT_LIMIT as PLAN_LIMIT } from "@/lib/plans"
-const CONTACT_TYPES = ["whatsapp", "instagram", "email", "website"] as const
+const CONTACT_TYPES = ["WhatsApp", "Instagram", "E-mail", "Website"] as const
 
 interface Props {
   expert: Expert
@@ -242,10 +242,10 @@ function TabVitrine({ expert, onSave, onPhotoChange }: {
     e.preventDefault()
     setSaving(true)
     
-    // Fallback: se o rótulo estiver vazio, usa o tipo (capitalizado)
+    // Fallback: se o rótulo estiver vazio, usa o tipo diretamente
     const processedLinks = links.map(link => ({
       ...link,
-      label: link.label.trim() || (link.type.charAt(0).toUpperCase() + link.type.slice(1))
+      label: link.label.trim() || link.type
     }))
       
     await onSave({ 

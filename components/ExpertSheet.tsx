@@ -25,9 +25,10 @@ function initials(name: string) {
 }
 
 function ContactIcon({ type }: { type: string }) {
-  if (type === "whatsapp") return <Phone size={16} />
-  if (type === "instagram") return <Instagram size={16} />
-  if (type === "email") return <Mail size={16} />
+  const t = type.toLowerCase()
+  if (t === "whatsapp") return <Phone size={16} />
+  if (t === "instagram") return <Instagram size={16} />
+  if (t === "email") return <Mail size={16} />
   return <Globe size={16} />
 }
 
