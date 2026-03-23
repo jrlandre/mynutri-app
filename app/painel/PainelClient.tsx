@@ -277,10 +277,10 @@ function TabVitrine({ expert, onSave, onPhotoChange }: {
       <Field label="Especialidade" value={specialty} onChange={setSpecialty} placeholder="Ex: Nutrição Esportiva" />
       <Field label="Cidade" value={city} onChange={setCity} placeholder="Ex: São Paulo - SP" />
 
-      {/* Vitrine toggle */}
+      {/* Exibição toggle */}
       <div className="flex items-center justify-between py-1">
         <div>
-          <p className="text-sm font-medium">Aparecer na vitrine</p>
+          <p className="text-sm font-medium">Aparecer na exibição</p>
           <p className="text-xs text-muted-foreground">Exibir perfil na página /experts para novos clientes</p>
         </div>
         <button
@@ -566,8 +566,8 @@ export default function PainelClient({ expert: initialExpert, initialClients, in
   const [referrals] = useState<Referral[]>(initialReferrals)
 
   const TABS = expert.is_promoter
-    ? (["Início", "Vitrine", "IA", "Comissões"] as const)
-    : (["Início", "Vitrine", "IA"] as const)
+    ? (["Início", "Exibição", "IA", "Comissões"] as const)
+    : (["Início", "Exibição", "IA"] as const)
   type Tab = typeof TABS[number]
 
   const [tab, setTab] = useState<Tab>("Início")
@@ -670,7 +670,7 @@ export default function PainelClient({ expert: initialExpert, initialClients, in
               onDeactivate={handleDeactivate}
             />
           )}
-          {tab === "Vitrine" && (
+          {tab === "Exibição" && (
             <TabVitrine
               expert={expert}
               onSave={handleSaveProfile}
