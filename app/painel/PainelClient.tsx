@@ -186,11 +186,13 @@ function TabVitrine({ expert, onSave, onPhotoChange }: {
   const [cityOptions, setCityOptions] = useState<string[]>([])
 
   useEffect(() => {
-    fetch('https://servicodados.ibge.gov.br/api/v1/localidades/municipios')
+    fetch('https://servicodados.ibge.gov.br/api/v1/localidades/municipios?orderBy=nome')
       .then(r => r.json())
       .then(data => {
-        const formatted = data.map((m: any) => `${m.nome} - ${m.microrregiao.mesorregiao.UF.sigla}`)
-        setCityOptions(formatted)
+        if (Array.isArray(data)) {
+          const formatted = data.map((m: any) => `${m.nome} - ${m.microrregiao.mesorregiao.UF.sigla}`)
+          setCityOptions(formatted)
+        }
       })
       .catch(() => {})
   }, [])
@@ -298,7 +300,7 @@ function TabVitrine({ expert, onSave, onPhotoChange }: {
           className="px-4 py-3 rounded-xl border border-border bg-card text-sm focus:outline-none focus:ring-2 focus:ring-ring/40"
         />
         <datalist id="city-options">
-          {cityOptions.slice(0, 500).map(c => <option key={c} value={c} />)}
+          {cityOptions.map(c => <option key={c} value={c} />)}
         </datalist>
       </div>
 
@@ -338,7 +340,7 @@ function TabVitrine({ expert, onSave, onPhotoChange }: {
               <input
                 value={link.label}
                 onChange={e => updateLink(i, "label", e.target.value)}
-                placeholder={`Rótulo (ex: ${link.type.charAt(0).toUpperCase() + link.type.slice(1)})`}
+                placeholder="Rótulo"
                 className="px-3 py-2 rounded-xl border border-border bg-card text-sm focus:outline-none focus:ring-2 focus:ring-ring/40"
               />
               <input
