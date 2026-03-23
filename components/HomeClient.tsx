@@ -145,6 +145,7 @@ export default function HomeClient({ tenantSubdomain, userProfile }: Props) {
   const [loginGated, setLoginGated] = useState(false)
   const [menuOpen, setMenuOpen] = useState(false)
   const [imagePickerOpen, setImagePickerOpen] = useState(false)
+  const [webcamOpen, setWebcamOpen] = useState(false)
   const [hasPassword, setHasPassword] = useState<boolean | null>(null)
   const [hasGoogleLinked, setHasGoogleLinked] = useState<boolean | null>(null)
   const [dismissedPasswordBanner, setDismissedPasswordBanner] = useState(true) // começa oculto até checar localStorage
@@ -161,6 +162,9 @@ export default function HomeClient({ tenantSubdomain, userProfile }: Props) {
   const audioRef = useRef<HTMLAudioElement | null>(null)
   const recordingIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null)
   const maxRecordingTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const webcamVideoRef = useRef<HTMLVideoElement>(null)
+  const webcamStreamRef = useRef<MediaStream | null>(null)
+  const webcamCanvasRef = useRef<HTMLCanvasElement>(null)
 
   const MAX_RECORDING_SECONDS = 90
 
@@ -501,6 +505,13 @@ export default function HomeClient({ tenantSubdomain, userProfile }: Props) {
 
   function triggerImageInput(camera: boolean) {
     setImagePickerOpen(false)
+    if (camera) {
+      const isMobile = navigator.maxTouchPoints > 0
+      if (!isMobile) {
+        void handleOpenWebcam()
+        return
+      }
+    }
     const input = document.createElement("input")
     input.type = "file"
     input.accept = "image/*"
@@ -518,6 +529,42 @@ export default function HomeClient({ tenantSubdomain, userProfile }: Props) {
     document.body.appendChild(input)
     input.click()
     document.body.removeChild(input)
+  }
+
+  async function handleOpenWebcam() {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ video: true })
+      webcamStreamRef.current = stream
+      setWebcamOpen(true)
+      // Atribui o stream ao elemento de vídeo após renderizar
+      setTimeout(() => {
+        if (webcamVideoRef.current) {
+          webcamVideoRef.current.srcObject = stream
+        }
+      }, 50)
+    } catch {
+      // Permissão negada ou câmera indisponível — silencioso
+    }
+  }
+
+  function handleCloseWebcam() {
+    webcamStreamRef.current?.getTracks().forEach(t => t.stop())
+    webcamStreamRef.current = null
+    setWebcamOpen(false)
+  }
+
+  function handleWebcamCapture() {
+    const video = webcamVideoRef.current
+    const canvas = webcamCanvasRef.current
+    if (!video || !canvas) return
+    canvas.width = video.videoWidth
+    canvas.height = video.videoHeight
+    canvas.getContext("2d")?.drawImage(video, 0, 0)
+    const dataUrl = canvas.toDataURL("image/jpeg", 0.85)
+    const [prefix, base64] = dataUrl.split(",")
+    const mimeType = prefix.replace("data:", "").replace(";base64", "")
+    handleCloseWebcam()
+    void submit("image", base64, mimeType)
   }
 
   async function handleStartRecording() {
@@ -1250,6 +1297,43 @@ export default function HomeClient({ tenantSubdomain, userProfile }: Props) {
               </div>
             </motion.div>
           </>
+        )}
+      </AnimatePresence>
+
+      {/* Webcam overlay — desktop only */}
+      <AnimatePresence>
+        {webcamOpen && (
+          <motion.div
+            key="webcam-overlay"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.2 }}
+            className="fixed inset-0 z-50 bg-black flex flex-col items-center justify-center"
+          >
+            <video
+              ref={webcamVideoRef}
+              autoPlay
+              playsInline
+              muted
+              className="w-full max-w-2xl max-h-[70dvh] object-cover rounded-xl"
+            />
+            <canvas ref={webcamCanvasRef} className="hidden" />
+            <div className="flex gap-4 mt-6">
+              <button
+                onClick={handleCloseWebcam}
+                className="px-6 py-3 rounded-xl border border-white/30 text-white text-sm font-medium hover:bg-white/10 transition-colors"
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={handleWebcamCapture}
+                className="px-6 py-3 rounded-xl bg-white text-black text-sm font-semibold hover:bg-white/90 active:scale-[0.97] transition-all"
+              >
+                Tirar foto
+              </button>
+            </div>
+          </motion.div>
         )}
       </AnimatePresence>
     </main>
