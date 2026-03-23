@@ -146,6 +146,8 @@ export default function HomeClient({ tenantSubdomain, userProfile }: Props) {
   const [menuOpen, setMenuOpen] = useState(false)
   const [imagePickerOpen, setImagePickerOpen] = useState(false)
   const [webcamOpen, setWebcamOpen] = useState(false)
+  const [webcamStream, setWebcamStream] = useState<MediaStream | null>(null)
+  const [webcamError, setWebcamError] = useState<string | null>(null)
   const [hasPassword, setHasPassword] = useState<boolean | null>(null)
   const [hasGoogleLinked, setHasGoogleLinked] = useState<boolean | null>(null)
   const [dismissedPasswordBanner, setDismissedPasswordBanner] = useState(true) // começa oculto até checar localStorage
@@ -163,7 +165,6 @@ export default function HomeClient({ tenantSubdomain, userProfile }: Props) {
   const recordingIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null)
   const maxRecordingTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const webcamVideoRef = useRef<HTMLVideoElement>(null)
-  const webcamStreamRef = useRef<MediaStream | null>(null)
   const webcamCanvasRef = useRef<HTMLCanvasElement>(null)
 
   const MAX_RECORDING_SECONDS = 90
@@ -230,6 +231,14 @@ export default function HomeClient({ tenantSubdomain, userProfile }: Props) {
       window.history.replaceState({}, '', window.location.pathname)
     }
   }, [])
+
+  // Liga o stream da webcam ao elemento <video> assim que o DOM estiver pronto
+  useEffect(() => {
+    if (webcamVideoRef.current && webcamStream) {
+      webcamVideoRef.current.srcObject = webcamStream
+      webcamVideoRef.current.play().catch(() => {})
+    }
+  }, [webcamStream])
 
   useEffect(() => {
     if (!pendingAudio) {
@@ -503,14 +512,19 @@ export default function HomeClient({ tenantSubdomain, userProfile }: Props) {
     setImagePickerOpen(true)
   }
 
+  function isMobileDevice(): boolean {
+    if (typeof window === 'undefined') return false
+    const ua = window.navigator.userAgent
+    const isMobileOS = /iPhone|iPad|iPod|Android/i.test(ua)
+    const isModernIPad = /Macintosh/i.test(ua) && navigator.maxTouchPoints > 1
+    return isMobileOS || isModernIPad
+  }
+
   function triggerImageInput(camera: boolean) {
     setImagePickerOpen(false)
-    if (camera) {
-      const isMobile = window.matchMedia("(pointer: coarse)").matches
-      if (!isMobile) {
-        void handleOpenWebcam()
-        return
-      }
+    if (camera && !isMobileDevice()) {
+      void handleOpenWebcam()
+      return
     }
     const input = document.createElement("input")
     input.type = "file"
@@ -532,25 +546,27 @@ export default function HomeClient({ tenantSubdomain, userProfile }: Props) {
   }
 
   async function handleOpenWebcam() {
+    setWebcamError(null)
     try {
-      const stream = await navigator.mediaDevices.getUserMedia({ video: true })
-      webcamStreamRef.current = stream
+      const stream = await navigator.mediaDevices.getUserMedia({
+        video: { facingMode: { ideal: "environment" } },
+      })
+      setWebcamStream(stream)
       setWebcamOpen(true)
-      // Atribui o stream ao elemento de vídeo após renderizar
-      setTimeout(() => {
-        if (webcamVideoRef.current) {
-          webcamVideoRef.current.srcObject = stream
-        }
-      }, 50)
-    } catch {
-      // Permissão negada ou câmera indisponível — silencioso
+    } catch (err) {
+      const name = err instanceof Error ? err.name : ''
+      if (name === 'NotAllowedError') setWebcamError('Permissão de câmera negada.')
+      else if (name === 'NotFoundError') setWebcamError('Nenhuma câmera encontrada.')
+      else setWebcamError('Não foi possível acessar a câmera.')
+      setWebcamOpen(true) // abre overlay para mostrar o erro
     }
   }
 
   function handleCloseWebcam() {
-    webcamStreamRef.current?.getTracks().forEach(t => t.stop())
-    webcamStreamRef.current = null
+    webcamStream?.getTracks().forEach(t => t.stop())
+    setWebcamStream(null)
     setWebcamOpen(false)
+    setWebcamError(null)
   }
 
   function handleWebcamCapture() {
@@ -1309,30 +1325,44 @@ export default function HomeClient({ tenantSubdomain, userProfile }: Props) {
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             transition={{ duration: 0.2 }}
-            className="fixed inset-0 z-50 bg-black flex flex-col items-center justify-center"
+            className="fixed inset-0 z-50 bg-black flex flex-col items-center justify-center px-6"
           >
-            <video
-              ref={webcamVideoRef}
-              autoPlay
-              playsInline
-              muted
-              className="w-full max-w-2xl max-h-[70dvh] object-cover rounded-xl"
-            />
-            <canvas ref={webcamCanvasRef} className="hidden" />
-            <div className="flex gap-4 mt-6">
-              <button
-                onClick={handleCloseWebcam}
-                className="px-6 py-3 rounded-xl border border-white/30 text-white text-sm font-medium hover:bg-white/10 transition-colors"
-              >
-                Cancelar
-              </button>
-              <button
-                onClick={handleWebcamCapture}
-                className="px-6 py-3 rounded-xl bg-white text-black text-sm font-semibold hover:bg-white/90 active:scale-[0.97] transition-all"
-              >
-                Tirar foto
-              </button>
-            </div>
+            {webcamError ? (
+              <div className="flex flex-col items-center gap-4 text-center">
+                <p className="text-white/80 text-sm">{webcamError}</p>
+                <button
+                  onClick={handleCloseWebcam}
+                  className="px-6 py-3 rounded-xl bg-white text-black text-sm font-semibold"
+                >
+                  Fechar
+                </button>
+              </div>
+            ) : (
+              <>
+                <video
+                  ref={webcamVideoRef}
+                  autoPlay
+                  playsInline
+                  muted
+                  className="w-full max-w-2xl max-h-[70dvh] object-cover rounded-xl"
+                />
+                <canvas ref={webcamCanvasRef} className="hidden" />
+                <div className="flex gap-4 mt-6">
+                  <button
+                    onClick={handleCloseWebcam}
+                    className="px-6 py-3 rounded-xl border border-white/30 text-white text-sm font-medium hover:bg-white/10 transition-colors"
+                  >
+                    Cancelar
+                  </button>
+                  <button
+                    onClick={handleWebcamCapture}
+                    className="px-6 py-3 rounded-xl bg-white text-black text-sm font-semibold hover:bg-white/90 active:scale-[0.97] transition-all"
+                  >
+                    Tirar foto
+                  </button>
+                </div>
+              </>
+            )}
           </motion.div>
         )}
       </AnimatePresence>
