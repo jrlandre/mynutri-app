@@ -181,6 +181,7 @@ function TabVitrine({ expert, onSave, onPhotoChange }: {
   const [city, setCity] = useState(expert.city ?? "")
   const [listed, setListed] = useState(expert.listed)
   const [links, setLinks] = useState<ContactLink[]>(expert.contact_links ?? [])
+  const [additionalEmails, setAdditionalEmails] = useState<string>(expert.additional_emails?.join(', ') ?? "")
   const [saving, setSaving] = useState(false)
   const [saved, setSaved] = useState(false)
 
@@ -226,7 +227,22 @@ function TabVitrine({ expert, onSave, onPhotoChange }: {
   async function handleSave(e: React.FormEvent) {
     e.preventDefault()
     setSaving(true)
-    await onSave({ name, specialty: specialty || null, city: city || null, listed, contact_links: links })
+    
+    // Parse emails
+    const emails = additionalEmails
+      .split(',')
+      .map(e => e.trim().toLowerCase())
+      .filter(e => e.length > 0 && e.includes('@'))
+      
+    await onSave({ 
+      name, 
+      specialty: specialty || null, 
+      city: city || null, 
+      listed, 
+      contact_links: links,
+      additional_emails: emails.length > 0 ? emails : []
+    })
+    
     setSaving(false)
     setSaved(true)
     setTimeout(() => setSaved(false), 2000)
@@ -268,6 +284,18 @@ function TabVitrine({ expert, onSave, onPhotoChange }: {
       <Field label="Nome" value={name} onChange={setName} required />
       <Field label="Especialidade" value={specialty} onChange={setSpecialty} placeholder="Ex: Treinador de Alta Performance" />
       <Field label="Cidade" value={city} onChange={setCity} placeholder="Ex: São Paulo – SP" />
+      
+      <div className="flex flex-col gap-1">
+        <Field 
+          label="Emails Adicionais de Acesso" 
+          value={additionalEmails} 
+          onChange={setAdditionalEmails} 
+          placeholder="Ex: contato@email.com, socio@email.com" 
+        />
+        <p className="text-xs text-muted-foreground ml-1">
+          Separe por vírgula. Estes emails também poderão acessar e editar o painel.
+        </p>
+      </div>
 
       {/* Vitrine toggle */}
       <div className="flex items-center justify-between py-1">

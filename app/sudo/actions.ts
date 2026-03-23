@@ -60,35 +60,6 @@ export async function changeExpertPlan(expertId: string, newPlan: 'standard' | '
   revalidatePath('/sudo')
 }
 
-// ─── Impersonation ────────────────────────────────────────────────────────────
-
-export async function generateImpersonationLink(expertId: string): Promise<string> {
-  await checkAdmin()
-
-  const { data: expert } = await adminClient
-    .from('experts')
-    .select('user_id, subdomain')
-    .eq('id', expertId)
-    .maybeSingle()
-
-  if (!expert?.user_id) throw new Error('Expert não encontrado')
-
-  const { data: userData } = await adminClient.auth.admin.getUserById(expert.user_id)
-  if (!userData.user?.email) throw new Error('Email do usuário não encontrado')
-
-  const appDomain = (process.env.NEXT_PUBLIC_APP_URL ?? '').replace(/^https?:\/\//, '').replace(/\/$/, '')
-  const redirectTo = `https://${expert.subdomain}.${appDomain}/auth/callback?next=/painel`
-
-  const { data } = await adminClient.auth.admin.generateLink({
-    type: 'magiclink',
-    email: userData.user.email,
-    options: { redirectTo },
-  })
-
-  if (!data?.properties?.action_link) throw new Error('Link de impersonation não gerado')
-  return data.properties.action_link
-}
-
 // ─── Reenviar boas-vindas ─────────────────────────────────────────────────────
 
 export async function resendWelcomeEmail(expertId: string): Promise<void> {

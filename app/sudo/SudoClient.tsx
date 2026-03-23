@@ -7,7 +7,6 @@ import type { Expert } from "@/types"
 import {
   toggleExpertStatus,
   changeExpertPlan,
-  generateImpersonationLink,
   resendWelcomeEmail,
   createExpertBypass,
   setCommission,
@@ -154,12 +153,12 @@ function TabExperts({ experts, clientCountByExpert }: {
 }) {
   const [, startTransition] = useTransition()
   const [loadingId, setLoadingId] = useState<string | null>(null)
-  const [impersonationLink, setImpersonationLink] = useState<string | null>(null)
-  const [copied, setCopied] = useState(false)
   const [showCreateForm, setShowCreateForm] = useState(false)
   const [createForm, setCreateForm] = useState({ email: "", name: "", subdomain: "", plan: "standard" as "standard" | "enterprise" })
   const [createError, setCreateError] = useState<string | null>(null)
   const [createLoading, setCreateLoading] = useState(false)
+
+  const appDomain = (process.env.NEXT_PUBLIC_APP_URL ?? "mynutri.pro").replace(/^https?:\/\//, "").replace(/\/$/, "")
 
   function handleToggleStatus(expertId: string, newStatus: boolean) {
     setLoadingId(expertId + "-status")
@@ -173,19 +172,6 @@ function TabExperts({ experts, clientCountByExpert }: {
     setLoadingId(expertId + "-plan")
     startTransition(async () => {
       await changeExpertPlan(expertId, newPlan)
-      setLoadingId(null)
-    })
-  }
-
-  function handleImpersonate(expertId: string) {
-    setLoadingId(expertId + "-imp")
-    startTransition(async () => {
-      try {
-        const link = await generateImpersonationLink(expertId)
-        setImpersonationLink(link)
-      } catch {
-        // ignore
-      }
       setLoadingId(null)
     })
   }
@@ -210,13 +196,6 @@ function TabExperts({ experts, clientCountByExpert }: {
       setCreateError(err instanceof Error ? err.message : "Erro ao criar expert")
     }
     setCreateLoading(false)
-  }
-
-  function copyLink() {
-    if (!impersonationLink) return
-    navigator.clipboard.writeText(impersonationLink)
-    setCopied(true)
-    setTimeout(() => setCopied(false), 2000)
   }
 
   return (
@@ -295,13 +274,14 @@ function TabExperts({ experts, clientCountByExpert }: {
           </div>
 
           <div className="flex items-center gap-2 flex-wrap border-t border-border pt-2">
-            <button
-              onClick={() => handleImpersonate(expert.id)}
-              disabled={!!loadingId}
-              className="text-xs text-muted-foreground hover:text-foreground transition-colors disabled:opacity-50"
+            <a
+              href={`https://${expert.subdomain}.${appDomain}/painel`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-xs text-muted-foreground hover:text-foreground transition-colors flex items-center gap-0.5"
             >
-              {loadingId === expert.id + "-imp" ? "..." : "Acessar como"}
-            </button>
+              Acessar Painel <ExternalLink size={10} />
+            </a>
             <span className="text-muted-foreground/40">·</span>
             <button
               onClick={() => handleResendWelcome(expert.id)}
@@ -331,29 +311,12 @@ function TabExperts({ experts, clientCountByExpert }: {
         <p className="text-sm text-muted-foreground text-center py-8">Nenhum expert cadastrado.</p>
       )}
 
-      {/* Impersonation modal */}
-      <AnimatePresence>
-        {impersonationLink && (
-          <Modal title="Link de acesso" onClose={() => setImpersonationLink(null)}>
-            <p className="text-xs text-muted-foreground">Abra em uma janela anônima para não deslogar o admin.</p>
-            <div className="flex items-center gap-2 bg-muted rounded-xl px-3 py-2.5">
-              <p className="text-xs truncate flex-1 font-mono">{impersonationLink}</p>
-              <button
-                onClick={copyLink}
-                className="text-xs text-primary font-medium hover:opacity-70 shrink-0 flex items-center gap-1"
-              >
-                {copied ? <><Check size={12} /> Copiado</> : <><Copy size={12} /> Copiar</>}
-              </button>
-            </div>
-          </Modal>
-        )}
-      </AnimatePresence>
-
       {/* Criar expert sem billing modal */}
       <AnimatePresence>
         {showCreateForm && (
           <Modal title="Criar expert sem billing" onClose={() => setShowCreateForm(false)}>
             <form onSubmit={handleCreateBypass} className="flex flex-col gap-3">
+
               <input
                 type="email"
                 placeholder="Email"

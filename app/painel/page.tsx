@@ -22,7 +22,7 @@ function extractSubdomain(host: string): string | null {
 
 export default async function PainelPage() {
   const headersList = await headers()
-  const host = headersList.get('host') ?? ''
+  const host = headersList.get('x-forwarded-host') || headersList.get('host') || ''
   const subdomain = extractSubdomain(host)
 
   const supabase = await createClient()
@@ -30,17 +30,38 @@ export default async function PainelPage() {
 
   if (!user) redirect('/auth?next=/painel')
 
-  const { data: expert, error } = await adminClient
+  // Verifica se o usuário logado é Admin (is_admin = true)
+  const { data: adminCheck } = await adminClient
     .from('experts')
-    .select('*')
+    .select('is_admin')
     .eq('user_id', user.id)
-    .eq('active', true)
-    // Se tiver subdomain, verifica que é o dono deste subdomínio específico
-    .eq(subdomain ? 'subdomain' : 'active', subdomain ?? true)
     .maybeSingle()
 
-  // Auto-populate photo from social login on first access
-  if (expert && !expert.photo_url) {
+  const isAdmin = adminCheck?.is_admin === true
+
+  let query = adminClient
+    .from('experts')
+    .select('*')
+    .eq('active', true)
+
+  if (!isAdmin) {
+    // Se NÃO for admin, restringe aos painéis que ele é dono ou tem o email na lista
+    if (user.email) {
+      query = query.or(`user_id.eq.${user.id},additional_emails.cs.{${user.email}}`)
+    } else {
+      query = query.eq('user_id', user.id)
+    }
+  }
+
+  // Se tiver subdomain (sempre vai ter em produção), filtra para pegar o painel correto
+  if (subdomain) {
+    query = query.eq('subdomain', subdomain)
+  }
+
+  const { data: expert, error } = await query.limit(1).maybeSingle()
+
+  // Auto-populate photo from social login on first access (somente se ele for o dono do painel)
+  if (expert && !expert.photo_url && expert.user_id === user.id) {
     const avatarUrl = user.user_metadata?.avatar_url || user.user_metadata?.picture
     if (avatarUrl) {
       await adminClient.from('experts').update({ photo_url: avatarUrl }).eq('id', expert.id)
