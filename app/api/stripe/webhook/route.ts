@@ -37,8 +37,20 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       case "customer.subscription.deleted":
         await handleSubscriptionDeleted(event.data.object as Stripe.Subscription)
         break
+      case "customer.subscription.updated":
+        await handleSubscriptionUpdated(
+          event.data.object as Stripe.Subscription,
+          (event.data as { previous_attributes?: Partial<Stripe.Subscription> }).previous_attributes
+        )
+        break
       case "invoice.payment_succeeded":
         await handleRecurringInvoice(event.data.object as Stripe.Invoice)
+        break
+      case "invoice.payment_failed":
+        await handlePaymentFailed(event.data.object as Stripe.Invoice)
+        break
+      case "charge.refunded":
+        await handleChargeRefunded(event.data.object as Stripe.Charge)
         break
     }
   } catch (err) {
@@ -314,6 +326,128 @@ async function handleSubscriptionDeleted(subscription: Stripe.Subscription) {
   }
 
   console.log(`[stripe/webhook] Assinatura cancelada: ${subscription.id}`)
+}
+
+// ─── handleSubscriptionUpdated ───────────────────────────────────────────────
+
+async function handleSubscriptionUpdated(
+  subscription: Stripe.Subscription,
+  previousAttributes?: Partial<Stripe.Subscription>
+) {
+  const { status } = subscription
+  const previousStatus = previousAttributes?.status
+
+  if (status === "active" && (previousStatus === "past_due" || previousStatus === "unpaid")) {
+    // Pagamento recuperado após inadimplência — reativa apenas se estava inativo
+    // Checar previousStatus evita reativar experts banidos manualmente pelo admin
+    // quando o Stripe dispara updates de rotina (renovação, atualização de cartão, etc.)
+    const { error } = await adminClient
+      .from("experts")
+      .update({ active: true })
+      .eq("stripe_subscription_id", subscription.id)
+      .eq("active", false)
+    if (error) console.error("[stripe/webhook] Erro ao reativar expert:", error.message)
+    else console.log(`[stripe/webhook] Expert reativado (${previousStatus} → active): ${subscription.id}`)
+  } else if (status === "unpaid" || status === "incomplete_expired") {
+    // Stripe esgotou as tentativas — desativa
+    const { error } = await adminClient
+      .from("experts")
+      .update({ active: false })
+      .eq("stripe_subscription_id", subscription.id)
+    if (error) console.error("[stripe/webhook] Erro ao desativar expert:", error.message)
+    else console.log(`[stripe/webhook] Expert desativado (${status}): ${subscription.id}`)
+  }
+  // past_due: Stripe ainda está tentando cobrar — mantém ativo
+  // canceled: coberto por customer.subscription.deleted
+}
+
+// ─── handlePaymentFailed ──────────────────────────────────────────────────────
+
+async function handlePaymentFailed(invoice: Stripe.Invoice) {
+  // Só notifica na primeira tentativa — Stripe pode tentar várias vezes
+  if ((invoice.attempt_count ?? 0) !== 1) return
+
+  const rawSub = invoice.parent?.subscription_details?.subscription
+  const subscriptionId = typeof rawSub === "string" ? rawSub : null
+  if (!subscriptionId) return
+
+  const { data: expert } = await adminClient
+    .from("experts")
+    .select("id, name, user_id, subdomain, stripe_customer_id")
+    .eq("stripe_subscription_id", subscriptionId)
+    .maybeSingle()
+
+  if (!expert?.user_id) return
+
+  const { data: userData } = await adminClient.auth.admin.getUserById(expert.user_id)
+  const email = userData.user?.email
+  if (!email || !process.env.RESEND_API_KEY) return
+
+  const appDomain = (process.env.NEXT_PUBLIC_APP_URL ?? "").replace(/^https?:\/\//, "").replace(/\/$/, "")
+  const panelUrl = `https://${expert.subdomain}.${appDomain}/painel`
+
+  // Gera link direto para o Billing Portal para facilitar atualização de cartão
+  let billingUrl = panelUrl
+  if (expert.stripe_customer_id) {
+    try {
+      const stripe = getStripe()
+      const portalSession = await stripe.billingPortal.sessions.create({
+        customer: expert.stripe_customer_id,
+        return_url: panelUrl,
+      })
+      billingUrl = portalSession.url
+    } catch {
+      // fallback para o painel
+    }
+  }
+
+  const firstName = expert.name.split(" ")[0]
+  const resend = new Resend(process.env.RESEND_API_KEY)
+  await resend.emails.send({
+    from: process.env.RESEND_FROM_EMAIL ?? "MyNutri <noreply@mynutri.pro>",
+    to: email,
+    subject: `Problema com seu pagamento no MyNutri`,
+    html: `
+      <p>Olá, ${firstName}.</p>
+      <p>Identificamos um problema ao processar o pagamento da sua assinatura MyNutri.</p>
+      <p>Para continuar usando sua conta sem interrupções, atualize seu método de pagamento:</p>
+      <p>
+        <a href="${billingUrl}"
+           style="background:#16a34a;color:#fff;padding:12px 24px;border-radius:8px;text-decoration:none;display:inline-block;font-weight:600;">
+          Atualizar forma de pagamento
+        </a>
+      </p>
+      <p>Tentaremos processar o pagamento novamente em breve.</p>
+      <p>— Equipe MyNutri</p>
+    `,
+  })
+
+  console.log(`[stripe/webhook] Email de pagamento falho enviado: ${email}`)
+}
+
+// ─── handleChargeRefunded ─────────────────────────────────────────────────────
+
+async function handleChargeRefunded(charge: Stripe.Charge) {
+  // Apenas reembolso total — reembolsos parciais não cancelam comissões
+  if (charge.amount_refunded < charge.amount) return
+
+  // `invoice` existe no objeto runtime mas foi removido dos tipos do SDK
+  const invoiceField = (charge as unknown as { invoice?: unknown }).invoice
+  const invoiceId = typeof invoiceField === "string" ? invoiceField : null
+  if (!invoiceId) return
+
+  // Cancela comissões pendentes/já liberadas para não pagar sobre cobrança estornada
+  const { error } = await adminClient
+    .from("referrals")
+    .update({ status: "refunded" })
+    .eq("stripe_invoice_id", invoiceId)
+    .in("status", ["pending", "cleared"])
+
+  if (error) {
+    console.error("[stripe/webhook] Erro ao marcar referrals como refunded:", error.message)
+  } else {
+    console.log(`[stripe/webhook] Referrals refunded para invoice ${invoiceId}`)
+  }
 }
 
 // ─── handleRecurringInvoice ───────────────────────────────────────────────────

@@ -25,6 +25,31 @@ async function checkAdmin() {
 
 export async function toggleExpertStatus(expertId: string, newStatus: boolean) {
   await checkAdmin()
+
+  if (!newStatus) {
+    // Desativando: cancela assinatura no Stripe para evitar cobranças futuras
+    const { data: expert } = await adminClient
+      .from('experts')
+      .select('stripe_subscription_id')
+      .eq('id', expertId)
+      .maybeSingle()
+
+    if (expert?.stripe_subscription_id && process.env.STRIPE_SECRET_KEY) {
+      const stripe = new Stripe(process.env.STRIPE_SECRET_KEY)
+      try {
+        await stripe.subscriptions.cancel(expert.stripe_subscription_id)
+      } catch (err: unknown) {
+        // Ignora erro se assinatura já estava cancelada (status 404 ou resource_missing)
+        const stripeErr = err as { code?: string; statusCode?: number }
+        const alreadyCanceled = stripeErr?.code === 'resource_missing' || stripeErr?.statusCode === 404
+        if (!alreadyCanceled) {
+          console.error('[sudo] Erro ao cancelar assinatura Stripe:', err)
+          throw new Error('Falha ao cancelar assinatura no Stripe. Tente novamente ou cancele diretamente no painel Stripe.')
+        }
+      }
+    }
+  }
+
   await adminClient.from('experts').update({ active: newStatus }).eq('id', expertId)
   revalidatePath('/sudo')
 }
