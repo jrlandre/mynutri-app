@@ -19,6 +19,8 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       return NextResponse.json({ error: 'Formato inválido. Use JPEG, PNG ou WebP.' }, { status: 400 })
     }
 
+    // O arquivo chega aqui via Base64, já comprimido pelo navegador.
+    // Não limitamos o tamanho original pois a compressão no client garante a eficiência.
     const ext = mimeType.split('/')[1].replace('jpeg', 'jpg')
     const path = `${expert.user_id}/avatar.${ext}`
     const buffer = Buffer.from(photo, 'base64')
