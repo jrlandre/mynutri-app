@@ -183,6 +183,21 @@ function TabVitrine({ expert, onSave, onPhotoChange }: {
   const [links, setLinks] = useState<ContactLink[]>(expert.contact_links ?? [])
   const [saving, setSaving] = useState(false)
   const [saved, setSaved] = useState(false)
+  const linksContainerRef = useRef<HTMLDivElement>(null)
+
+  // Autoscroll quando adicionar link
+  useEffect(() => {
+    if (links.length > (expert.contact_links?.length ?? 0)) {
+      // Scroll suave para o último link adicionado
+      setTimeout(() => {
+        const lastLink = linksContainerRef.current?.lastElementChild
+        if (lastLink) {
+          lastLink.scrollIntoView({ behavior: "smooth", block: "center" })
+        }
+      }, 100)
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [links.length])
 
   // Photo
   const fileRef = useRef<HTMLInputElement>(null)
@@ -306,7 +321,7 @@ function TabVitrine({ expert, onSave, onPhotoChange }: {
             <p className="text-xs text-muted-foreground">Nenhum link adicionado</p>
           </div>
         ) : (
-          <div className="flex flex-col gap-3">
+          <div ref={linksContainerRef} className="flex flex-col gap-3">
             {links.map((link, i) => (
               <div key={i} className="relative p-4 rounded-2xl bg-muted/30 border border-border flex flex-col gap-3 group">
                 <button 
