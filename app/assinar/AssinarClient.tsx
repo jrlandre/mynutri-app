@@ -9,12 +9,13 @@ type SubdomainStatus = "idle" | "checking" | "available" | "unavailable" | "inva
 
 interface Props {
   appDomain: string
+  defaultEmail?: string
 }
 
-export default function AssinarClient({ appDomain }: Props) {
+export default function AssinarClient({ appDomain, defaultEmail = "" }: Props) {
   const [subdomain, setSubdomain] = useState("")
   const [name, setName] = useState("")
-  const [email, setEmail] = useState("")
+  const [email, setEmail] = useState(defaultEmail)
   const [plan, setPlan] = useState<Plan>("yearly")
   const [subdomainStatus, setSubdomainStatus] = useState<SubdomainStatus>("idle")
   const [subdomainError, setSubdomainError] = useState("")

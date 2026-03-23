@@ -215,12 +215,19 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
     }
   )
 
+  let userId: string
   if (inviteError) {
-    console.error("[stripe/webhook] Erro ao criar usuário:", inviteError.message)
-    throw inviteError
+    // Fallback: usuário já existe — buscar pelo email via RPC
+    const { data: existingId } = await adminClient.rpc("get_user_id_by_email", { p_email: email })
+    if (!existingId) {
+      console.error("[stripe/webhook] Erro ao criar usuário:", inviteError.message)
+      throw inviteError
+    }
+    console.log(`[stripe/webhook] Usuário ${email} já existe — vinculando expert ao userId existente`)
+    userId = existingId as string
+  } else {
+    userId = inviteData.user.id
   }
-
-  const userId = inviteData.user.id
 
   // Detect subscription period
   let subscription_period: "monthly" | "yearly" | null = null

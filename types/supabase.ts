@@ -308,6 +308,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      get_user_id_by_email: {
+        Args: { p_email: string }
+        Returns: string | null
+      }
       check_and_increment_usage: {
         Args: {
           p_user_id: string | null
