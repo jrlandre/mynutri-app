@@ -24,11 +24,21 @@ function initials(name: string) {
   return name.split(" ").slice(0, 2).map(w => w[0]).join("").toUpperCase()
 }
 
-function ContactIcon({ type }: { type: string }) {
+function ContactIcon({ type, url }: { type: string, url?: string }) {
   const t = type.toLowerCase()
   if (t === "whatsapp") return <Phone size={16} />
   if (t === "instagram") return <Instagram size={16} />
-  if (t === "email") return <Mail size={16} />
+  if (t === "e-mail" || t === "email") return <Mail size={16} />
+  
+  if (t === "website" && url) {
+    try {
+      const domain = new URL(url.startsWith('http') ? url : `https://${url}`).hostname
+      return <img src={`https://www.google.com/s2/favicons?domain=${domain}&sz=32`} alt="" className="w-4 h-4 rounded-sm" />
+    } catch {
+      return <Globe size={16} />
+    }
+  }
+
   return <Globe size={16} />
 }
 
@@ -117,7 +127,7 @@ export default function ExpertSheet({ expert, onClose }: Props) {
                     rel="noopener noreferrer"
                     className="w-full flex items-center justify-center gap-2.5 px-4 py-3 rounded-xl border border-border bg-card text-sm font-medium hover:bg-muted active:scale-[0.98] transition-all"
                   >
-                    <ContactIcon type={link.type} />
+                    <ContactIcon type={link.type} url={link.url} />
                     {link.label}
                   </a>
                 ))}

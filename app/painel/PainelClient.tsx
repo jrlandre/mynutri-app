@@ -628,8 +628,8 @@ export default function PainelClient({ expert: initialExpert, initialClients, in
   const [referrals] = useState<Referral[]>(initialReferrals)
 
   const TABS = expert.is_promoter
-    ? (["Início", "Exibição", "IA", "Comissões"] as const)
-    : (["Início", "Exibição", "IA"] as const)
+    ? (["Início", "Exibição", "Config. de IA", "Comissões"] as const)
+    : (["Início", "Exibição", "Config. de IA"] as const)
   type Tab = typeof TABS[number]
 
   const [tab, setTab] = useState<Tab>("Início")
@@ -743,7 +743,7 @@ export default function PainelClient({ expert: initialExpert, initialClients, in
               onPhotoChange={(url) => setExpert(prev => ({ ...prev, photo_url: url }))}
             />
           )}
-          {tab === "IA" && (
+          {tab === "Config. de IA" && (
             <TabIA expert={expert} onSave={handleSaveProfile} />
           )}
           {tab === "Comissões" && expert.is_promoter && (
