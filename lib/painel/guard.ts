@@ -47,12 +47,8 @@ export async function requireExpert(): Promise<GuardResult | Response> {
     .select('*')
     .eq('active', true)
 
-  if (!isAdmin) {
-    if (user.email) {
-      query = query.or(`user_id.eq.${user.id},additional_emails.cs.{${user.email}}`)
-    } else {
-      query = query.eq('user_id', user.id)
-    }
+  if (!isAdmin || !subdomain) {
+    query = query.eq('user_id', user.id)
   }
 
   if (subdomain) {

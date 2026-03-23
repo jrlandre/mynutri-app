@@ -44,13 +44,8 @@ export default async function PainelPage() {
     .select('*')
     .eq('active', true)
 
-  if (!isAdmin) {
-    // Se NÃO for admin, restringe aos painéis que ele é dono ou tem o email na lista
-    if (user.email) {
-      query = query.or(`user_id.eq.${user.id},additional_emails.cs.{${user.email}}`)
-    } else {
-      query = query.eq('user_id', user.id)
-    }
+  if (!isAdmin || !subdomain) {
+    query = query.eq('user_id', user.id)
   }
 
   // Se tiver subdomain (sempre vai ter em produção), filtra para pegar o painel correto

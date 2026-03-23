@@ -62,7 +62,6 @@ interface Expert {
   lifetime: boolean
   active: boolean
   is_admin?: boolean
-  additional_emails?: string[]
   is_promoter?: boolean
   referral_code?: string | null
   stripe_coupon_id?: string | null

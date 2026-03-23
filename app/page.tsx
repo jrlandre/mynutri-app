@@ -32,13 +32,8 @@ export default async function Home() {
     let expertQuery = adminClient
       .from('experts')
       .select('id, photo_url')
+      .eq('user_id', user.id)
       .eq('active', true)
-
-    if (user.email) {
-      expertQuery = expertQuery.or(`user_id.eq.${user.id},additional_emails.cs.{${user.email}}`)
-    } else {
-      expertQuery = expertQuery.eq('user_id', user.id)
-    }
 
     const [{ data: client }, { data: expert }, { data: adminCheck }] = await Promise.all([
       adminClient
