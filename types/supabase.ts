@@ -308,7 +308,18 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      check_and_increment_usage: {
+        Args: {
+          p_user_id: string | null
+          p_ip: string | null
+          p_date: string
+          p_limit: number
+        }
+        Returns: {
+          allowed: boolean
+          count: number
+        }
+      }
     }
     Enums: {
       [_ in never]: never
