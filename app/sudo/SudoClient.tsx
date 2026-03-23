@@ -12,7 +12,6 @@ import {
   setCommission,
   markReferralsPaid,
   setPromoterStatus,
-  createStripeCoupon,
   associateCouponToPromoter,
 } from "./actions"
 
@@ -615,38 +614,10 @@ function TabPromoters({ experts, promoters, allReferrals }: {
 // ─── Tab Cupons ───────────────────────────────────────────────────────────────
 
 function TabCupons({ promoters }: { promoters: PromoterRow[] }) {
-  const [couponForm, setCouponForm] = useState({
-    code: "",
-    percentOff: "10",
-    duration: "forever" as "once" | "repeating" | "forever",
-    durationMonths: "",
-  })
-  const [couponResult, setCouponResult] = useState<{ couponId: string; promotionCodeId: string } | null>(null)
-  const [couponError, setCouponError] = useState<string | null>(null)
-  const [couponLoading, setCouponLoading] = useState(false)
   const [associatePromoter, setAssociatePromoter] = useState("")
   const [associateCouponId, setAssociateCouponId] = useState("")
   const [assocLoading, setAssocLoading] = useState(false)
   const [assocSuccess, setAssocSuccess] = useState(false)
-
-  async function handleCreateCoupon(e: React.FormEvent) {
-    e.preventDefault()
-    setCouponError(null)
-    setCouponLoading(true)
-    try {
-      const result = await createStripeCoupon({
-        code: couponForm.code,
-        percentOff: parseFloat(couponForm.percentOff),
-        duration: couponForm.duration,
-        durationMonths: couponForm.durationMonths ? parseInt(couponForm.durationMonths) : undefined,
-      })
-      setCouponResult(result)
-      setAssociateCouponId(result.couponId)
-    } catch (err) {
-      setCouponError(err instanceof Error ? err.message : "Erro ao criar cupom")
-    }
-    setCouponLoading(false)
-  }
 
   async function handleAssociate(e: React.FormEvent) {
     e.preventDefault()
@@ -663,61 +634,15 @@ function TabCupons({ promoters }: { promoters: PromoterRow[] }) {
 
   return (
     <div className="flex flex-col gap-5 pt-4">
-      <div className="rounded-2xl border border-border bg-card px-5 py-4 flex flex-col gap-4">
-        <p className="text-sm font-semibold">Criar cupom no Stripe</p>
-        <form onSubmit={handleCreateCoupon} className="flex flex-col gap-3">
-          <input
-            type="text"
-            placeholder="Código (ex: PROMO10)"
-            required
-            value={couponForm.code}
-            onChange={e => setCouponForm(p => ({ ...p, code: e.target.value }))}
-            className="px-3 py-2.5 rounded-xl border border-border bg-background text-sm focus:outline-none focus:ring-2 focus:ring-ring/40"
-          />
-          <input
-            type="number"
-            placeholder="% de desconto"
-            min="1"
-            max="100"
-            required
-            value={couponForm.percentOff}
-            onChange={e => setCouponForm(p => ({ ...p, percentOff: e.target.value }))}
-            className="px-3 py-2.5 rounded-xl border border-border bg-background text-sm focus:outline-none focus:ring-2 focus:ring-ring/40"
-          />
-          <select
-            value={couponForm.duration}
-            onChange={e => setCouponForm(p => ({ ...p, duration: e.target.value as "once" | "repeating" | "forever" }))}
-            className="px-3 py-2.5 rounded-xl border border-border bg-background text-sm focus:outline-none focus:ring-2 focus:ring-ring/40"
-          >
-            <option value="once">Uma vez</option>
-            <option value="repeating">Recorrente (N meses)</option>
-            <option value="forever">Para sempre</option>
-          </select>
-          {couponForm.duration === "repeating" && (
-            <input
-              type="number"
-              placeholder="Duração em meses"
-              min="1"
-              value={couponForm.durationMonths}
-              onChange={e => setCouponForm(p => ({ ...p, durationMonths: e.target.value }))}
-              className="px-3 py-2.5 rounded-xl border border-border bg-background text-sm focus:outline-none focus:ring-2 focus:ring-ring/40"
-            />
-          )}
-          {couponError && <p className="text-xs text-destructive">{couponError}</p>}
-          {couponResult && (
-            <div className="rounded-xl bg-muted px-3 py-2 text-xs font-mono">
-              <p>Coupon ID: <span className="text-primary">{couponResult.couponId}</span></p>
-              <p>Promo Code ID: {couponResult.promotionCodeId}</p>
-            </div>
-          )}
-          <button
-            type="submit"
-            disabled={couponLoading}
-            className="w-full py-2.5 rounded-xl bg-primary text-primary-foreground text-sm font-medium hover:opacity-90 disabled:opacity-50 transition-opacity"
-          >
-            {couponLoading ? "Criando..." : "Criar cupom"}
-          </button>
-        </form>
+      <div className="flex justify-center">
+        <a
+          href="https://dashboard.stripe.com/promotion_codes"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="flex items-center gap-1.5 text-sm text-primary font-medium hover:underline transition-all"
+        >
+          Gerenciar no Stripe <ExternalLink size={14} />
+        </a>
       </div>
 
       <div className="rounded-2xl border border-border bg-card px-5 py-4 flex flex-col gap-4">
@@ -763,15 +688,6 @@ function TabCupons({ promoters }: { promoters: PromoterRow[] }) {
           ))}
         </div>
       )}
-
-      <a
-        href="https://dashboard.stripe.com/promotion_codes"
-        target="_blank"
-        rel="noopener noreferrer"
-        className="flex items-center justify-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors"
-      >
-        Ver todos no Stripe <ExternalLink size={14} />
-      </a>
     </div>
   )
 }

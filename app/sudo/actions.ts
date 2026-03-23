@@ -200,35 +200,6 @@ export async function setPromoterStatus(
   revalidatePath('/sudo')
 }
 
-// ─── Cupons — criar no Stripe ─────────────────────────────────────────────────
-
-export async function createStripeCoupon(data: {
-  code: string
-  percentOff: number
-  duration: 'once' | 'repeating' | 'forever'
-  durationMonths?: number
-}): Promise<{ couponId: string; promotionCodeId: string }> {
-  await checkAdmin()
-
-  const stripeKey = process.env.STRIPE_SECRET_KEY
-  if (!stripeKey) throw new Error('Stripe não configurado')
-
-  const stripe = new Stripe(stripeKey)
-
-  const coupon = await stripe.coupons.create({
-    percent_off: data.percentOff,
-    duration: data.duration,
-    duration_in_months: data.durationMonths,
-  })
-
-  const promoCode = await stripe.promotionCodes.create({
-    promotion: { type: 'coupon', coupon: coupon.id },
-    code: data.code,
-  })
-
-  return { couponId: coupon.id, promotionCodeId: promoCode.id }
-}
-
 // ─── Cupons — associar a promoter ────────────────────────────────────────────
 
 export async function associateCouponToPromoter(
