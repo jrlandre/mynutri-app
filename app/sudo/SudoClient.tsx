@@ -459,22 +459,21 @@ function TabPromoters({ experts, promoters, allReferrals }: {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm font-semibold">{p.name}</p>
-                {p.referral_code && (
-                  <div className="flex items-center gap-1.5">
-                    <p className="text-xs text-muted-foreground font-mono">
-                      {appDomain}/r/{p.referral_code}
-                    </p>
-                    <button
-                      onClick={() => {
-                        setShowSetPromoter(p.id)
-                        setPromoterForm({ referral_code: p.referral_code || "", is_promoter: true })
-                      }}
-                      className="p-1 rounded-md text-muted-foreground hover:text-primary hover:bg-primary/5 transition-colors"
-                    >
-                      <Pencil size={10} />
-                    </button>
-                  </div>
-                )}
+                <div className="flex items-center gap-1.5">
+                  <p className="text-xs text-muted-foreground font-mono">
+                    {p.referral_code ? `${appDomain}/r/${p.referral_code}` : "Sem link de indicação"}
+                  </p>
+                  <button
+                    onClick={() => {
+                      setShowSetPromoter(p.id)
+                      setPromoterForm({ referral_code: p.referral_code || "", is_promoter: true })
+                    }}
+                    className="p-1 rounded-md text-muted-foreground hover:text-primary hover:bg-primary/5 transition-colors"
+                    title="Editar código de referral"
+                  >
+                    <Pencil size={10} />
+                  </button>
+                </div>
               </div>
               <span className="text-sm font-bold text-primary">{currentPct}%</span>
             </div>
