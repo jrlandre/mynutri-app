@@ -506,7 +506,7 @@ export default function HomeClient({ tenantSubdomain, userProfile }: Props) {
   function triggerImageInput(camera: boolean) {
     setImagePickerOpen(false)
     if (camera) {
-      const isMobile = navigator.maxTouchPoints > 0
+      const isMobile = window.matchMedia("(pointer: coarse)").matches
       if (!isMobile) {
         void handleOpenWebcam()
         return
