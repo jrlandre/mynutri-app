@@ -395,13 +395,16 @@ function TabVitrine({ expert, onSave, onPhotoChange }: {
                 <div className="grid grid-cols-2 gap-3">
                   <div className="flex flex-col gap-1.5">
                     <label className="text-[10px] font-bold text-muted-foreground uppercase ml-1">Tipo</label>
-                    <select
-                      value={link.type}
-                      onChange={e => updateLink(i, "type", e.target.value)}
-                      className="px-3 py-2 rounded-xl border border-border bg-card text-sm focus:outline-none focus:ring-2 focus:ring-ring/40"
-                    >
-                      {CONTACT_TYPES.map(t => <option key={t} value={t}>{t}</option>)}
-                    </select>
+                    <div className="relative">
+                      <select
+                        value={link.type}
+                        onChange={e => updateLink(i, "type", e.target.value)}
+                        className="w-full px-3 py-2 rounded-xl border border-border bg-card text-sm focus:outline-none focus:ring-2 focus:ring-ring/40 appearance-none pr-8"
+                      >
+                        {CONTACT_TYPES.map(t => <option key={t} value={t}>{t}</option>)}
+                      </select>
+                      <ChevronLeft size={14} className="absolute right-3 top-1/2 -translate-y-1/2 -rotate-90 pointer-events-none text-muted-foreground" />
+                    </div>
                   </div>
                   <div className="flex flex-col gap-1.5">
                     <label className="text-[10px] font-bold text-muted-foreground uppercase ml-1">Rótulo</label>
