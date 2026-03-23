@@ -52,18 +52,27 @@ export async function GET(request: Request): Promise<NextResponse> {
     const panelUrl = `https://${expert.subdomain}.${appDomain}/painel`
 
     try {
+      // Marcar como enviado ANTES de enviar — previne duplicatas em execuções paralelas.
+      // Se o envio falhar, o expert fica marcado como enviado (aceitável vs duplicata).
+      const { data: claimed } = await adminClient
+        .from("experts")
+        .update({ welcome_email_sent: true })
+        .eq("id", expert.id)
+        .eq("welcome_email_sent", false) // só atualiza se ainda false (lock otimista)
+        .select("id")
+
+      if (!claimed || claimed.length === 0) {
+        // Outra execução paralela já reivindicou este expert
+        results.push({ id: expert.id, status: "skipped" })
+        continue
+      }
+
       await resend.emails.send({
         from: process.env.RESEND_FROM_EMAIL ?? 'MyNutri <noreply@mynutri.pro>',
         to: email,
         subject: `Boas-vindas ao MyNutri, ${expert.name.split(' ')[0]}!`,
         react: ExpertWelcomeEmail({ name: expert.name, panelUrl }),
       })
-
-      // Atualizar status
-      await adminClient
-        .from("experts")
-        .update({ welcome_email_sent: true })
-        .eq("id", expert.id)
 
       results.push({ id: expert.id, status: "success" })
     } catch (err) {
