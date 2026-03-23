@@ -29,6 +29,17 @@ export default async function Home() {
     let expertName = null
     let hasPanel = false
 
+    let expertQuery = adminClient
+      .from('experts')
+      .select('id, photo_url')
+      .eq('active', true)
+
+    if (user.email) {
+      expertQuery = expertQuery.or(`user_id.eq.${user.id},additional_emails.cs.{${user.email}}`)
+    } else {
+      expertQuery = expertQuery.eq('user_id', user.id)
+    }
+
     const [{ data: client }, { data: expert }, { data: adminCheck }] = await Promise.all([
       adminClient
         .from('clients')
@@ -37,13 +48,7 @@ export default async function Home() {
         .eq('active', true)
         .limit(1)
         .maybeSingle(),
-      adminClient
-        .from('experts')
-        .select('id, photo_url')
-        .eq('user_id', user.id)
-        .eq('active', true)
-        .limit(1)
-        .maybeSingle(),
+      expertQuery.limit(1).maybeSingle(),
       adminClient
         .from('experts')
         .select('is_admin')
