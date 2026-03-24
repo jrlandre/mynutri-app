@@ -1,10 +1,26 @@
 'use client'
 
-import React, { useState, useRef, useCallback } from 'react'
+import React, { useState, useRef, useCallback, useEffect } from 'react'
 import { AnimatePresence, motion } from 'framer-motion'
 import { compressImage } from '@/lib/compress-image'
 import { validateImageFile } from '@/lib/validateImageFile'
 import { usePickerStrategy } from '@/hooks/usePickerStrategy'
+
+// Suporte TypeScript para File System Access API
+declare global {
+  interface Window {
+    showOpenFilePicker?: (options?: {
+      types?: Array<{ description: string; accept: Record<string, string[]> }>
+      multiple?: boolean
+      excludeAcceptAllOption?: boolean
+    }) => Promise<FileSystemFileHandle[]>
+  }
+}
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+interface FileSystemFileHandle {
+  getFile(): Promise<File>
+}
 
 interface Props {
   onImageSelected: (base64: string, mimeType: string) => void
@@ -50,6 +66,13 @@ export function ImagePickerTrigger({ onImageSelected, onError, children }: Props
   const webcamVideoNodeRef = useRef<HTMLVideoElement | null>(null)
   const isRequestingCamera = useRef(false)
 
+  // 5. Cleanup de stream WebRTC ao desmontar
+  useEffect(() => {
+    return () => {
+      webcamStreamRef.current?.getTracks().forEach(track => track.stop())
+    }
+  }, [])
+
   const webcamVideoCallbackRef = useCallback((node: HTMLVideoElement | null) => {
     webcamVideoNodeRef.current = node
     if (node && webcamStreamRef.current) {
@@ -79,16 +102,22 @@ export function ImagePickerTrigger({ onImageSelected, onError, children }: Props
     e.target.value = '' // Reseta para permitir selecionar o mesmo arquivo duas vezes
     if (!file) return
     setSheetOpen(false)
-    await processFile(file)
+    
+    // 3. processFile envolto em try/catch no event handler
+    try {
+      await processFile(file)
+    } catch (err) {
+      onError?.(err instanceof Error ? err.message : 'Falha inesperada ao processar imagem.')
+    }
   }
 
   // O clique inicial decide o destino supremo
   function handleTriggerClick() {
+    if (strategy === 'RESOLVING') return // 1. Previne cliques durante a hidrata
+
     if (strategy === 'IOS') {
       // Bypass total do nosso código: confia cegamente na Apple Action Sheet
-      if (typeof navigator !== 'undefined' && navigator.vibrate) {
-        navigator.vibrate(10) // Pequeno feedback tátil compensando a falta de animação visual
-      }
+      // 7. Removido navigator.vibrate(10) pois não funciona no iOS Safari
       iosInputRef.current?.click()
     } else {
       // Android e Desktop: Abre o nosso Sniper Bottom Sheet
@@ -114,8 +143,7 @@ export function ImagePickerTrigger({ onImageSelected, onError, children }: Props
     // 1. Tenta usar a moderna File System Access API (ignora o Chooser do Android S23)
     if (typeof window !== 'undefined' && 'showOpenFilePicker' in window) {
       try {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const [fileHandle] = await (window as any).showOpenFilePicker({
+        const fileHandles = await window.showOpenFilePicker!({
           types: [{
             description: 'Imagens',
             accept: { 'image/*': [] }
@@ -123,12 +151,19 @@ export function ImagePickerTrigger({ onImageSelected, onError, children }: Props
           multiple: false,
           excludeAcceptAllOption: true
         })
-        const file = await fileHandle.getFile()
+        const file = await fileHandles[0].getFile()
         setSheetOpen(false)
-        await processFile(file)
+        try {
+          await processFile(file)
+        } catch (err) {
+          onError?.(err instanceof Error ? err.message : 'Falha ao processar imagem.')
+        }
         return
       } catch (err) {
         if (err instanceof Error && err.name === 'AbortError') return
+        
+        // 2. Log para diagnóstico de falha silenciosa
+        console.warn('[ImagePicker] showOpenFilePicker falhou, caindo para fallback:', err)
       }
     }
     
@@ -198,42 +233,57 @@ export function ImagePickerTrigger({ onImageSelected, onError, children }: Props
     onImageSelected(base64, 'image/jpeg')
   }
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const trigger = React.cloneElement(children as React.ReactElement<any>, { onClick: handleTriggerClick })
+  // 4. React.cloneElement com React.Children.only
+  // 6. A11y: aria-haspopup no trigger apenas se for abrir o sheet
+  const trigger = React.cloneElement(React.Children.only(children) as React.ReactElement<any>, { 
+    onClick: handleTriggerClick,
+    ...(strategy !== 'IOS' && strategy !== 'RESOLVING' && {
+      'aria-haspopup': 'dialog',
+      'aria-expanded': sheetOpen,
+    })
+  })
 
   return (
     <>
-      {/* 0. Input Delegação Total (Exclusivo iOS) */}
-      <input
-        ref={iosInputRef}
-        type="file"
-        accept="image/*"
-        style={{ display: 'none' }}
-        onChange={handleFileInputChange}
-      />
+      {/* 8. Renderização condicional de inputs e 6. Acessibilidade (aria-hidden) */}
+      
+      {strategy === 'IOS' && (
+        <input
+          ref={iosInputRef}
+          type="file"
+          accept="image/*"
+          aria-hidden="true"
+          style={{ display: 'none' }}
+          onChange={handleFileInputChange}
+        />
+      )}
 
-      {/* 1. Input Sniper para Câmera (Exclusivo Android) */}
-      <input
-        ref={cameraInputRef}
-        type="file"
-        accept="image/*"
-        capture="environment"
-        style={{ display: 'none' }}
-        onChange={handleFileInputChange}
-      />
+      {strategy === 'ANDROID' && (
+        <input
+          ref={cameraInputRef}
+          type="file"
+          accept="image/*"
+          capture="environment"
+          aria-hidden="true"
+          style={{ display: 'none' }}
+          onChange={handleFileInputChange}
+        />
+      )}
 
-      {/* 2. Input Sniper para Arquivos (Fallback Android) */}
-      <input
-        ref={filesInputRef}
-        type="file"
-        accept="image/*, .heic, .heif, .avif"
-        style={{ display: 'none' }}
-        onChange={handleFileInputChange}
-      />
+      {(strategy === 'ANDROID' || strategy === 'DESKTOP') && (
+        <input
+          ref={filesInputRef}
+          type="file"
+          accept="image/*, .heic, .heif, .avif"
+          aria-hidden="true"
+          style={{ display: 'none' }}
+          onChange={handleFileInputChange}
+        />
+      )}
       
       {trigger}
 
-      {/* Bottom sheet (Visível apenas para Android e Desktop) */}
+      {/* Bottom sheet Universal */}
       <AnimatePresence>
         {sheetOpen && (
           <>
@@ -246,8 +296,12 @@ export function ImagePickerTrigger({ onImageSelected, onError, children }: Props
               onClick={() => setSheetOpen(false)}
               className="fixed inset-0 bg-black/40 z-50"
             />
+            {/* 6. A11y: role="dialog" e aria-modal */}
             <motion.div
               key="img-sheet"
+              role="dialog"
+              aria-modal="true"
+              aria-label="Opções de envio de imagem"
               initial={{ y: '100%' }}
               animate={{ y: 0 }}
               exit={{ y: '100%' }}
