@@ -537,7 +537,9 @@ export default function HomeClient({ tenantSubdomain, userProfile }: Props) {
     const input = document.createElement("input")
     input.type = "file"
     input.accept = "image/*"
-    if (camera) input.capture = "environment"
+    if (camera) {
+      input.setAttribute("capture", "environment")
+    }
     input.onchange = async () => {
       const file = input.files?.[0]
       if (!file) return
