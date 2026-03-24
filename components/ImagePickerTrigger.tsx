@@ -17,7 +17,6 @@ declare global {
   }
 }
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
 interface FileSystemFileHandle {
   getFile(): Promise<File>
 }
@@ -235,13 +234,20 @@ export function ImagePickerTrigger({ onImageSelected, onError, children }: Props
 
   // 4. React.cloneElement com React.Children.only
   // 6. A11y: aria-haspopup no trigger apenas se for abrir o sheet
-  const trigger = React.cloneElement(React.Children.only(children) as React.ReactElement<any>, { 
-    onClick: handleTriggerClick,
-    ...(strategy !== 'IOS' && strategy !== 'RESOLVING' && {
-      'aria-haspopup': 'dialog',
-      'aria-expanded': sheetOpen,
-    })
-  })
+  const trigger = React.cloneElement(
+    React.Children.only(children) as React.ReactElement<{
+      onClick?: React.MouseEventHandler<HTMLElement>
+      'aria-haspopup'?: boolean | 'dialog' | 'menu' | 'listbox' | 'tree' | 'grid'
+      'aria-expanded'?: boolean
+    }>,
+    { 
+      onClick: handleTriggerClick,
+      ...(strategy !== 'IOS' && strategy !== 'RESOLVING' && {
+        'aria-haspopup': 'dialog',
+        'aria-expanded': sheetOpen,
+      })
+    }
+  )
 
   return (
     <>
