@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useRef, useEffect, useCallback } from "react"
+import { useState, useRef, useEffect } from "react"
 import { AnimatePresence, motion } from "framer-motion"
 import Link from "next/link"
 import { LogOut, LayoutDashboard, ShieldCheck, History, X, MessageSquare, Trash, Play, Pause } from "lucide-react"
@@ -8,7 +8,7 @@ import { createClient } from "@/lib/supabase/client"
 import SessionHistory from "@/components/SessionHistory"
 import PaywallScreen from "@/components/PaywallScreen"
 import LoginGateScreen from "@/components/LoginGateScreen"
-import { compressImage } from "@/lib/compress-image"
+import { ImagePickerTrigger } from "@/components/ImagePickerTrigger"
 import type { SessionState, AnalysisResult, InputType, UserProfile, Message } from "@/types"
 
 interface Props {
@@ -108,15 +108,6 @@ function MicIcon({ className }: { className?: string }) {
   )
 }
 
-function GalleryIcon() {
-  return (
-    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-      <rect x="3" y="3" width="18" height="18" rx="2" />
-      <circle cx="8.5" cy="8.5" r="1.5" />
-      <polyline points="21 15 16 10 5 21" />
-    </svg>
-  )
-}
 
 function StopIcon({ className }: { className?: string }) {
   return (
@@ -144,11 +135,6 @@ export default function HomeClient({ tenantSubdomain, userProfile }: Props) {
   const [paywalled, setPaywalled] = useState(false)
   const [loginGated, setLoginGated] = useState(false)
   const [menuOpen, setMenuOpen] = useState(false)
-  const [imagePickerOpen, setImagePickerOpen] = useState(false)
-  const [webcamOpen, setWebcamOpen] = useState(false)
-  const [webcamError, setWebcamError] = useState<string | null>(null)
-  const [isFrontCamera, setIsFrontCamera] = useState(false)
-  const [isStartingCamera, setIsStartingCamera] = useState(false)
   const [hasPassword, setHasPassword] = useState<boolean | null>(null)
   const [hasGoogleLinked, setHasGoogleLinked] = useState<boolean | null>(null)
   const [dismissedPasswordBanner, setDismissedPasswordBanner] = useState(true) // começa oculto até checar localStorage
@@ -165,9 +151,6 @@ export default function HomeClient({ tenantSubdomain, userProfile }: Props) {
   const audioRef = useRef<HTMLAudioElement | null>(null)
   const recordingIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null)
   const maxRecordingTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
-  const webcamStreamRef = useRef<MediaStream | null>(null)
-  const webcamVideoNodeRef = useRef<HTMLVideoElement | null>(null)
-  const isRequestingCamera = useRef(false)
 
   const MAX_RECORDING_SECONDS = 90
 
@@ -231,20 +214,6 @@ export default function HomeClient({ tenantSubdomain, userProfile }: Props) {
     }
     if (params.has('error') || params.has('error_code')) {
       window.history.replaceState({}, '', window.location.pathname)
-    }
-  }, [])
-
-  // Para o stream ao desmontar o componente (ex: navegar para outra página com overlay aberto)
-  useEffect(() => {
-    return () => { webcamStreamRef.current?.getTracks().forEach(t => t.stop()) }
-  }, [])
-
-  // Callback ref: garante que o stream é ligado ao <video> apenas quando o nó DOM existe
-  const webcamVideoCallbackRef = useCallback((node: HTMLVideoElement | null) => {
-    webcamVideoNodeRef.current = node
-    if (node && webcamStreamRef.current) {
-      node.srcObject = webcamStreamRef.current
-      node.play().catch(() => {})
     }
   }, [])
 
@@ -516,102 +485,8 @@ export default function HomeClient({ tenantSubdomain, userProfile }: Props) {
     void submit("text", text)
   }
 
-  function handleOpenImagePicker() {
-    setImagePickerOpen(true)
-  }
-
-  function isMobileDevice(): boolean {
-    if (typeof window === 'undefined') return false
-    const ua = window.navigator.userAgent
-    const isMobileOS = /iPhone|iPad|iPod|Android/i.test(ua)
-    const isModernIPad = /Macintosh/i.test(ua) && navigator.maxTouchPoints > 1
-    return isMobileOS || isModernIPad
-  }
-
-  function triggerImageInput(camera: boolean) {
-    setImagePickerOpen(false)
-    
-    // Se for câmera, usamos nossa interface customizada (WebRTC) em qualquer dispositivo.
-    // Isso evita 100% o seletor "Escolher uma ação" do Android.
-    if (camera) {
-      void handleOpenWebcam()
-      return
-    }
-
-    const input = document.createElement("input")
-    input.type = "file"
-    // MIME types específicos costumam ser mais eficazes que extensões para pular o seletor no Android
-    input.accept = "image/jpeg,image/png,image/webp"
-    
-    input.onchange = async () => {
-      const file = input.files?.[0]
-      if (!file) return
-      try {
-        const base64 = await compressImage(file)
-        void submit("image", base64, "image/jpeg")
-      } catch {
-        setError("Não foi possível processar a imagem. Tente outra.")
-      }
-    }
-    input.click()
-  }
-
-  async function handleOpenWebcam() {
-    if (isRequestingCamera.current) return
-    isRequestingCamera.current = true
-    setIsStartingCamera(true)
-    setWebcamError(null)
-    webcamStreamRef.current?.getTracks().forEach(t => t.stop())
-    try {
-      const stream = await navigator.mediaDevices.getUserMedia({
-        video: {
-          facingMode: { ideal: "environment" },
-          width: { ideal: 1920 },
-          height: { ideal: 1080 },
-        },
-      })
-      webcamStreamRef.current = stream
-      const settings = stream.getVideoTracks()[0]?.getSettings()
-      setIsFrontCamera(settings?.facingMode === 'user')
-      setWebcamOpen(true)
-    } catch (err) {
-      const name = err instanceof Error ? err.name : ''
-      if (name === 'NotAllowedError') setWebcamError('Permissão de câmera negada.')
-      else if (name === 'NotFoundError') setWebcamError('Nenhuma câmera encontrada.')
-      else if (name === 'NotReadableError') setWebcamError('Câmera em uso por outro app.')
-      else setWebcamError('Não foi possível acessar a câmera.')
-      setWebcamOpen(true)
-    } finally {
-      isRequestingCamera.current = false
-      setIsStartingCamera(false)
-    }
-  }
-
-  function handleCloseWebcam() {
-    webcamStreamRef.current?.getTracks().forEach(t => t.stop())
-    webcamStreamRef.current = null
-    setWebcamOpen(false)
-    setWebcamError(null)
-    setIsFrontCamera(false)
-    setIsStartingCamera(false)
-  }
-
-  function handleWebcamCapture() {
-    const video = webcamVideoNodeRef.current
-    if (!video || video.videoWidth === 0) return
-    const canvas = document.createElement("canvas")
-    canvas.width = video.videoWidth
-    canvas.height = video.videoHeight
-    const ctx = canvas.getContext("2d")
-    if (!ctx) return
-    if (isFrontCamera) {
-      ctx.translate(canvas.width, 0)
-      ctx.scale(-1, 1)
-    }
-    ctx.drawImage(video, 0, 0)
-    const base64 = canvas.toDataURL("image/jpeg", 0.85).split(",")[1]
-    handleCloseWebcam()
-    void submit("image", base64, "image/jpeg")
+  function handleImageSelected(base64: string, mimeType: string) {
+    void submit("image", base64, mimeType)
   }
 
   async function handleStartRecording() {
@@ -1002,15 +877,16 @@ export default function HomeClient({ tenantSubdomain, userProfile }: Props) {
               <div className="flex flex-col gap-3 w-full max-w-sm">
                 {/* Linha 1: câmera + áudio — altura fixa, sempre visível */}
                 <div className="flex gap-3">
-                  <button
-                    type="button"
-                    onClick={handleOpenImagePicker}
-                    disabled={isRecording || isProcessingAudio || !!pendingAudio}
-                    className="flex-1 flex items-center justify-center gap-2.5 px-5 py-3.5 rounded-xl bg-secondary border border-border text-secondary-foreground text-sm font-medium hover:bg-secondary/80 active:scale-[0.97] transition-all cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-secondary"
-                  >
-                    <CameraIcon className="opacity-70 flex-shrink-0" />
-                    Imagem
-                  </button>
+                  <ImagePickerTrigger onImageSelected={handleImageSelected} onError={setError}>
+                    <button
+                      type="button"
+                      disabled={isRecording || isProcessingAudio || !!pendingAudio}
+                      className="flex-1 flex items-center justify-center gap-2.5 px-5 py-3.5 rounded-xl bg-secondary border border-border text-secondary-foreground text-sm font-medium hover:bg-secondary/80 active:scale-[0.97] transition-all cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-secondary"
+                    >
+                      <CameraIcon className="opacity-70 flex-shrink-0" />
+                      Imagem
+                    </button>
+                  </ImagePickerTrigger>
                   <button
                     type="button"
                     onClick={isRecording ? handleStopRecording : handleStartRecording}
@@ -1191,15 +1067,16 @@ export default function HomeClient({ tenantSubdomain, userProfile }: Props) {
           className="flex items-center border border-border rounded-full bg-card pl-1 pr-1 focus-within:ring-2 focus-within:ring-ring/40 transition-shadow"
         >
           {/* Botões à esquerda: câmera + mic/trash */}
-          <button
-            type="button"
-            onClick={handleOpenImagePicker}
-            disabled={loading || isRecording || !!pendingAudio}
-            aria-label="Adicionar imagem"
-            className="w-8 h-8 flex items-center justify-center rounded-full text-muted-foreground hover:text-foreground hover:bg-muted disabled:opacity-40 transition-colors flex-shrink-0 my-0.5 ml-0.5 cursor-pointer disabled:cursor-not-allowed"
-          >
-            <CameraIcon />
-          </button>
+          <ImagePickerTrigger onImageSelected={handleImageSelected} onError={setError}>
+            <button
+              type="button"
+              disabled={loading || isRecording || !!pendingAudio}
+              aria-label="Adicionar imagem"
+              className="w-8 h-8 flex items-center justify-center rounded-full text-muted-foreground hover:text-foreground hover:bg-muted disabled:opacity-40 transition-colors flex-shrink-0 my-0.5 ml-0.5 cursor-pointer disabled:cursor-not-allowed"
+            >
+              <CameraIcon />
+            </button>
+          </ImagePickerTrigger>
           <button
             type="button"
             onClick={pendingAudio ? handleDiscardAudio : handleStartRecording}
@@ -1287,119 +1164,6 @@ export default function HomeClient({ tenantSubdomain, userProfile }: Props) {
       )}
       </AnimatePresence>
 
-      {/* Image picker bottom sheet */}
-      <AnimatePresence>
-        {imagePickerOpen && (
-          <>
-            <motion.div
-              key="img-backdrop"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              transition={{ duration: 0.2 }}
-              onClick={() => setImagePickerOpen(false)}
-              className="fixed inset-0 bg-black/40 z-50"
-            />
-            <motion.div
-              key="img-sheet"
-              initial={{ y: "100%" }}
-              animate={{ y: 0 }}
-              exit={{ y: "100%" }}
-              transition={{ type: "spring", damping: 32, stiffness: 320 }}
-              className="fixed bottom-0 left-1/2 -translate-x-1/2 z-50 w-full max-w-2xl bg-background rounded-t-2xl shadow-xl"
-            >
-              <div className="w-10 h-1 bg-muted rounded-full mx-auto mt-3 mb-2" />
-              <p className="text-center text-xs font-medium text-muted-foreground uppercase tracking-wide mb-3 px-6">Adicionar imagem</p>
-              <div className="flex flex-col px-4 pb-8 gap-2">
-                <button
-                  onClick={() => triggerImageInput(true)}
-                  disabled={isStartingCamera}
-                  className="flex items-center gap-4 px-4 py-3.5 rounded-xl bg-secondary hover:bg-secondary/80 active:scale-[0.98] transition-all text-left disabled:opacity-60 disabled:cursor-not-allowed"
-                >
-                  <div className="w-10 h-10 rounded-full bg-primary/10 text-primary flex items-center justify-center flex-shrink-0">
-                    <CameraIcon />
-                  </div>
-                  <div>
-                    <div className="text-sm font-medium">Câmera</div>
-                    <div className="text-xs text-muted-foreground">
-                      {isStartingCamera ? "Iniciando câmera…" : "Tirar uma foto agora"}
-                    </div>
-                  </div>
-                </button>
-                <button
-                  onClick={() => triggerImageInput(false)}
-                  className="flex items-center gap-4 px-4 py-3.5 rounded-xl bg-secondary hover:bg-secondary/80 active:scale-[0.98] transition-all text-left"
-                >
-                  <div className="w-10 h-10 rounded-full bg-primary/10 text-primary flex items-center justify-center flex-shrink-0">
-                    <GalleryIcon />
-                  </div>
-                  <div>
-                    <div className="text-sm font-medium">Galeria / Arquivos</div>
-                    <div className="text-xs text-muted-foreground">Escolher do dispositivo</div>
-                  </div>
-                </button>
-                <button
-                  onClick={() => setImagePickerOpen(false)}
-                  className="text-sm text-muted-foreground py-3 hover:text-foreground transition-colors"
-                >
-                  Cancelar
-                </button>
-              </div>
-            </motion.div>
-          </>
-        )}
-      </AnimatePresence>
-
-      {/* Webcam overlay — desktop only */}
-      <AnimatePresence>
-        {webcamOpen && (
-          <motion.div
-            key="webcam-overlay"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: 0.2 }}
-            className="fixed inset-0 z-50 bg-black flex flex-col items-center justify-center px-6"
-          >
-            {webcamError ? (
-              <div className="flex flex-col items-center gap-4 text-center">
-                <p className="text-white/80 text-sm">{webcamError}</p>
-                <button
-                  onClick={handleCloseWebcam}
-                  className="px-6 py-3 rounded-xl bg-white text-black text-sm font-semibold"
-                >
-                  Fechar
-                </button>
-              </div>
-            ) : (
-              <>
-                <video
-                  ref={webcamVideoCallbackRef}
-                  autoPlay
-                  playsInline
-                  muted
-                  className="w-full max-w-2xl max-h-[70dvh] rounded-xl"
-                  style={{ objectFit: "contain", transform: isFrontCamera ? "scaleX(-1)" : "none" }}
-                />
-                <div className="flex gap-4 mt-6">
-                  <button
-                    onClick={handleCloseWebcam}
-                    className="px-6 py-3 rounded-xl border border-white/30 text-white text-sm font-medium hover:bg-white/10 transition-colors"
-                  >
-                    Cancelar
-                  </button>
-                  <button
-                    onClick={handleWebcamCapture}
-                    className="px-6 py-3 rounded-xl bg-white text-black text-sm font-semibold hover:bg-white/90 active:scale-[0.97] transition-all"
-                  >
-                    Tirar foto
-                  </button>
-                </div>
-              </>
-            )}
-          </motion.div>
-        )}
-      </AnimatePresence>
     </main>
   )
 }
