@@ -684,7 +684,7 @@ export default function PainelClient({ expert: initialExpert, initialClients, in
         id: crypto.randomUUID(),
         user_id: null,
         expert_id: expert.id,
-        email,
+        email: email || null,
         active: true,
         magic_link_token: "pending",
         invited_at: new Date().toISOString(),
