@@ -168,7 +168,7 @@ function TabInicio({ expert, clients, onInvite, onToggleActive }: {
               {activeClients.map(p => (
                 <div key={p.id} className="flex items-center gap-3 px-4 py-3 rounded-xl border border-border bg-card">
                   <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center text-xs font-bold shrink-0 text-primary">
-                    {(p.email ?? "?")[0].toUpperCase()}
+                    {(p.email || "?")[0].toUpperCase()}
                   </div>
                   <div className="flex-1 min-w-0">
                     <p className="text-sm font-medium truncate">{p.email ?? "—"}</p>
@@ -201,7 +201,7 @@ function TabInicio({ expert, clients, onInvite, onToggleActive }: {
               {inactiveClients.map(p => (
                 <div key={p.id} className="flex items-center gap-3 px-4 py-3 rounded-xl border border-border bg-card opacity-60">
                   <div className="w-8 h-8 rounded-full bg-muted flex items-center justify-center text-xs font-medium shrink-0 text-muted-foreground">
-                    {(p.email ?? "?")[0].toUpperCase()}
+                    {(p.email || "?")[0].toUpperCase()}
                   </div>
                   <div className="flex-1 min-w-0">
                     <p className="text-sm font-medium truncate">{p.email ?? "—"}</p>
