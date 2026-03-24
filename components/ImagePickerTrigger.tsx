@@ -91,7 +91,6 @@ export function ImagePickerTrigger({ onImageSelected, onError, children }: Props
     if (isRequestingCamera.current) return
     isRequestingCamera.current = true
     setIsStartingCamera(true)
-    setMenuError(null)
     
     webcamStreamRef.current?.getTracks().forEach(t => t.stop())
     
@@ -109,7 +108,7 @@ export function ImagePickerTrigger({ onImageSelected, onError, children }: Props
     } catch (err) {
       const name = err instanceof Error ? err.name : ''
       if (name === 'NotFoundError') {
-        setMenuError('Nenhuma câmera conectada ao computador.')
+        setMenuError('Nenhuma câmera conectada.')
       } else if (name === 'NotAllowedError') {
         setMenuError('Permissão de câmera negada.')
       } else if (name === 'NotReadableError') {
