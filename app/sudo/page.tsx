@@ -39,7 +39,8 @@ export default async function SudoPage() {
     adminClient
       .from('experts')
       .select('*')
-      .order('created_at', { ascending: false }),
+      .order('created_at', { ascending: false })
+      .limit(500),
     adminClient
       .from('clients')
       .select('id, expert_id, active'),

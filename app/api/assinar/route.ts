@@ -30,6 +30,15 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       return NextResponse.json({ error: "Subdomínio inválido." }, { status: 400 })
     }
 
+    const RESERVED_SUBDOMAINS = new Set([
+      'www', 'api', 'admin', 'mail', 'smtp', 'ftp', 'static', 'assets', 'cdn',
+      'app', 'painel', 'sudo', 'auth', 'webhook', 'experts', 'convite',
+      'assinar', 'obrigado', 'r', 'support', 'help', 'blog', 'dev', 'staging',
+    ])
+    if (RESERVED_SUBDOMAINS.has(subdomain)) {
+      return NextResponse.json({ error: "Este subdomínio é reservado." }, { status: 400 })
+    }
+
     if (!["monthly", "yearly"].includes(plan)) {
       return NextResponse.json({ error: "Plano inválido." }, { status: 400 })
     }

@@ -77,6 +77,7 @@ export type Database = {
           id: string
           invited_at: string
           magic_link_token: string | null
+          token_expires_at: string | null
           user_id: string | null
         }
         Insert: {
@@ -87,6 +88,7 @@ export type Database = {
           id?: string
           invited_at?: string
           magic_link_token?: string | null
+          token_expires_at?: string | null
           user_id?: string | null
         }
         Update: {
@@ -97,6 +99,7 @@ export type Database = {
           id?: string
           invited_at?: string
           magic_link_token?: string | null
+          token_expires_at?: string | null
           user_id?: string | null
         }
         Relationships: [

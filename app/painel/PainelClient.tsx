@@ -8,6 +8,7 @@ import { createClient } from "@/lib/supabase/client"
 import { compressImage } from "@/lib/compress-image"
 import type { Expert, Client, ContactLink, Referral } from "@/types"
 import { CLIENT_LIMIT as PLAN_LIMIT } from "@/lib/plans"
+import { CitySelector } from "@/components/CitySelector"
 const CONTACT_TYPES = ["WhatsApp", "Instagram", "E-mail", "Website"] as const
 
 interface Props {
@@ -356,7 +357,7 @@ function TabVitrine({ expert, onSave, onPhotoChange }: {
       {/* Campos */}
       <Field label="Nome" value={name} onChange={setName} required />
       <Field label="Especialidade" value={specialty} onChange={setSpecialty} placeholder="Ex: Nutrição Esportiva" />
-      <Field label="Cidade" value={city} onChange={setCity} placeholder="Ex: São Paulo - SP" />
+      <CitySelector value={city} onChange={setCity} />
 
       {/* Perfil toggle */}
       <div className="flex items-center justify-between py-1">

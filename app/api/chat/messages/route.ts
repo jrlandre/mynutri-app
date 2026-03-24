@@ -16,6 +16,17 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: "sessionId is required" }, { status: 400 })
   }
 
+  const { data: session } = await supabase
+    .from("chat_sessions")
+    .select("id")
+    .eq("id", sessionId)
+    .eq("user_id", user.id)
+    .maybeSingle()
+
+  if (!session) {
+    return NextResponse.json({ error: "Session not found" }, { status: 404 })
+  }
+
   const { data, error } = await supabase
     .from("chat_messages")
     .select("id, role, content_type, content, mime_type, created_at")

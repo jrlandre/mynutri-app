@@ -37,12 +37,13 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
 
     const token = randomUUID()
     const invited_at = new Date().toISOString()
+    const token_expires_at = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString()
 
     // Upsert: se já existe convite para esse email nesse expert, renova o token
     const { error: upsertError } = await adminClient
       .from('clients')
       .upsert(
-        { expert_id: expert.id, email, magic_link_token: token, invited_at, active: true },
+        { expert_id: expert.id, email, magic_link_token: token, token_expires_at, invited_at, active: true },
         { onConflict: 'expert_id,email' }
       )
 
