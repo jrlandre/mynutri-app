@@ -36,14 +36,15 @@ export function ImagePickerTrigger({ onImageSelected, onError, children }: Props
   
   const [sheetOpen, setSheetOpen] = useState(false)
   const [webcamOpen, setWebcamOpen] = useState(false)
-  
-  // Alterado para focar no erro específico do menu
   const [menuError, setMenuError] = useState<string | null>(null)
   
   const [isFrontCamera, setIsFrontCamera] = useState(false)
   const [isStartingCamera, setIsStartingCamera] = useState(false)
 
-  const fileInputRef = useRef<HTMLInputElement>(null)
+  // Inputs ocultos para o "Sniper Mode"
+  const cameraInputRef = useRef<HTMLInputElement>(null)
+  const filesInputRef = useRef<HTMLInputElement>(null)
+  
   const webcamStreamRef = useRef<MediaStream | null>(null)
   const webcamVideoNodeRef = useRef<HTMLVideoElement | null>(null)
   const isRequestingCamera = useRef(false)
@@ -56,10 +57,8 @@ export function ImagePickerTrigger({ onImageSelected, onError, children }: Props
     }
   }, [])
 
-  async function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
-    const file = e.target.files?.[0]
-    e.target.value = ''
-    if (!file) return
+  // Processador central de arquivos
+  async function processFile(file: File) {
     const validation = await validateImageFile(file)
     if (!validation.valid) {
       onError?.(validation.error ?? 'Imagem inválida.')
@@ -73,21 +72,65 @@ export function ImagePickerTrigger({ onImageSelected, onError, children }: Props
     }
   }
 
+  // Handler para quando o arquivo vem via <input type="file">
+  async function handleFileInputChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0]
+    e.target.value = '' // Reseta para permitir selecionar o mesmo arquivo duas vezes
+    if (!file) return
+    setSheetOpen(false)
+    await processFile(file)
+  }
+
+  // O clique inicial SEMPRE abre a nossa UI (Bottom Sheet)
   function handleTriggerClick() {
+    setMenuError(null)
+    setSheetOpen(true)
+  }
+
+  // --- AÇÃO: CÂMERA ---
+  async function handleSheetCamera() {
     if (strategy === 'NATIVE') {
-      fileInputRef.current?.click()
+      // Sniper: Tiro direto na câmera nativa do SO Mobile
+      setSheetOpen(false)
+      cameraInputRef.current?.click()
     } else {
-      setMenuError(null)
-      setSheetOpen(true)
+      // Fallback: Aciona WebRTC no Desktop
+      await openWebcam()
     }
   }
 
-  function handleSheetGallery() {
+  // --- AÇÃO: ARQUIVOS ---
+  async function handleSheetFiles() {
+    // 1. Tenta usar a moderna File System Access API (ignora o Chooser do Android)
+    if (typeof window !== 'undefined' && 'showOpenFilePicker' in window) {
+      try {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const [fileHandle] = await (window as any).showOpenFilePicker({
+          types: [{
+            description: 'Imagens',
+            accept: { 'image/*': [] }
+          }],
+          multiple: false,
+          excludeAcceptAllOption: true
+        })
+        const file = await fileHandle.getFile()
+        setSheetOpen(false)
+        await processFile(file)
+        return
+      } catch (err) {
+        // Se o usuário apenas fechou a janela, não fazemos nada.
+        if (err instanceof Error && err.name === 'AbortError') return
+        // Se a API falhar por outro motivo de segurança, caímos no fallback abaixo
+      }
+    }
+    
+    // 2. Fallback Legacy: Dispara o input oculto com o hack do MIME type
     setSheetOpen(false)
-    fileInputRef.current?.click()
+    filesInputRef.current?.click()
   }
 
-  async function handleOpenWebcam() {
+  // --- Lógica da Webcam Customizada (Desktop) ---
+  async function openWebcam() {
     if (isRequestingCamera.current) return
     isRequestingCamera.current = true
     setIsStartingCamera(true)
@@ -102,7 +145,6 @@ export function ImagePickerTrigger({ onImageSelected, onError, children }: Props
       const settings = stream.getVideoTracks()[0]?.getSettings()
       setIsFrontCamera(settings?.facingMode === 'user')
       
-      // Sucesso! Esconde o Bottom Sheet e abre o overlay da webcam
       setSheetOpen(false)
       setWebcamOpen(true)
     } catch (err) {
@@ -116,7 +158,6 @@ export function ImagePickerTrigger({ onImageSelected, onError, children }: Props
       } else {
         setMenuError('Erro desconhecido ao acessar a câmera.')
       }
-      // Mantemos o sheetOpen(true) para ele ver o erro e clicar em Arquivos
     } finally {
       isRequestingCamera.current = false
       setIsStartingCamera(false)
@@ -154,18 +195,28 @@ export function ImagePickerTrigger({ onImageSelected, onError, children }: Props
 
   return (
     <>
+      {/* 1. Input Exclusivo para Câmera (Sniper Mobile) */}
       <input
-        ref={fileInputRef}
+        ref={cameraInputRef}
         type="file"
-        // NOTA: Omitimos o atributo 'capture' para garantir que o menu
-        // nativo de 'Tirar foto' ou 'Escolher da galeria' apareça no iOS/Android.
         accept="image/*"
+        capture="environment"
         style={{ display: 'none' }}
-        onChange={handleFileChange}
+        onChange={handleFileInputChange}
       />
+
+      {/* 2. Input Exclusivo para Arquivos (Fallback Legacy com hack anti-câmera) */}
+      <input
+        ref={filesInputRef}
+        type="file"
+        accept="image/*, .heic, .heif, .avif"
+        style={{ display: 'none' }}
+        onChange={handleFileInputChange}
+      />
+      
       {trigger}
 
-      {/* Bottom sheet para Desktop/Custom */}
+      {/* Bottom sheet Universal */}
       <AnimatePresence>
         {sheetOpen && (
           <>
@@ -197,7 +248,7 @@ export function ImagePickerTrigger({ onImageSelected, onError, children }: Props
                 )}
 
                 <button
-                  onClick={() => void handleOpenWebcam()}
+                  onClick={() => void handleSheetCamera()}
                   disabled={isStartingCamera}
                   className="flex items-center gap-4 px-4 py-3.5 rounded-xl bg-secondary hover:bg-secondary/80 active:scale-[0.98] transition-all text-left disabled:opacity-60 disabled:cursor-not-allowed"
                 >
@@ -213,7 +264,7 @@ export function ImagePickerTrigger({ onImageSelected, onError, children }: Props
                 </button>
 
                 <button
-                  onClick={handleSheetGallery}
+                  onClick={() => void handleSheetFiles()}
                   className="flex items-center gap-4 px-4 py-3.5 rounded-xl bg-secondary hover:bg-secondary/80 active:scale-[0.98] transition-all text-left"
                 >
                   <div className="w-10 h-10 rounded-full bg-primary/10 text-primary flex items-center justify-center flex-shrink-0">
@@ -237,7 +288,7 @@ export function ImagePickerTrigger({ onImageSelected, onError, children }: Props
         )}
       </AnimatePresence>
 
-      {/* Webcam overlay */}
+      {/* Webcam overlay (Desktop) */}
       <AnimatePresence>
         {webcamOpen && (
           <motion.div
