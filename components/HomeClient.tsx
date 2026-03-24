@@ -536,7 +536,10 @@ export default function HomeClient({ tenantSubdomain, userProfile }: Props) {
     }
     const input = document.createElement("input")
     input.type = "file"
-    input.accept = "image/*"
+    // Se for câmera, usa o seletor genérico que o Android associa a 'captura'.
+    // Se for galeria, usa extensões específicas para induzir a abertura direta de arquivos.
+    input.accept = camera ? "image/*" : ".jpg,.jpeg,.png,.webp"
+    
     if (camera) {
       input.setAttribute("capture", "environment")
     }
