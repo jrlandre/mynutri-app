@@ -190,6 +190,10 @@ export function ImagePickerTrigger({ onImageSelected, onError, children }: Props
     onImageSelected(base64, 'image/jpeg')
   }
 
+  // Detecta ecossistema Apple para evitar que o Safari esconda a opção 'Fototeca'
+  const isAppleDevice = typeof navigator !== 'undefined' && (/Macintosh|iPad|iPhone|iPod/.test(navigator.userAgent))
+  const filesAcceptString = isAppleDevice ? 'image/*' : 'image/*, .heic, .heif, .avif'
+
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const trigger = React.cloneElement(children as React.ReactElement<any>, { onClick: handleTriggerClick })
 
@@ -209,7 +213,7 @@ export function ImagePickerTrigger({ onImageSelected, onError, children }: Props
       <input
         ref={filesInputRef}
         type="file"
-        accept="image/*, .heic, .heif, .avif"
+        accept={filesAcceptString}
         style={{ display: 'none' }}
         onChange={handleFileInputChange}
       />
