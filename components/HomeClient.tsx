@@ -530,19 +530,19 @@ export default function HomeClient({ tenantSubdomain, userProfile }: Props) {
 
   function triggerImageInput(camera: boolean) {
     setImagePickerOpen(false)
-    if (camera && !isMobileDevice()) {
+    
+    // Se for câmera, usamos nossa interface customizada (WebRTC) em qualquer dispositivo.
+    // Isso evita 100% o seletor "Escolher uma ação" do Android.
+    if (camera) {
       void handleOpenWebcam()
       return
     }
+
     const input = document.createElement("input")
     input.type = "file"
-    // Se for câmera, usa o seletor genérico que o Android associa a 'captura'.
-    // Se for galeria, usa extensões específicas para induzir a abertura direta de arquivos.
-    input.accept = camera ? "image/*" : ".jpg,.jpeg,.png,.webp"
+    // MIME types específicos costumam ser mais eficazes que extensões para pular o seletor no Android
+    input.accept = "image/jpeg,image/png,image/webp"
     
-    if (camera) {
-      input.setAttribute("capture", "environment")
-    }
     input.onchange = async () => {
       const file = input.files?.[0]
       if (!file) return
