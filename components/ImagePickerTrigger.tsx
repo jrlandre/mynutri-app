@@ -207,7 +207,7 @@ export function ImagePickerTrigger({ onImageSelected, onError, children }: Props
                   <div>
                     <div className="text-sm font-medium">Câmera</div>
                     <div className="text-xs text-muted-foreground">
-                      {isStartingCamera ? 'Iniciando câmera…' : 'Tirar uma foto agora'}
+                      Tirar uma foto agora
                     </div>
                   </div>
                 </button>
