@@ -36,7 +36,6 @@ export async function PATCH(
   }
 }
 
-// Mantido por compatibilidade, mas agora apenas desativa
 export async function DELETE(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
@@ -48,16 +47,36 @@ export async function DELETE(
     const { expert } = guard
     const { id } = await params
 
-    const { data, error } = await adminClient
+    // Busca o cliente primeiro para saber se é pendente
+    const { data: client } = await adminClient
       .from('clients')
-      .update({ active: false })
+      .select('activated_at')
       .eq('id', id)
       .eq('expert_id', expert.id)
-      .select('id')
+      .maybeSingle()
 
-    if (error) throw new Error(error.message)
-    if (!data || data.length === 0) {
+    if (!client) {
       return NextResponse.json({ error: 'Cliente não encontrado' }, { status: 404 })
+    }
+
+    if (!client.activated_at) {
+      // É um convite pendente: DELETA de vez do banco
+      const { error } = await adminClient
+        .from('clients')
+        .delete()
+        .eq('id', id)
+        .eq('expert_id', expert.id)
+      
+      if (error) throw error
+    } else {
+      // Já é um cliente real: apenas desativa
+      const { error } = await adminClient
+        .from('clients')
+        .update({ active: false })
+        .eq('id', id)
+        .eq('expert_id', expert.id)
+      
+      if (error) throw error
     }
 
     return NextResponse.json({ success: true })

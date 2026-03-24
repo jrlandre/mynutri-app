@@ -19,20 +19,26 @@ interface Props {
 
 // ─── Aba Início ──────────────────────────────────────────────────────────────
 
-function TabInicio({ expert, clients, onInvite, onToggleActive }: {
+function TabInicio({ expert, clients, onInvite, onToggleActive, onDelete }: {
   expert: Expert
   clients: Client[]
   onInvite: (email: string) => Promise<{ invite_url?: string; error?: string }>
   onToggleActive: (id: string, active: boolean) => Promise<void>
+  onDelete: (id: string) => Promise<void>
 }) {
   const limit = PLAN_LIMIT[expert.plan] ?? 50
-  const activeClients = clients.filter(p => p.active)
+  
+  // Filtros
+  const pendingInvites = clients.filter(p => p.active && !p.activated_at)
+  const activeClients = clients.filter(p => p.active && p.activated_at)
   const inactiveClients = clients.filter(p => !p.active)
+
   const [inviteEmail, setInviteEmail] = useState("")
   const [inviteLoading, setInviteLoading] = useState(false)
   const [inviteResult, setInviteResult] = useState<{ url?: string; error?: string } | null>(null)
   const [showInvite, setShowInvite] = useState(false)
   const [toggling, setToggling] = useState<string | null>(null)
+  const [deleting, setDeleting] = useState<string | null>(null)
   const [copiedInvite, setCopiedInvite] = useState(false)
 
   async function handleInvite(e: React.FormEvent) {
@@ -49,6 +55,13 @@ function TabInicio({ expert, clients, onInvite, onToggleActive }: {
     setToggling(id)
     await onToggleActive(id, !currentStatus)
     setToggling(null)
+  }
+
+  async function handleDelete(id: string) {
+    if (!confirm("Excluir este convite permanentemente?")) return
+    setDeleting(id)
+    await onDelete(id)
+    setDeleting(null)
   }
 
   return (
@@ -153,6 +166,37 @@ function TabInicio({ expert, clients, onInvite, onToggleActive }: {
 
       {/* Listas de clientes */}
       <div className="flex flex-col gap-8">
+        {/* Pendentes */}
+        {pendingInvites.length > 0 && (
+          <div className="flex flex-col gap-3">
+            <div className="flex items-baseline gap-2 px-1">
+              <p className="text-sm font-bold uppercase tracking-wider text-muted-foreground/70">Convites pendentes</p>
+              <span className="text-xs font-medium text-muted-foreground/50">{pendingInvites.length}</span>
+            </div>
+            <div className="flex flex-col gap-2">
+              {pendingInvites.map(p => (
+                <div key={p.id} className="flex items-center gap-3 px-4 py-3 rounded-xl border border-border bg-card">
+                  <div className="w-8 h-8 rounded-full bg-muted flex items-center justify-center text-xs font-semibold shrink-0 text-muted-foreground">
+                    {(p.email || "?")[0].toUpperCase()}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium truncate">{p.email ?? "—"}</p>
+                    <p className="text-xs text-muted-foreground italic">Aguardando ativação</p>
+                  </div>
+                  <button
+                    onClick={() => handleDelete(p.id)}
+                    disabled={deleting === p.id}
+                    title="Excluir convite"
+                    className="p-2 rounded-lg text-muted-foreground hover:text-destructive hover:bg-destructive/5 transition-colors disabled:opacity-40"
+                  >
+                    <Trash2 size={16} />
+                  </button>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
         {/* Ativos */}
         <div className="flex flex-col gap-3">
           <div className="flex items-baseline gap-2 px-1">
@@ -173,7 +217,7 @@ function TabInicio({ expert, clients, onInvite, onToggleActive }: {
                   <div className="flex-1 min-w-0">
                     <p className="text-sm font-medium truncate">{p.email ?? "—"}</p>
                     <p className="text-xs text-muted-foreground">
-                      {p.activated_at ? "Ativo" : "Convite pendente"}
+                      Cliente ativo
                     </p>
                   </div>
                   <button
@@ -703,6 +747,11 @@ export default function PainelClient({ expert: initialExpert, initialClients, in
     setClients(prev => prev.map(p => p.id === id ? { ...p, active } : p))
   }
 
+  async function handleDeleteClient(id: string) {
+    await fetch(`/api/painel/clients/${id}`, { method: "DELETE" })
+    setClients(prev => prev.filter(p => p.id !== id))
+  }
+
   async function handleSaveProfile(data: Partial<Expert>) {
     const res = await fetch("/api/painel/profile", {
       method: "PATCH",
@@ -772,6 +821,7 @@ export default function PainelClient({ expert: initialExpert, initialClients, in
               clients={clients}
               onInvite={handleInvite}
               onToggleActive={handleToggleActive}
+              onDelete={handleDeleteClient}
             />
           )}
           {tab === "Exibição" && (
