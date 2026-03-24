@@ -41,7 +41,8 @@ export function ImagePickerTrigger({ onImageSelected, onError, children }: Props
   const [isFrontCamera, setIsFrontCamera] = useState(false)
   const [isStartingCamera, setIsStartingCamera] = useState(false)
 
-  // Inputs ocultos para o "Sniper Mode"
+  // Inputs ocultos para as diferentes rotas
+  const iosInputRef = useRef<HTMLInputElement>(null)
   const cameraInputRef = useRef<HTMLInputElement>(null)
   const filesInputRef = useRef<HTMLInputElement>(null)
   
@@ -81,16 +82,25 @@ export function ImagePickerTrigger({ onImageSelected, onError, children }: Props
     await processFile(file)
   }
 
-  // O clique inicial SEMPRE abre a nossa UI (Bottom Sheet)
+  // O clique inicial decide o destino supremo
   function handleTriggerClick() {
-    setMenuError(null)
-    setSheetOpen(true)
+    if (strategy === 'IOS') {
+      // Bypass total do nosso código: confia cegamente na Apple Action Sheet
+      if (typeof navigator !== 'undefined' && navigator.vibrate) {
+        navigator.vibrate(10) // Pequeno feedback tátil compensando a falta de animação visual
+      }
+      iosInputRef.current?.click()
+    } else {
+      // Android e Desktop: Abre o nosso Sniper Bottom Sheet
+      setMenuError(null)
+      setSheetOpen(true)
+    }
   }
 
-  // --- AÇÃO: CÂMERA ---
+  // --- AÇÃO: CÂMERA (Somente visível via Bottom Sheet no Android/Desktop) ---
   async function handleSheetCamera() {
-    if (strategy === 'NATIVE') {
-      // Sniper: Tiro direto na câmera nativa do SO Mobile
+    if (strategy === 'ANDROID') {
+      // Sniper: Tiro direto na câmera nativa do Android
       setSheetOpen(false)
       cameraInputRef.current?.click()
     } else {
@@ -99,9 +109,9 @@ export function ImagePickerTrigger({ onImageSelected, onError, children }: Props
     }
   }
 
-  // --- AÇÃO: ARQUIVOS ---
+  // --- AÇÃO: ARQUIVOS (Somente visível via Bottom Sheet no Android/Desktop) ---
   async function handleSheetFiles() {
-    // 1. Tenta usar a moderna File System Access API (ignora o Chooser do Android)
+    // 1. Tenta usar a moderna File System Access API (ignora o Chooser do Android S23)
     if (typeof window !== 'undefined' && 'showOpenFilePicker' in window) {
       try {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -118,13 +128,11 @@ export function ImagePickerTrigger({ onImageSelected, onError, children }: Props
         await processFile(file)
         return
       } catch (err) {
-        // Se o usuário apenas fechou a janela, não fazemos nada.
         if (err instanceof Error && err.name === 'AbortError') return
-        // Se a API falhar por outro motivo de segurança, caímos no fallback abaixo
       }
     }
     
-    // 2. Fallback Legacy: Dispara o input oculto com o hack do MIME type
+    // 2. Fallback Legacy: Dispara o input oculto com o hack do MIME type (Para o S9)
     setSheetOpen(false)
     filesInputRef.current?.click()
   }
@@ -190,16 +198,21 @@ export function ImagePickerTrigger({ onImageSelected, onError, children }: Props
     onImageSelected(base64, 'image/jpeg')
   }
 
-  // Detecta ecossistema Apple para evitar que o Safari esconda a opção 'Fototeca'
-  const isAppleDevice = typeof navigator !== 'undefined' && (/Macintosh|iPad|iPhone|iPod/.test(navigator.userAgent))
-  const filesAcceptString = isAppleDevice ? 'image/*' : 'image/*, .heic, .heif, .avif'
-
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const trigger = React.cloneElement(children as React.ReactElement<any>, { onClick: handleTriggerClick })
 
   return (
     <>
-      {/* 1. Input Exclusivo para Câmera (Sniper Mobile) */}
+      {/* 0. Input Delegação Total (Exclusivo iOS) */}
+      <input
+        ref={iosInputRef}
+        type="file"
+        accept="image/*"
+        style={{ display: 'none' }}
+        onChange={handleFileInputChange}
+      />
+
+      {/* 1. Input Sniper para Câmera (Exclusivo Android) */}
       <input
         ref={cameraInputRef}
         type="file"
@@ -209,18 +222,18 @@ export function ImagePickerTrigger({ onImageSelected, onError, children }: Props
         onChange={handleFileInputChange}
       />
 
-      {/* 2. Input Exclusivo para Arquivos (Fallback Legacy com hack anti-câmera) */}
+      {/* 2. Input Sniper para Arquivos (Fallback Android) */}
       <input
         ref={filesInputRef}
         type="file"
-        accept={filesAcceptString}
+        accept="image/*, .heic, .heif, .avif"
         style={{ display: 'none' }}
         onChange={handleFileInputChange}
       />
       
       {trigger}
 
-      {/* Bottom sheet Universal */}
+      {/* Bottom sheet (Visível apenas para Android e Desktop) */}
       <AnimatePresence>
         {sheetOpen && (
           <>
