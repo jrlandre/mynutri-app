@@ -79,22 +79,6 @@ export function ImagePickerTrigger({ onImageSelected, onError, children }: Props
   const isRequestingCamera = useRef(false)
   const mountedRef = useRef(true)
 
-  // Validação em modo dev para garantir que o children suporta refs
-  useEffect(() => {
-    if (process.env.NODE_ENV === 'development') {
-      const child = React.Children.only(children)
-      const type = child.type
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      if (typeof type === 'function' && !(type as any).$$typeof?.toString().includes('forward')) {
-        console.warn(
-          '[ImagePickerTrigger] O children precisa ser um elemento DOM nativo ' +
-          'ou um componente criado com React.forwardRef para que o retorno de ' +
-          'foco funcione corretamente após fechar os modais.'
-        )
-      }
-    }
-  }, [children])
-
   useEffect(() => {
     return () => {
       mountedRef.current = false

@@ -11,16 +11,17 @@ export function useFocusTrap(ref: React.RefObject<HTMLElement | null>, active: b
     if (!active || !ref.current) return
 
     const el = ref.current
-    const focusable = Array.from(el.querySelectorAll<HTMLElement>(FOCUSABLE))
-    
-    if (focusable.length === 0) return
-
-    const first = focusable[0]
-    const last = focusable[focusable.length - 1]
 
     function onKeyDown(e: KeyboardEvent) {
       if (e.key !== 'Tab') return
+      
+      // 1. Re-query a cada tab para garantir que o array está fresco 
+      // (caso botões tenham sido desabilitados ou renderizados dinamicamente)
+      const focusable = Array.from(el.querySelectorAll<HTMLElement>(FOCUSABLE))
       if (focusable.length === 0) { e.preventDefault(); return }
+      
+      const first = focusable[0]
+      const last = focusable[focusable.length - 1]
 
       if (e.shiftKey && document.activeElement === first) {
         e.preventDefault()
@@ -33,5 +34,6 @@ export function useFocusTrap(ref: React.RefObject<HTMLElement | null>, active: b
 
     el.addEventListener('keydown', onKeyDown)
     return () => el.removeEventListener('keydown', onKeyDown)
-  }, [active, ref])
+    // 3. ref é um objeto estável, não precisa estar nas dependências
+  }, [active])
 }
