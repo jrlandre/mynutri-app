@@ -6,7 +6,6 @@ import { compressImage } from '@/lib/compress-image'
 import { validateImageFile } from '@/lib/validateImageFile'
 import { usePickerStrategy } from '@/hooks/usePickerStrategy'
 
-// Suporte TypeScript para File System Access API
 declare global {
   interface Window {
     showOpenFilePicker?: (options?: {
@@ -56,18 +55,24 @@ export function ImagePickerTrigger({ onImageSelected, onError, children }: Props
   const [isFrontCamera, setIsFrontCamera] = useState(false)
   const [isStartingCamera, setIsStartingCamera] = useState(false)
 
-  // Inputs ocultos para as diferentes rotas
   const iosInputRef = useRef<HTMLInputElement>(null)
   const cameraInputRef = useRef<HTMLInputElement>(null)
   const filesInputRef = useRef<HTMLInputElement>(null)
   
+  // A11y: ref para devolver o foco após o dialog fechar
+  const triggerRef = useRef<HTMLElement>(null)
+  
   const webcamStreamRef = useRef<MediaStream | null>(null)
   const webcamVideoNodeRef = useRef<HTMLVideoElement | null>(null)
   const isRequestingCamera = useRef(false)
+  
+  // Anti Race-condition: evita vazamento de stream se desmontar durante getUserMedia
+  const mountedRef = useRef(true)
 
-  // 5. Cleanup de stream WebRTC ao desmontar
   useEffect(() => {
+    mountedRef.current = true
     return () => {
+      mountedRef.current = false
       webcamStreamRef.current?.getTracks().forEach(track => track.stop())
     }
   }, [])
@@ -80,7 +85,12 @@ export function ImagePickerTrigger({ onImageSelected, onError, children }: Props
     }
   }, [])
 
-  // Processador central de arquivos
+  function closeSheet() {
+    setSheetOpen(false)
+    // Devolve o foco ao botão original (A11y)
+    requestAnimationFrame(() => triggerRef.current?.focus())
+  }
+
   async function processFile(file: File) {
     const validation = await validateImageFile(file)
     if (!validation.valid) {
@@ -95,14 +105,12 @@ export function ImagePickerTrigger({ onImageSelected, onError, children }: Props
     }
   }
 
-  // Handler para quando o arquivo vem via <input type="file">
   async function handleFileInputChange(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0]
-    e.target.value = '' // Reseta para permitir selecionar o mesmo arquivo duas vezes
+    e.target.value = '' 
     if (!file) return
-    setSheetOpen(false)
+    closeSheet()
     
-    // 3. processFile envolto em try/catch no event handler
     try {
       await processFile(file)
     } catch (err) {
@@ -110,48 +118,36 @@ export function ImagePickerTrigger({ onImageSelected, onError, children }: Props
     }
   }
 
-  // O clique inicial decide o destino supremo
   function handleTriggerClick() {
-    if (strategy === 'RESOLVING') return // 1. Previne cliques durante a hidrata
+    if (strategy === 'RESOLVING') return 
 
     if (strategy === 'IOS') {
-      // Bypass total do nosso código: confia cegamente na Apple Action Sheet
-      // 7. Removido navigator.vibrate(10) pois não funciona no iOS Safari
       iosInputRef.current?.click()
     } else {
-      // Android e Desktop: Abre o nosso Sniper Bottom Sheet
       setMenuError(null)
       setSheetOpen(true)
     }
   }
 
-  // --- AÇÃO: CÂMERA (Somente visível via Bottom Sheet no Android/Desktop) ---
   async function handleSheetCamera() {
     if (strategy === 'ANDROID') {
-      // Sniper: Tiro direto na câmera nativa do Android
-      setSheetOpen(false)
+      closeSheet()
       cameraInputRef.current?.click()
     } else {
-      // Fallback: Aciona WebRTC no Desktop
       await openWebcam()
     }
   }
 
-  // --- AÇÃO: ARQUIVOS (Somente visível via Bottom Sheet no Android/Desktop) ---
   async function handleSheetFiles() {
-    // 1. Tenta usar a moderna File System Access API (ignora o Chooser do Android S23)
-    if (typeof window !== 'undefined' && 'showOpenFilePicker' in window) {
+    // Garantido rodar no client via onClick
+    if ('showOpenFilePicker' in window) {
       try {
         const fileHandles = await window.showOpenFilePicker!({
-          types: [{
-            description: 'Imagens',
-            accept: { 'image/*': [] }
-          }],
-          multiple: false,
-          excludeAcceptAllOption: true
+          types: [{ description: 'Imagens', accept: { 'image/*': [] } }],
+          multiple: false, excludeAcceptAllOption: true
         })
         const file = await fileHandles[0].getFile()
-        setSheetOpen(false)
+        closeSheet()
         try {
           await processFile(file)
         } catch (err) {
@@ -160,18 +156,14 @@ export function ImagePickerTrigger({ onImageSelected, onError, children }: Props
         return
       } catch (err) {
         if (err instanceof Error && err.name === 'AbortError') return
-        
-        // 2. Log para diagnóstico de falha silenciosa
         console.warn('[ImagePicker] showOpenFilePicker falhou, caindo para fallback:', err)
       }
     }
     
-    // 2. Fallback Legacy: Dispara o input oculto com o hack do MIME type (Para o S9)
-    setSheetOpen(false)
+    closeSheet()
     filesInputRef.current?.click()
   }
 
-  // --- Lógica da Webcam Customizada (Desktop) ---
   async function openWebcam() {
     if (isRequestingCamera.current) return
     isRequestingCamera.current = true
@@ -183,6 +175,13 @@ export function ImagePickerTrigger({ onImageSelected, onError, children }: Props
       const stream = await navigator.mediaDevices.getUserMedia({
         video: { facingMode: { ideal: 'environment' }, width: { ideal: 1920 }, height: { ideal: 1080 } },
       })
+      
+      // Se o componente foi desmontado enquanto o usuário aceitava a permissão, para o stream e sai
+      if (!mountedRef.current) {
+        stream.getTracks().forEach(t => t.stop())
+        return
+      }
+
       webcamStreamRef.current = stream
       const settings = stream.getVideoTracks()[0]?.getSettings()
       setIsFrontCamera(settings?.facingMode === 'user')
@@ -190,6 +189,8 @@ export function ImagePickerTrigger({ onImageSelected, onError, children }: Props
       setSheetOpen(false)
       setWebcamOpen(true)
     } catch (err) {
+      if (!mountedRef.current) return
+      
       const name = err instanceof Error ? err.name : ''
       if (name === 'NotFoundError') {
         setMenuError('Nenhuma câmera conectada.')
@@ -202,7 +203,7 @@ export function ImagePickerTrigger({ onImageSelected, onError, children }: Props
       }
     } finally {
       isRequestingCamera.current = false
-      setIsStartingCamera(false)
+      if (mountedRef.current) setIsStartingCamera(false)
     }
   }
 
@@ -212,6 +213,8 @@ export function ImagePickerTrigger({ onImageSelected, onError, children }: Props
     setWebcamOpen(false)
     setIsFrontCamera(false)
     setIsStartingCamera(false)
+    // Devolve o foco também quando fecha a câmera
+    requestAnimationFrame(() => triggerRef.current?.focus())
   }
 
   function handleWebcamCapture() {
@@ -232,16 +235,16 @@ export function ImagePickerTrigger({ onImageSelected, onError, children }: Props
     onImageSelected(base64, 'image/jpeg')
   }
 
-  // 4. React.cloneElement com React.Children.only
-  // 6. A11y: aria-haspopup no trigger apenas se for abrir o sheet
   const trigger = React.cloneElement(
     React.Children.only(children) as React.ReactElement<{
       onClick?: React.MouseEventHandler<HTMLElement>
+      ref?: React.Ref<HTMLElement>
       'aria-haspopup'?: boolean | 'dialog' | 'menu' | 'listbox' | 'tree' | 'grid'
       'aria-expanded'?: boolean
     }>,
     { 
       onClick: handleTriggerClick,
+      ref: triggerRef,
       ...(strategy !== 'IOS' && strategy !== 'RESOLVING' && {
         'aria-haspopup': 'dialog',
         'aria-expanded': sheetOpen,
@@ -251,69 +254,25 @@ export function ImagePickerTrigger({ onImageSelected, onError, children }: Props
 
   return (
     <>
-      {/* 8. Renderização condicional de inputs e 6. Acessibilidade (aria-hidden) */}
-      
       {strategy === 'IOS' && (
-        <input
-          ref={iosInputRef}
-          type="file"
-          accept="image/*"
-          aria-hidden="true"
-          style={{ display: 'none' }}
-          onChange={handleFileInputChange}
-        />
+        <input ref={iosInputRef} type="file" accept="image/*" aria-hidden="true" style={{ display: 'none' }} onChange={handleFileInputChange} />
       )}
 
       {strategy === 'ANDROID' && (
-        <input
-          ref={cameraInputRef}
-          type="file"
-          accept="image/*"
-          capture="environment"
-          aria-hidden="true"
-          style={{ display: 'none' }}
-          onChange={handleFileInputChange}
-        />
+        <input ref={cameraInputRef} type="file" accept="image/*" capture="environment" aria-hidden="true" style={{ display: 'none' }} onChange={handleFileInputChange} />
       )}
 
       {(strategy === 'ANDROID' || strategy === 'DESKTOP') && (
-        <input
-          ref={filesInputRef}
-          type="file"
-          accept="image/*, .heic, .heif, .avif"
-          aria-hidden="true"
-          style={{ display: 'none' }}
-          onChange={handleFileInputChange}
-        />
+        <input ref={filesInputRef} type="file" accept="image/*, .heic, .heif, .avif" aria-hidden="true" style={{ display: 'none' }} onChange={handleFileInputChange} />
       )}
       
       {trigger}
 
-      {/* Bottom sheet Universal */}
       <AnimatePresence>
         {sheetOpen && (
           <>
-            <motion.div
-              key="img-backdrop"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              transition={{ duration: 0.2 }}
-              onClick={() => setSheetOpen(false)}
-              className="fixed inset-0 bg-black/40 z-50"
-            />
-            {/* 6. A11y: role="dialog" e aria-modal */}
-            <motion.div
-              key="img-sheet"
-              role="dialog"
-              aria-modal="true"
-              aria-label="Opções de envio de imagem"
-              initial={{ y: '100%' }}
-              animate={{ y: 0 }}
-              exit={{ y: '100%' }}
-              transition={{ type: 'spring', damping: 32, stiffness: 320 }}
-              className="fixed bottom-0 left-1/2 -translate-x-1/2 z-50 w-full max-w-2xl bg-background rounded-t-2xl shadow-xl"
-            >
+            <motion.div key="img-backdrop" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.2 }} onClick={closeSheet} className="fixed inset-0 bg-black/40 z-50" />
+            <motion.div key="img-sheet" role="dialog" aria-modal="true" aria-label="Opções de envio de imagem" initial={{ y: '100%' }} animate={{ y: 0 }} exit={{ y: '100%' }} transition={{ type: 'spring', damping: 32, stiffness: 320 }} className="fixed bottom-0 left-1/2 -translate-x-1/2 z-50 w-full max-w-2xl bg-background rounded-t-2xl shadow-xl">
               <div className="w-10 h-1 bg-muted rounded-full mx-auto mt-3 mb-2" />
               <p className="text-center text-xs font-medium text-muted-foreground uppercase tracking-wide mb-3 px-6">Adicionar imagem</p>
               
@@ -354,7 +313,7 @@ export function ImagePickerTrigger({ onImageSelected, onError, children }: Props
                 </button>
 
                 <button
-                  onClick={() => setSheetOpen(false)}
+                  onClick={closeSheet}
                   className="text-sm text-muted-foreground py-3 hover:text-foreground transition-colors"
                 >
                   Cancelar
@@ -365,17 +324,9 @@ export function ImagePickerTrigger({ onImageSelected, onError, children }: Props
         )}
       </AnimatePresence>
 
-      {/* Webcam overlay (Desktop) */}
       <AnimatePresence>
         {webcamOpen && (
-          <motion.div
-            key="webcam-overlay"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: 0.2 }}
-            className="fixed inset-0 z-50 bg-black flex flex-col items-center justify-center px-6"
-          >
+          <motion.div key="webcam-overlay" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.2 }} className="fixed inset-0 z-50 bg-black flex flex-col items-center justify-center px-6">
             <video
               ref={webcamVideoCallbackRef}
               autoPlay
