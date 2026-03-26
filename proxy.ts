@@ -1,3 +1,17 @@
+/**
+ * PROXY — Next.js 16+ convention (substitui middleware.ts)
+ *
+ * Este arquivo é detectado e executado automaticamente pelo Next.js 16
+ * como o arquivo de proxy da aplicação. O nome CORRETO é "proxy.ts"
+ * (não "middleware.ts"). O export principal deve se chamar "proxy",
+ * não "middleware".
+ *
+ * Referência: https://nextjs.org/docs/messages/middleware-to-proxy
+ * Confirmação: .next/dev/server/middleware.js referencia este arquivo
+ * como INNER_MIDDLEWARE_MODULE em tempo de compilação.
+ *
+ * NÃO renomear para middleware.ts.
+ */
 import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
 import { adminClient } from '@/lib/supabase/admin'
@@ -35,7 +49,7 @@ async function buildLimiters() {
 
   return {
     global: new Ratelimit({ redis: kv, limiter: Ratelimit.slidingWindow(500, "1 h"), prefix: "" }),
-    ip:     new Ratelimit({ redis: kv, limiter: Ratelimit.slidingWindow(20,  "1 h"), prefix: "" }),
+    ip:     new Ratelimit({ redis: kv, limiter: Ratelimit.slidingWindow(200, "1 h"), prefix: "" }),
   }
 }
 
@@ -47,12 +61,14 @@ export async function proxy(request: NextRequest) {
     requestHeaders.set('x-tenant-config', tenantJson)
   }
 
-  if (request.nextUrl.pathname.startsWith('/api/')) {
+  // Rate limiting aplicado somente ao endpoint de IA (/api/analyze).
+  // Rotas baratas (histórico, auth, painel, etc.) não são limitadas aqui —
+  // cada uma delas é uma query simples ao banco sem custo de API externa.
+  const isAnalyze = request.nextUrl.pathname.startsWith('/api/analyze')
+  if (isAnalyze) {
     try {
       const limiters = await buildLimiters()
       if (limiters) {
-        const isWebhook = request.nextUrl.pathname.startsWith('/api/webhook')
-
         const globalLimit = await limiters.global.limit("ratelimit_global")
         if (!globalLimit.success) {
           return NextResponse.json(
@@ -61,16 +77,14 @@ export async function proxy(request: NextRequest) {
           )
         }
 
-        if (!isWebhook) {
-          const ip = (request.headers.get("x-forwarded-for") ?? "").split(",")[0].trim() || null
-          if (ip) {
-            const ipLimit = await limiters.ip.limit(`ratelimit_ip_${ip}`)
-            if (!ipLimit.success) {
-              return NextResponse.json(
-                { error: "limite_atingido", message: "Muitas análises em pouco tempo. Tente novamente em alguns minutos.", retryAfter: 60 },
-                { status: 429 }
-              )
-            }
+        const ip = (request.headers.get("x-forwarded-for") ?? "").split(",")[0].trim() || null
+        if (ip) {
+          const ipLimit = await limiters.ip.limit(`ratelimit_ip_${ip}`)
+          if (!ipLimit.success) {
+            return NextResponse.json(
+              { error: "limite_atingido", message: "Muitas análises em pouco tempo. Tente novamente em alguns minutos.", retryAfter: 60 },
+              { status: 429 }
+            )
           }
         }
       }

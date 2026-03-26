@@ -123,6 +123,7 @@ export default function HomeClient({ tenantSubdomain, userProfile }: Props) {
   const [historyOpen, setHistoryOpen] = useState(false)
   const [sessionsList, setSessionsList] = useState<SessionMeta[]>([])
   const [loadingHistory, setLoadingHistory] = useState(false)
+  const [historyError, setHistoryError] = useState<string | null>(null)
 
   const [loading, setLoading] = useState(false)
   const [inputText, setInputText] = useState("")
@@ -252,20 +253,30 @@ export default function HomeClient({ tenantSubdomain, userProfile }: Props) {
 
   async function fetchSessions() {
     setLoadingHistory(true)
+    setHistoryError(null)
     try {
       const res = await fetch("/api/chat/sessions")
       if (res.ok) {
         const data = await res.json() as { sessions?: SessionMeta[] }
         setSessionsList(data.sessions ?? [])
+      } else if (res.status === 401) {
+        setHistoryError("Sessão expirada. Recarregue a página.")
+      } else if (res.status === 429) {
+        setHistoryError("Muitas requisições em pouco tempo. Aguarde alguns minutos.")
+      } else {
+        setHistoryError("Erro ao carregar histórico. Tente novamente.")
       }
     } catch (e) {
       console.error(e)
+      setHistoryError("Erro ao carregar histórico. Tente novamente.")
     } finally {
       setLoadingHistory(false)
     }
   }
 
   async function loadSession(id: string) {
+    const prevSession = session
+    const prevSessionId = sessionId
     setSessionId(id)
     setHistoryOpen(false)
     setSession({ messages: [], analyses: [] })
@@ -283,7 +294,7 @@ export default function HomeClient({ tenantSubdomain, userProfile }: Props) {
             created_at: string
           }[]
         }
-        
+
         const loadedMessages: Message[] = []
         const loadedAnalyses: AnalysisResult[] = []
 
@@ -322,9 +333,19 @@ export default function HomeClient({ tenantSubdomain, userProfile }: Props) {
           }
         }
         setSession({ messages: loadedMessages, analyses: loadedAnalyses })
+      } else {
+        setSession(prevSession)
+        setSessionId(prevSessionId)
+        setError(res.status === 429
+          ? "Muitas requisições em pouco tempo. Aguarde alguns minutos."
+          : "Erro ao carregar a conversa. Tente novamente."
+        )
       }
     } catch (e) {
       console.error("Erro ao carregar sessão", e)
+      setSession(prevSession)
+      setSessionId(prevSessionId)
+      setError("Erro ao carregar a conversa. Tente novamente.")
     } finally {
       setLoading(false)
     }
@@ -742,6 +763,16 @@ export default function HomeClient({ tenantSubdomain, userProfile }: Props) {
                       <div key={i} className="h-12 bg-muted animate-pulse rounded-lg" />
                     ))}
                   </div>
+                ) : historyError ? (
+                  <div className="p-4 flex flex-col items-center gap-3 text-center">
+                    <p className="text-sm text-muted-foreground">{historyError}</p>
+                    <button
+                      onClick={() => void fetchSessions()}
+                      className="text-xs text-primary hover:underline"
+                    >
+                      Tentar novamente
+                    </button>
+                  </div>
                 ) : sessionsList.length > 0 ? (
                   <div className="flex flex-col gap-4 py-1">
                     {groupSessions(sessionsList).map((group) => (
@@ -864,7 +895,7 @@ export default function HomeClient({ tenantSubdomain, userProfile }: Props) {
           {loginGated ? (
             <LoginGateScreen key="login-gate" />
           ) : paywalled ? (
-            <PaywallScreen key="paywall" />
+            <PaywallScreen key="paywall" tenantSubdomain={tenantSubdomain} />
           ) : isEmpty && !loading ? (
             <motion.div
               key="empty"

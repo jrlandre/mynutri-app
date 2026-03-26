@@ -3,7 +3,11 @@
 import { motion } from "framer-motion"
 import { useRouter } from "next/navigation"
 
-export default function PaywallScreen() {
+interface Props {
+  tenantSubdomain?: string
+}
+
+export default function PaywallScreen({ tenantSubdomain }: Props) {
   const router = useRouter()
 
   function handleShare() {
@@ -45,7 +49,13 @@ export default function PaywallScreen() {
           <span className="text-xs opacity-75">Solicitar acesso</span>
         </button>
         <button
-          onClick={() => router.push('/experts')}
+          onClick={() => {
+            if (tenantSubdomain) {
+              window.location.href = `https://mynutri.pro/experts/${tenantSubdomain}`
+            } else {
+              router.push('/experts')
+            }
+          }}
           className="w-full flex flex-col items-center justify-center px-5 py-3 rounded-xl border border-border bg-card hover:bg-muted active:scale-[0.97] transition-all"
         >
           <span className="text-sm font-medium">Ainda não</span>
