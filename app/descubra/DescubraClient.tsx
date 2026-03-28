@@ -174,7 +174,7 @@ export function DescubraClient() {
                 Preço simples, sem surpresas
               </h2>
               <p className="text-sm text-muted-foreground mt-1">
-                Clientes ilimitados. Cancele quando quiser.
+                Cancele quando quiser.
               </p>
             </div>
             <div className="grid grid-cols-2 gap-3">
