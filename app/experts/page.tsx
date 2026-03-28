@@ -1,9 +1,22 @@
+import type { Metadata } from "next"
 import { ChevronLeft } from "lucide-react"
 import Link from "next/link"
 import { adminClient } from "@/lib/supabase/admin"
 import { ExpertFilters } from "./ExpertFilters"
 import { ExpertListClient } from "./ExpertListClient"
 import type { Expert } from "@/types"
+
+export const metadata: Metadata = {
+  title: 'Encontre seu Expert — MyNutri',
+  description: 'Clientes de experts parceiros têm acesso ilimitado ao assistente de nutrição com IA.',
+  openGraph: {
+    title: 'Encontre seu Expert — MyNutri',
+    description: 'Clientes de experts parceiros têm acesso ilimitado ao assistente de nutrição com IA.',
+    url: 'https://mynutri.pro/experts',
+    type: 'website',
+    images: [{ url: '/og-default.png', width: 1200, height: 630, alt: 'MyNutri' }],
+  },
+}
 
 export default async function ExpertsPage({
   searchParams,

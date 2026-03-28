@@ -23,19 +23,21 @@ function initials(name: string) {
 
 interface Props {
   expert: Expert
-  onClick: () => void
+  onClick?: () => void
 }
 
 export default function ExpertCard({ expert, onClick }: Props) {
   return (
-    <button
+    <div
       onClick={onClick}
-      className="w-full flex items-center gap-4 px-4 py-4 rounded-2xl border border-border bg-card hover:bg-muted active:scale-[0.98] transition-all text-left"
+      className="w-full flex items-center gap-4 px-4 py-4 rounded-2xl border border-border bg-card hover:bg-muted active:scale-[0.98] transition-all text-left cursor-pointer"
     >
       {expert.photo_url ? (
         <img
           src={expert.photo_url}
           alt={expert.name}
+          width={96}
+          height={96}
           className="w-24 h-24 rounded-full object-cover shrink-0"
         />
       ) : (
@@ -53,6 +55,6 @@ export default function ExpertCard({ expert, onClick }: Props) {
           <span className="text-xs text-muted-foreground truncate">{expert.city}</span>
         )}
       </div>
-    </button>
+    </div>
   )
 }

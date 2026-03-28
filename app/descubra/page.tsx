@@ -6,7 +6,31 @@ import { GTMScript } from '@/components/GTMScript'
 export const metadata: Metadata = {
   title: 'MyNutri — IA nutricional personalizada pelo seu expert',
   description:
-    'Nutricionistas e profissionais de performance oferecem IA personalizada para seus clientes. Orientação especializada 24h, na hora que precisa.',
+    'Profissionais de saúde e performance que querem oferecer algo diferente aos clientes. Crie seu espaço com IA personalizada.',
+  openGraph: {
+    title: 'MyNutri — IA nutricional personalizada pelo seu expert',
+    description:
+      'Profissionais de saúde e performance que querem oferecer algo diferente aos clientes. Crie seu espaço com IA personalizada.',
+    url: 'https://mynutri.pro/descubra',
+    type: 'website',
+    images: [{ url: '/og-descubra.png', width: 1200, height: 630, alt: 'MyNutri' }],
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'MyNutri — IA nutricional personalizada pelo seu expert',
+    description:
+      'Profissionais de saúde e performance que querem oferecer algo diferente aos clientes. Crie seu espaço com IA personalizada.',
+    images: ['/og-descubra.png'],
+  },
+}
+
+const orgJsonLd = {
+  '@context': 'https://schema.org',
+  '@type': 'Organization',
+  name: 'MyNutri',
+  url: 'https://mynutri.pro',
+  description:
+    'Plataforma de orientação nutricional com IA personalizada por profissionais de saúde e performance.',
 }
 
 export default function DescubraPage() {
@@ -14,6 +38,10 @@ export default function DescubraPage() {
   return (
     <>
       <GTMScript />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(orgJsonLd) }}
+      />
       {pixelId && (
         <>
           <Script id="meta-pixel-descubra" strategy="afterInteractive">{`

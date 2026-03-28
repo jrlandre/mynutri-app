@@ -3,9 +3,39 @@ import { createClient } from "@/lib/supabase/server"
 import AssinarClient from "./AssinarClient"
 import { GTMScript } from '@/components/GTMScript'
 
+const productJsonLd = {
+  '@context': 'https://schema.org',
+  '@type': 'Product',
+  name: 'MyNutri Expert Plan',
+  description:
+    'Espaço personalizado com IA para profissionais de saúde e performance atenderem seus clientes.',
+  offers: [
+    {
+      '@type': 'Offer',
+      name: 'Mensal',
+      price: '249.00',
+      priceCurrency: 'BRL',
+      availability: 'https://schema.org/InStock',
+    },
+    {
+      '@type': 'Offer',
+      name: 'Anual',
+      price: '2490.00',
+      priceCurrency: 'BRL',
+      availability: 'https://schema.org/InStock',
+    },
+  ],
+}
+
 export const metadata = {
-  title: "Assine o MyNutri",
-  description: "Crie seu espaço personalizado e comece a atender seus pacientes com IA.",
+  title: 'Assine o MyNutri — Crie seu espaço com IA',
+  description: 'Profissionais de saúde e performance: crie seu espaço personalizado com IA para atender seus clientes.',
+  openGraph: {
+    title: 'Assine o MyNutri — Crie seu espaço com IA',
+    url: 'https://mynutri.pro/assinar',
+    type: 'website',
+    images: [{ url: '/og-default.png', width: 1200, height: 630 }],
+  },
 }
 
 export default async function AssinarPage({
@@ -21,6 +51,10 @@ export default async function AssinarPage({
   return (
     <>
       <GTMScript />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(productJsonLd) }}
+      />
       {pixelId && (
         <>
           <Script id="meta-pixel-assinar" strategy="afterInteractive">{`
