@@ -19,6 +19,9 @@ export const metadata: Metadata = {
   metadataBase: new URL('https://mynutri.pro'),
   title: "MyNutri",
   description: "Assistente de Saúde & Performance",
+  verification: {
+    google: 'Q0-9Pg-WhlhMPXQUKes4Nye2oFVWOiPUVrMKnevw7NA',
+  },
 }
 
 export default function RootLayout({
