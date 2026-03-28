@@ -69,6 +69,11 @@ export default function TermosPage() {
             tratamento de saúde</strong>. Em caso de dúvidas sobre condições de saúde específicas,
             consulte um profissional habilitado.
           </p>
+          <p>
+            As respostas geradas pela inteligência artificial são probabilísticas e <strong>podem
+            conter imprecisões</strong>. O usuário é responsável por validar qualquer orientação
+            com seu profissional de saúde antes de adotá-la.
+          </p>
         </section>
 
         <section className="flex flex-col gap-2">
@@ -87,8 +92,9 @@ export default function TermosPage() {
             a qualquer momento pelo painel ou pelo suporte.
           </p>
           <p>
-            Ao cancelar, o subdomínio do expert sai do ar. Os clientes finais continuam com
-            acesso ao MyNutri pelo plano gratuito (3 análises por dia), sem vínculo com o expert.
+            Ao cancelar, o ambiente personalizado do expert é desativado e o subdomínio sai do ar.
+            Os clientes vinculados serão notificados e poderão continuar usando o MyNutri pelo plano
+            gratuito (3 orientações por dia), sem as configurações do expert.
           </p>
         </section>
 

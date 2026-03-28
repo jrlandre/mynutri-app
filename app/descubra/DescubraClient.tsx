@@ -25,7 +25,7 @@ const STEPS = [
   {
     n: '3',
     title: 'Seus clientes usam',
-    desc: 'Tiram dúvidas, pedem orientações e aprendem — com a IA treinada por você, 24h por dia.',
+    desc: 'Tiram dúvidas, pedem orientações e aprendem — com a IA configurada com as suas diretrizes, disponível 24h.',
   },
 ]
 
@@ -150,11 +150,11 @@ export function DescubraClient() {
                 Para você, paciente
               </p>
               <h2 className="text-xl font-extrabold tracking-tight">
-                Orientação especializada na hora que você precisa
+                O método do seu profissional, disponível quando precisar
               </h2>
               <p className="text-sm text-muted-foreground leading-relaxed">
-                No supermercado, na academia, às 23h. A IA do seu expert responde com base
-                no método dele — não uma IA genérica de internet.
+                No supermercado, na academia, às 23h. A IA responde com base nas diretrizes
+                do seu profissional — não com conselhos genéricos de internet.
               </p>
             </div>
             <Link
@@ -173,9 +173,6 @@ export function DescubraClient() {
               <h2 className="text-xl font-extrabold tracking-tight">
                 Preço simples, sem surpresas
               </h2>
-              <p className="text-sm text-muted-foreground mt-1">
-                Cancele quando quiser.
-              </p>
             </div>
             <div className="grid grid-cols-2 gap-3">
               <div className="flex flex-col gap-0.5 px-4 py-4 rounded-xl border border-border bg-card">

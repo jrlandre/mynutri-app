@@ -41,9 +41,24 @@ export default function PrivacidadePage() {
         <section className="flex flex-col gap-2">
           <h2 className="font-semibold text-base">2. Como usamos os dados</h2>
           <p>
-            Os dados coletados são usados exclusivamente para operar o MyNutri: autenticar usuários,
-            manter o histórico de conversas e melhorar a qualidade do serviço. <strong>Não vendemos,
-            alugamos nem compartilhamos seus dados com terceiros</strong> para fins comerciais.
+            Os dados são usados exclusivamente para operar e melhorar o MyNutri. Utilizamos os
+            seguintes fornecedores de serviço, que atuam como <strong>processadores de dados</strong> sob
+            nossa instrução:
+          </p>
+          <ul className="list-disc pl-5 flex flex-col gap-1 text-muted-foreground">
+            <li><span className="text-foreground font-medium">Google (Gemini API)</span> — processamento das mensagens para gerar as respostas da IA</li>
+            <li><span className="text-foreground font-medium">Supabase</span> — armazenamento seguro dos dados da conta e histórico</li>
+            <li><span className="text-foreground font-medium">Stripe</span> — processamento de pagamentos (experts)</li>
+            <li><span className="text-foreground font-medium">PostHog</span> — métricas de uso do produto, sem dados de saúde</li>
+          </ul>
+          <p className="text-muted-foreground">
+            <strong className="text-foreground">Não vendemos nem alugamos</strong> seus dados para fins comerciais de terceiros.
+          </p>
+          <p className="text-muted-foreground">
+            Nas páginas de marketing (<span className="font-mono text-xs bg-muted px-1 py-0.5 rounded">/descubra</span>,{' '}
+            <span className="font-mono text-xs bg-muted px-1 py-0.5 rounded">/assinar</span>), utilizamos ferramentas de análise de campanha
+            (Meta Pixel, Google Tag Manager) para medir a eficácia dos anúncios. Essas ferramentas{' '}
+            <strong className="text-foreground">não têm acesso</strong> ao seu histórico de conversas ou dados de saúde.
           </p>
         </section>
 
@@ -89,9 +104,16 @@ export default function PrivacidadePage() {
 
         <section className="flex flex-col gap-2">
           <h2 className="font-semibold text-base">7. Cookies</h2>
-          <p>
-            Usamos apenas cookies de sessão necessários para a autenticação via Supabase. Não
-            utilizamos cookies de rastreamento de terceiros ou publicidade.
+          <p>Utilizamos os seguintes tipos de cookies:</p>
+          <ul className="list-disc pl-5 flex flex-col gap-1 text-muted-foreground">
+            <li><span className="text-foreground font-medium">Sessão de autenticação (Supabase)</span> — necessário para manter você logado</li>
+            <li><span className="text-foreground font-medium">utm_params</span> — armazena a origem da sua visita para atribuição de marketing (30 dias)</li>
+            <li><span className="text-foreground font-medium">PostHog (_ph_*)</span> — métricas de uso do produto, sem dados de saúde</li>
+            <li><span className="text-foreground font-medium">Meta Pixel (_fbc, _fbp)</span> — presentes apenas nas páginas de marketing (<span className="font-mono text-xs bg-muted px-1 py-0.5 rounded">/descubra</span>, <span className="font-mono text-xs bg-muted px-1 py-0.5 rounded">/assinar</span>), para medição de campanhas publicitárias. Não utilizados nas páginas do aplicativo.</li>
+          </ul>
+          <p className="text-muted-foreground">
+            Você pode desabilitar cookies de terceiros nas configurações do seu navegador. Os
+            cookies de sessão são necessários para o funcionamento do serviço.
           </p>
         </section>
 
