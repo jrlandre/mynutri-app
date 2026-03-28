@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server"
 import { adminClient } from "@/lib/supabase/admin"
+import { logger } from "@/lib/logger"
 
 export async function GET(request: Request): Promise<NextResponse> {
   const authHeader = request.headers.get("authorization")
@@ -18,7 +19,7 @@ export async function GET(request: Request): Promise<NextResponse> {
     .select("id")
 
   if (error) {
-    console.error("[cron/clear-commissions] Erro:", error)
+    logger.error('cron/clear-commissions', 'Erro ao limpar comissões', { error })
     return NextResponse.json({ error: error.message }, { status: 500 })
   }
 

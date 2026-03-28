@@ -1,9 +1,10 @@
 "use client"
 
 import { useState, useRef, useEffect } from "react"
+import posthog from 'posthog-js'
 import { motion, AnimatePresence } from "framer-motion"
 import { Plus, X, Trash2, Check, Upload, Link2, ChevronLeft, Copy, Pause, Play } from "lucide-react"
-import { useRouter } from "next/navigation"
+import { useRouter, useSearchParams } from "next/navigation"
 import { createClient } from "@/lib/supabase/client"
 import { compressImage } from "@/lib/compress-image"
 import type { Expert, Client, ContactLink, Referral } from "@/types"
@@ -705,6 +706,7 @@ function Field({ label, value, onChange, placeholder, required }: {
 
 export default function PainelClient({ expert: initialExpert, initialClients, initialReferrals }: Props) {
   const router = useRouter()
+  const searchParams = useSearchParams()
   const [expert, setExpert] = useState(initialExpert)
   const [clients, setClients] = useState<Client[]>(initialClients)
   const [referrals] = useState<Referral[]>(initialReferrals)
@@ -714,7 +716,16 @@ export default function PainelClient({ expert: initialExpert, initialClients, in
     : (["Início", "Exibição", "Config. de IA"] as const)
   type Tab = typeof TABS[number]
 
-  const [tab, setTab] = useState<Tab>("Início")
+  const initialTab: Tab = searchParams.get("tab") === "exibicao" ? "Exibição" : "Início"
+  const [tab, setTab] = useState<Tab>(initialTab)
+
+  // PostHog — expert acessou painel sem clientes (onboarding)
+  useEffect(() => {
+    if (initialClients.length === 0) {
+      posthog.capture('expert_accessed_panel', { expert_id: expert.id })
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
   async function handleInvite(email: string) {
     const res = await fetch("/api/painel/invite", {
@@ -724,6 +735,9 @@ export default function PainelClient({ expert: initialExpert, initialClients, in
     })
     const data = await res.json() as { invite_url?: string; error?: string }
     if (!data.error) {
+      if (clients.length === 0) {
+        posthog.capture('expert_sent_first_invite', { expert_id: expert.id })
+      }
       setClients(prev => [{
         id: crypto.randomUUID(),
         user_id: null,
@@ -759,7 +773,12 @@ export default function PainelClient({ expert: initialExpert, initialClients, in
       body: JSON.stringify(data),
     })
     const json = await res.json() as { expert?: Expert }
-    if (json.expert) setExpert(json.expert)
+    if (json.expert) {
+      setExpert(json.expert)
+      if (tab === 'Exibição') {
+        posthog.capture('expert_completed_profile', { expert_id: expert.id })
+      }
+    }
   }
 
   async function handleLogout() {

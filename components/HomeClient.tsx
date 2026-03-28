@@ -1,14 +1,16 @@
 "use client"
 
-import { useState, useRef, useEffect } from "react"
+import { useState, useRef, useEffect, useCallback } from "react"
+import { usePostHog } from 'posthog-js/react'
 import { AnimatePresence, motion } from "framer-motion"
 import Link from "next/link"
-import { LogOut, LayoutDashboard, ShieldCheck, History, X, MessageSquare, Trash, Play, Pause } from "lucide-react"
+import { LogOut, LayoutDashboard, ShieldCheck, History, X, MessageSquare, Trash, Play, Pause, LifeBuoy } from "lucide-react"
 import { createClient } from "@/lib/supabase/client"
 import SessionHistory from "@/components/SessionHistory"
 import PaywallScreen from "@/components/PaywallScreen"
 import LoginGateScreen from "@/components/LoginGateScreen"
 import { ImagePickerTrigger } from "@/components/ImagePickerTrigger"
+import { reportError } from "@/lib/report-error"
 import type { SessionState, AnalysisResult, InputType, UserProfile, Message } from "@/types"
 
 interface Props {
@@ -157,6 +159,19 @@ export default function HomeClient({ tenantSubdomain, userProfile }: Props) {
 
   const isEmpty = session.analyses.length === 0
 
+  // PostHog — identificar usuário logado
+  const ph = usePostHog()
+  useEffect(() => {
+    if (!userProfile) return
+    ph.identify(userProfile.email, {
+      email: userProfile.email,
+      name: userProfile.name ?? undefined,
+      is_expert: userProfile.hasPanel ?? false,
+      has_expert: !!userProfile.expertName,
+      is_also_expert: !!(userProfile.hasPanel && userProfile.expertName),
+    })
+  }, [userProfile, ph])
+
   useEffect(() => {
     if (historyOpen && userProfile) {
       void fetchSessions()
@@ -267,7 +282,7 @@ export default function HomeClient({ tenantSubdomain, userProfile }: Props) {
         setHistoryError("Erro ao carregar histórico. Tente novamente.")
       }
     } catch (e) {
-      console.error(e)
+      reportError('Erro ao carregar histórico de sessões', e)
       setHistoryError("Erro ao carregar histórico. Tente novamente.")
     } finally {
       setLoadingHistory(false)
@@ -342,7 +357,7 @@ export default function HomeClient({ tenantSubdomain, userProfile }: Props) {
         )
       }
     } catch (e) {
-      console.error("Erro ao carregar sessão", e)
+      reportError('Erro ao carregar sessão', e)
       setSession(prevSession)
       setSessionId(prevSessionId)
       setError("Erro ao carregar a conversa. Tente novamente.")
@@ -693,6 +708,13 @@ export default function HomeClient({ tenantSubdomain, userProfile }: Props) {
                               Conectar com Google
                             </button>
                           )}
+                          <a
+                            href="mailto:suporte@mynutri.pro"
+                            className="w-full text-left px-3 py-2 text-sm hover:bg-muted rounded-lg transition-colors flex items-center gap-2"
+                            onClick={() => setMenuOpen(false)}
+                          >
+                            <LifeBuoy size={16} className="text-muted-foreground" /> Suporte
+                          </a>
                           <button
                             onClick={() => {
                               setMenuOpen(false)

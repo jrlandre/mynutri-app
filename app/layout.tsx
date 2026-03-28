@@ -1,6 +1,8 @@
 import type { Metadata } from "next"
 import { Plus_Jakarta_Sans, Geist_Mono } from "next/font/google"
 import "./globals.css"
+import { ClientErrorHandler } from "@/components/ClientErrorHandler"
+import { PostHogProvider } from "@/providers/PostHogProvider"
 
 const jakarta = Plus_Jakarta_Sans({
   variable: "--font-geist-sans",
@@ -29,7 +31,8 @@ export default function RootLayout({
       className={`${jakarta.variable} ${geistMono.variable}`}
     >
       <body className="antialiased">
-        {children}
+        <ClientErrorHandler />
+        <PostHogProvider>{children}</PostHogProvider>
       </body>
     </html>
   )

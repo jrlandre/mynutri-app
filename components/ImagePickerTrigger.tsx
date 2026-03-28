@@ -6,6 +6,7 @@ import { compressImage } from '@/lib/compress-image'
 import { validateImageFile } from '@/lib/validateImageFile'
 import { usePickerStrategy } from '@/hooks/usePickerStrategy'
 import { useFocusTrap } from '@/hooks/useFocusTrap'
+import { reportError } from '@/lib/report-error'
 
 declare global {
   interface Window {
@@ -97,7 +98,7 @@ export function ImagePickerTrigger({ onImageSelected, onError, children }: Props
     if (node && webcamStreamRef.current) {
       node.srcObject = webcamStreamRef.current
       node.play().catch((err) => {
-        console.warn('[ImagePicker] Erro ao iniciar preview da câmera:', err)
+        reportError('[ImagePicker] Erro ao iniciar preview da câmera', err)
       })
     }
   }, [])
@@ -189,7 +190,7 @@ export function ImagePickerTrigger({ onImageSelected, onError, children }: Props
         return
       } catch (err) {
         if (err instanceof Error && err.name === 'AbortError') return
-        console.warn('[ImagePicker] showOpenFilePicker falhou, caindo para fallback:', err)
+        reportError('[ImagePicker] showOpenFilePicker falhou, caindo para fallback', err)
       }
     }
     

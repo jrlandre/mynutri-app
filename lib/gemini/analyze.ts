@@ -2,6 +2,7 @@ import { ThinkingLevel, createPartFromBase64, Type } from "@google/genai"
 import type { Content, Part } from "@google/genai"
 import { ai } from "./client"
 import { SYSTEM_PROMPT } from "./prompt"
+import { logger } from "@/lib/logger"
 import type { Message, AnalysisResult, InputType, ContentType, ConfidenceLevel, TenantConfig } from "@/types"
 
 const MODEL = "gemini-3-flash-preview"
@@ -110,7 +111,7 @@ export async function analyzeMessage(
       break
     } catch (error: unknown) {
       attempt++
-      console.error(`Falha na API do Gemini (tentativa ${attempt}/${maxAttempts}):`, error)
+      logger.error('gemini/analyze', `Falha na API do Gemini (tentativa ${attempt}/${maxAttempts})`, { error })
       
       if (attempt >= maxAttempts) {
         // Fallback for safety filters or persistent errors
@@ -143,7 +144,7 @@ export async function analyzeMessage(
   try {
     parsedData = JSON.parse(responseText)
   } catch (error) {
-    console.error("Falha ao parsear JSON da LLM:", responseText, error)
+    logger.error('gemini/analyze', 'Falha ao parsear JSON da LLM', { error, responseText: responseText.substring(0, 200) })
     parsedData = {
       confidence: "Baixa",
       confidenceReason: "Erro na estruturação da resposta da IA.",

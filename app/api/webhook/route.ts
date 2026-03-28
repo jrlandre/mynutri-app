@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server"
 import { analyzeMessage } from "@/lib/gemini/analyze"
 import { getHistory, setHistory } from "@/lib/session/history"
 import { sendMessage } from "@/lib/whatsapp/zapi"
+import { logger } from "@/lib/logger"
 import type { ContentType } from "@/types"
 
 interface ZAPIMessage {
@@ -68,13 +69,13 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     // Limite de payload Base64 (~5MB) para evitar gargalos de memória na Vercel e timeout no Gemini
     const base64Str = payload.message.imageBase64 || payload.message.audioBase64 || ""
     if (base64Str && base64Str.length * 0.75 > 5 * 1024 * 1024) {
-      console.warn(`[webhook] Payload muito grande descartado: ${payload.phone}`)
+      logger.warn('webhook', 'Payload muito grande descartado', { phone: payload.phone })
       return NextResponse.json({ ok: true })
     }
 
     const allowed = await checkPhoneRateLimit(payload.phone)
     if (!allowed) {
-      console.warn(`[webhook] rate limit atingido para ${payload.phone}`)
+      logger.warn('webhook', 'Rate limit atingido', { phone: payload.phone })
       return NextResponse.json({ ok: true })
     }
 
@@ -89,7 +90,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
 
     return NextResponse.json({ ok: true })
   } catch (error) {
-    console.error("[webhook] Erro interno:", error)
+    logger.error('webhook', 'Erro interno', { error })
     return NextResponse.json({ ok: true })
   }
 }

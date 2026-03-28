@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef } from "react"
 import { motion } from "framer-motion"
+import posthog from 'posthog-js'
 
 type Plan = "monthly" | "yearly"
 
@@ -25,6 +26,10 @@ export default function AssinarClient({ appDomain, defaultEmail = "", defaultRef
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   const SUBDOMAIN_REGEX = /^[a-z0-9][a-z0-9-]{1,28}[a-z0-9]$/
+
+  useEffect(() => {
+    posthog.capture('expert_viewed_pricing')
+  }, [])
 
   useEffect(() => {
     if (!subdomain) {
@@ -81,6 +86,7 @@ export default function AssinarClient({ appDomain, defaultEmail = "", defaultRef
         return
       }
 
+      posthog.capture('expert_started_checkout', { subdomain, plan, email })
       window.location.href = data.url
     } catch {
       setError("Erro de conexão. Tente novamente.")

@@ -2,6 +2,7 @@ import { NextResponse } from "next/server"
 import { adminClient } from "@/lib/supabase/admin"
 import { Resend } from "resend"
 import ExpertWelcomeEmail from "@/emails/ExpertWelcomeEmail"
+import { logger } from "@/lib/logger"
 
 export async function GET(request: Request): Promise<NextResponse> {
   const authHeader = request.headers.get("authorization")
@@ -34,7 +35,7 @@ export async function GET(request: Request): Promise<NextResponse> {
     .limit(50)
 
   if (error) {
-    console.error("[cron/retry-welcome-emails] Erro ao buscar experts:", error)
+    logger.error('cron/retry-welcome-emails', 'Erro ao buscar experts', { error })
     return NextResponse.json({ error: error.message }, { status: 500 })
   }
 
@@ -49,7 +50,7 @@ export async function GET(request: Request): Promise<NextResponse> {
     const email = user?.email
     if (!email) continue
 
-    const panelUrl = `https://${expert.subdomain}.${appDomain}/painel`
+    const panelUrl = `https://${expert.subdomain}.${appDomain}/painel?tab=exibicao`
 
     try {
       // Marcar como enviado ANTES de enviar — previne duplicatas em execuções paralelas.
@@ -76,7 +77,7 @@ export async function GET(request: Request): Promise<NextResponse> {
 
       results.push({ id: expert.id, status: "success" })
     } catch (err) {
-      console.error(`[cron/retry-welcome-emails] Falha ao reenviar email para ${email}:`, err)
+      logger.error('cron/retry-welcome-emails', 'Falha ao reenviar email de boas-vindas', { error: err, expertId: expert.id, email })
       const message = err instanceof Error ? err.message : String(err)
       results.push({ id: expert.id, status: "error", error: message })
     }

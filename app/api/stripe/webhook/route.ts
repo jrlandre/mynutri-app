@@ -1,8 +1,24 @@
-import { NextRequest, NextResponse } from "next/server"
+import { NextRequest, NextResponse, after } from "next/server"
+import { flushLogs } from "@/lib/axiom"
 import Stripe from "stripe"
 import { adminClient } from "@/lib/supabase/admin"
 import { Resend } from "resend"
 import ExpertWelcomeEmail from "@/emails/ExpertWelcomeEmail"
+import { logger } from "@/lib/logger"
+
+// Rate limit — bloqueia flood antes da verificação de assinatura.
+// 60/min é ~3x o pico legítimo do Stripe; retornar 429 dispara backoff exponencial no retry do Stripe.
+async function buildWebhookRatelimit() {
+  const hasKV = !!(process.env.KV_REST_API_URL && process.env.KV_REST_API_TOKEN)
+  if (!hasKV) return null
+  const { Ratelimit } = await import("@upstash/ratelimit")
+  const { kv } = await import("@vercel/kv")
+  return new Ratelimit({
+    redis: kv,
+    limiter: Ratelimit.slidingWindow(60, "1 m"),
+    prefix: "ratelimit_stripe_webhook_",
+  })
+}
 
 function getStripe() {
   const key = process.env.STRIPE_SECRET_KEY
@@ -11,6 +27,15 @@ function getStripe() {
 }
 
 export async function POST(request: NextRequest): Promise<NextResponse> {
+  const rl = await buildWebhookRatelimit()
+  if (rl) {
+    const { success } = await rl.limit("global")
+    if (!success) {
+      logger.warn('stripe/webhook', 'Rate limit atingido no webhook')
+      return NextResponse.json({ error: "Too many requests" }, { status: 429 })
+    }
+  }
+
   const body = await request.text()
   const sig = request.headers.get("stripe-signature")
   const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET
@@ -25,7 +50,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     event = stripe.webhooks.constructEvent(body, sig, webhookSecret)
   } catch (err) {
     const message = err instanceof Error ? err.message : "Assinatura inválida"
-    console.error("[stripe/webhook] Falha na verificação:", message)
+    logger.error('stripe/webhook', 'Falha na verificação de assinatura', { error: message })
     return NextResponse.json({ error: message }, { status: 400 })
   }
 
@@ -54,10 +79,11 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
         break
     }
   } catch (err) {
-    console.error(`[stripe/webhook] Erro ao processar ${event.type}:`, err)
+    logger.error('stripe/webhook', `Erro ao processar ${event.type}`, { error: err, eventId: event.id })
     return NextResponse.json({ error: "Erro interno no processamento." }, { status: 500 })
   }
 
+  after(flushLogs())
   return NextResponse.json({ received: true })
 }
 
@@ -201,7 +227,7 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
 
   const SUBDOMAIN_REGEX = /^[a-z0-9][a-z0-9-]{1,28}[a-z0-9]$/
   if (!subdomain || !name || !email || !SUBDOMAIN_REGEX.test(subdomain)) {
-    console.error("[stripe/webhook] Metadata inválida:", session.metadata)
+    logger.error('stripe/webhook', 'Metadata inválida no checkout.session.completed', { metadata: session.metadata, sessionId: session.id })
     return
   }
 
@@ -212,12 +238,12 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
     .eq("subdomain", subdomain)
     .maybeSingle()
   if (existingExpert) {
-    console.log(`[stripe/webhook] Expert ${subdomain} já existe — evento duplicado, ignorando`)
+    logger.info('stripe/webhook', 'Expert já existe — evento duplicado, ignorando', { subdomain, sessionId: session.id })
     return
   }
 
   const appDomain = (process.env.NEXT_PUBLIC_APP_URL ?? "").replace(/^https?:\/\//, "").replace(/\/$/, "")
-  const panelUrl = `https://${subdomain}.${appDomain}/painel`
+  const panelUrl = `https://${subdomain}.${appDomain}/painel?tab=exibicao`
 
   const { data: inviteData, error: inviteError } = await adminClient.auth.admin.inviteUserByEmail(
     email,
@@ -232,10 +258,10 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
     // Fallback: usuário já existe — buscar pelo email via RPC
     const { data: existingId } = await adminClient.rpc("get_user_id_by_email", { p_email: email })
     if (!existingId) {
-      console.error("[stripe/webhook] Erro ao criar usuário:", inviteError.message)
+      logger.error('stripe/webhook', 'Erro ao criar usuário via invite', { error: inviteError.message, email })
       throw inviteError
     }
-    console.log(`[stripe/webhook] Usuário ${email} já existe — vinculando expert ao userId existente`)
+    logger.info('stripe/webhook', 'Usuário já existe — vinculando expert ao userId existente', { email })
     userId = existingId as string
   } else {
     userId = inviteData.user.id
@@ -271,11 +297,11 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
     })
 
   if (insertError) {
-    console.error("[stripe/webhook] Erro ao inserir expert:", insertError.message)
+    logger.error('stripe/webhook', 'Erro ao inserir expert', { error: insertError.message, subdomain, email })
     throw insertError
   }
 
-  console.log(`[stripe/webhook] Expert criado: ${subdomain} (${email})`)
+  logger.info('stripe/webhook', 'Expert criado com sucesso', { subdomain, email })
 
   // Referral attribution — usar subdomain (único) para garantir o expert correto
   const { data: newExpert } = await adminClient
@@ -288,7 +314,7 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
     try {
       await createReferralRecords(session, newExpert.id)
     } catch (err) {
-      console.error("[stripe/webhook] Falha ao criar referral records:", err)
+      logger.error('stripe/webhook', 'Falha ao criar referral records', { error: err, subdomain })
     }
   }
 
@@ -307,7 +333,7 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
         .update({ welcome_email_sent: true })
         .eq("subdomain", subdomain)
     } catch (err) {
-      console.error("[stripe/webhook] Falha ao enviar email de boas-vindas:", err)
+      logger.error('stripe/webhook', 'Falha ao enviar email de boas-vindas', { error: err, email, subdomain })
     }
   }
 }
@@ -323,11 +349,11 @@ async function handleSubscriptionDeleted(subscription: Stripe.Subscription) {
     .eq("lifetime", false)
 
   if (error) {
-    console.error("[stripe/webhook] Erro ao desativar expert:", error.message)
+    logger.error('stripe/webhook', 'Erro ao desativar expert na deleção de assinatura', { error: error.message, subscriptionId: subscription.id })
     throw error
   }
 
-  console.log(`[stripe/webhook] Assinatura cancelada: ${subscription.id}`)
+  logger.info('stripe/webhook', 'Assinatura cancelada — expert desativado', { subscriptionId: subscription.id })
 }
 
 // ─── handleSubscriptionUpdated ───────────────────────────────────────────────
@@ -348,8 +374,8 @@ async function handleSubscriptionUpdated(
       .update({ active: true })
       .eq("stripe_subscription_id", subscription.id)
       .eq("active", false)
-    if (error) console.error("[stripe/webhook] Erro ao reativar expert:", error.message)
-    else console.log(`[stripe/webhook] Expert reativado (${previousStatus} → active): ${subscription.id}`)
+    if (error) logger.error('stripe/webhook', 'Erro ao reativar expert', { error: error.message, subscriptionId: subscription.id })
+    else logger.info('stripe/webhook', 'Expert reativado após recuperação de pagamento', { previousStatus, subscriptionId: subscription.id })
   } else if (status === "unpaid" || status === "incomplete_expired") {
     // Stripe esgotou as tentativas — desativa (exceto lifetime)
     const { error } = await adminClient
@@ -357,8 +383,8 @@ async function handleSubscriptionUpdated(
       .update({ active: false })
       .eq("stripe_subscription_id", subscription.id)
       .eq("lifetime", false)
-    if (error) console.error("[stripe/webhook] Erro ao desativar expert:", error.message)
-    else console.log(`[stripe/webhook] Expert desativado (${status}): ${subscription.id}`)
+    if (error) logger.error('stripe/webhook', 'Erro ao desativar expert por inadimplência', { error: error.message, status, subscriptionId: subscription.id })
+    else logger.info('stripe/webhook', 'Expert desativado por inadimplência', { status, subscriptionId: subscription.id })
   }
   // past_due: Stripe ainda está tentando cobrar — mantém ativo
   // canceled: coberto por customer.subscription.deleted
@@ -426,7 +452,7 @@ async function handlePaymentFailed(invoice: Stripe.Invoice) {
     `,
   })
 
-  console.log(`[stripe/webhook] Email de pagamento falho enviado: ${email}`)
+  logger.info('stripe/webhook', 'Email de pagamento falho enviado', { email, expertId: expert.id })
 }
 
 // ─── handleChargeRefunded ─────────────────────────────────────────────────────
@@ -448,9 +474,9 @@ async function handleChargeRefunded(charge: Stripe.Charge) {
     .in("status", ["pending", "cleared"])
 
   if (error) {
-    console.error("[stripe/webhook] Erro ao marcar referrals como refunded:", error.message)
+    logger.error('stripe/webhook', 'Erro ao marcar referrals como refunded', { error: error.message, invoiceId })
   } else {
-    console.log(`[stripe/webhook] Referrals refunded para invoice ${invoiceId}`)
+    logger.info('stripe/webhook', 'Referrals marcados como refunded', { invoiceId })
   }
 }
 

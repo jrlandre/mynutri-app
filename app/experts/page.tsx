@@ -1,130 +1,75 @@
-"use client"
-
-import { useState, useEffect, useCallback } from "react"
-import { motion } from "framer-motion"
-import { useRouter } from "next/navigation"
 import { ChevronLeft } from "lucide-react"
-import ExpertCard from "@/components/ExpertCard"
+import Link from "next/link"
+import { adminClient } from "@/lib/supabase/admin"
+import { ExpertFilters } from "./ExpertFilters"
+import { ExpertListClient } from "./ExpertListClient"
 import type { Expert } from "@/types"
 
-export default function ExpertsPage() {
-  const router = useRouter()
-  const [experts, setExperts] = useState<Expert[]>([])
-  const [loading, setLoading] = useState(true)
+export default async function ExpertsPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ city?: string; specialty?: string }>
+}) {
+  const { city, specialty } = await searchParams
 
-  const [cityFilter, setCityFilter] = useState("")
-  const [specialtyFilter, setSpecialtyFilter] = useState("")
+  const { data: allExperts } = await adminClient
+    .from("experts")
+    .select("id, subdomain, name, photo_url, specialty, city, contact_links")
+    .eq("active", true)
+    .eq("listed", true)
+    .order("name")
 
-  const fetchExperts = useCallback(async () => {
-    setLoading(true)
-    const params = new URLSearchParams()
-    if (cityFilter) params.set("city", cityFilter)
-    if (specialtyFilter) params.set("specialty", specialtyFilter)
+  const all = (allExperts ?? []) as unknown as Expert[]
 
-    try {
-      const res = await fetch(`/api/experts?${params}`)
-      const data = await res.json()
-      setExperts(data.experts ?? [])
-    } catch {
-      setExperts([])
-    } finally {
-      setLoading(false)
-    }
-  }, [cityFilter, specialtyFilter])
+  // Filtro em JS: uma única query + filtragem local evita round-trip extra
+  const experts = all.filter(
+    (e) =>
+      (!city || e.city?.toLowerCase().includes(city.toLowerCase())) &&
+      (!specialty || e.specialty?.toLowerCase().includes(specialty.toLowerCase()))
+  )
 
-  useEffect(() => {
-    fetchExperts()
-  }, [fetchExperts])
-
-  // Unique cities and specialties for filter pills
-  const cities = [...new Set(experts.map(p => p.city).filter(Boolean))] as string[]
-  const specialties = [...new Set(experts.map(p => p.specialty).filter(Boolean))] as string[]
+  const cities = [...new Set(all.map((e) => e.city).filter(Boolean))] as string[]
+  const specialties = [...new Set(all.map((e) => e.specialty).filter(Boolean))] as string[]
 
   return (
     <main className="min-h-dvh max-w-2xl mx-auto px-4 pb-12 flex flex-col">
       {/* Header */}
       <div className="sticky top-0 bg-background pt-4 pb-3 z-10">
         <div className="flex items-center gap-3 mb-4">
-          <button
-            onClick={() => router.back()}
+          <Link
+            href="/"
             className="flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground transition-colors"
           >
             <ChevronLeft size={16} />
             Voltar
-          </button>
+          </Link>
         </div>
         <h1 className="text-xl font-extrabold tracking-tight">Experts parceiros</h1>
         <p className="text-sm text-muted-foreground mt-1">
           Clientes desses profissionais têm acesso ilimitado ao MyNutri.
         </p>
-
-        {/* Filtros */}
-        {(cities.length > 0 || specialties.length > 0) && (
-          <div className="flex gap-2 mt-3 overflow-x-auto pb-1 scrollbar-none">
-            {specialties.map(s => (
-              <button
-                key={s}
-                onClick={() => setSpecialtyFilter(specialtyFilter === s ? "" : s)}
-                className={`shrink-0 px-3 py-1.5 rounded-full text-xs font-medium border transition-colors ${
-                  specialtyFilter === s
-                    ? "bg-primary text-primary-foreground border-primary"
-                    : "border-border bg-card hover:bg-muted"
-                }`}
-              >
-                {s}
-              </button>
-            ))}
-            {cities.map(c => (
-              <button
-                key={c}
-                onClick={() => setCityFilter(cityFilter === c ? "" : c)}
-                className={`shrink-0 px-3 py-1.5 rounded-full text-xs font-medium border transition-colors ${
-                  cityFilter === c
-                    ? "bg-primary text-primary-foreground border-primary"
-                    : "border-border bg-card hover:bg-muted"
-                }`}
-              >
-                {c}
-              </button>
-            ))}
-          </div>
-        )}
+        <ExpertFilters
+          cities={cities}
+          specialties={specialties}
+          activeCity={city ?? ""}
+          activeSpecialty={specialty ?? ""}
+        />
       </div>
 
       {/* Content */}
       <div className="flex-1 flex flex-col mt-4">
-        {loading ? (
-          <div className="flex-1 flex items-center justify-center">
-            <div className="w-5 h-5 rounded-full border-2 border-primary border-t-transparent animate-spin" />
-          </div>
-        ) : experts.length === 0 ? (
-          <motion.div
-            initial={{ opacity: 0, y: 8 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="flex-1 flex flex-col items-center justify-center gap-3 text-center"
-          >
+        {experts.length === 0 ? (
+          <div className="flex-1 flex flex-col items-center justify-center gap-3 text-center">
             <span className="text-3xl">🌱</span>
             <p className="text-sm font-medium">Nenhum Expert encontrado</p>
             <p className="text-xs text-muted-foreground">
-              {cityFilter || specialtyFilter
+              {city || specialty
                 ? "Tente remover os filtros."
                 : "Em breve mais profissionais por aqui."}
             </p>
-          </motion.div>
+          </div>
         ) : (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            className="grid grid-cols-1 sm:grid-cols-2 gap-3"
-          >
-            {experts.map(expert => (
-              <ExpertCard
-                key={expert.id}
-                expert={expert}
-                onClick={() => router.push(`/experts/${expert.subdomain}`)}
-              />
-            ))}
-          </motion.div>
+          <ExpertListClient experts={experts} />
         )}
       </div>
     </main>

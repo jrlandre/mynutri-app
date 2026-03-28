@@ -1,5 +1,6 @@
 import { headers } from 'next/headers'
 import { redirect } from 'next/navigation'
+import { Suspense } from 'react'
 import Link from 'next/link'
 import { ChevronLeft } from 'lucide-react'
 import { createClient } from '@/lib/supabase/server'
@@ -100,10 +101,12 @@ export default async function PainelPage() {
   ])
 
   return (
-    <PainelClient
-      expert={expert as unknown as Expert}
-      initialClients={(clients ?? []) as Client[]}
-      initialReferrals={(referralsResult.data ?? []) as Referral[]}
-    />
+    <Suspense>
+      <PainelClient
+        expert={expert as unknown as Expert}
+        initialClients={(clients ?? []) as Client[]}
+        initialReferrals={(referralsResult.data ?? []) as Referral[]}
+      />
+    </Suspense>
   )
 }

@@ -15,6 +15,7 @@
 import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
 import { adminClient } from '@/lib/supabase/admin'
+import { logger } from '@/lib/logger'
 
 async function resolveTenant(request: NextRequest): Promise<string | null> {
   const host = request.headers.get('host') ?? ''
@@ -60,6 +61,9 @@ export async function proxy(request: NextRequest) {
   if (tenantJson) {
     requestHeaders.set('x-tenant-config', tenantJson)
   }
+
+  // Gera ID único por request para correlação de logs ponta-a-ponta
+  requestHeaders.set('x-request-id', crypto.randomUUID())
 
   // Rate limiting aplicado somente ao endpoint de IA (/api/analyze).
   // Rotas baratas (histórico, auth, painel, etc.) não são limitadas aqui —

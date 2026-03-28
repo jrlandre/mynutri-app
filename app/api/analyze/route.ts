@@ -1,10 +1,13 @@
 import { NextRequest, NextResponse, after } from "next/server"
+import { flushLogs } from "@/lib/axiom"
+import { captureServerEvent } from "@/lib/posthog"
 import { analyzeMessage } from "@/lib/gemini/analyze"
 import { ai } from "@/lib/gemini/client"
 import { ThinkingLevel } from "@google/genai"
 import { createClient } from "@/lib/supabase/server"
 import { adminClient } from "@/lib/supabase/admin"
 import { checkAndIncrementUsage } from "@/lib/usage"
+import { logger } from "@/lib/logger"
 import type { Message, InputType, ContentType, TenantConfig } from "@/types"
 
 async function buildIpRatelimit() {
@@ -50,11 +53,12 @@ async function generateSessionTitle(sessionId: string, userId: string, firstMess
         .eq("user_id", userId)
     }
   } catch (error) {
-    console.error("[generateSessionTitle] Erro ao gerar título:", error)
+    logger.error("analyze/generateSessionTitle", "Erro ao gerar título", { error, sessionId, userId })
   }
 }
 
 export async function POST(request: NextRequest): Promise<NextResponse> {
+  const requestId = request.headers.get('x-request-id') ?? undefined
   try {
     // Rate limiting por IP distribuído
     const ip = (request.headers.get("x-forwarded-for") ?? "").split(",")[0].trim() || null
@@ -94,7 +98,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       try {
         tenantConfig = JSON.parse(tenantHeader)
       } catch (err) {
-        console.error('[analyze] x-tenant-config JSON inválido:', err)
+        logger.error('analyze', 'x-tenant-config JSON inválido', { error: err, requestId })
         return NextResponse.json({ error: 'x-tenant-config inválido' }, { status: 400 })
       }
     }
@@ -191,7 +195,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
           .single()
 
         if (sessionError) {
-          console.error("[analyze] Falha ao criar sessão:", sessionError.message)
+          logger.error('analyze', 'Falha ao criar sessão', { error: sessionError.message, requestId, userId: user.id })
         } else if (newSession) {
           sessionId = newSession.id
           isNewSession = true
@@ -234,9 +238,39 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       }
     }
 
+    // Telemetria PostHog — fire-and-forget, não bloqueia resposta
+    after(async () => {
+      if (!user?.id) return
+      const tier = usageCheck.tier
+
+      if (tier === 'client' && isNewSession) {
+        await captureServerEvent(user.id, 'client_first_analysis')
+      }
+      if (tier === 'free' && isNewSession) {
+        await captureServerEvent(user.id, 'organic_user_no_expert', { has_expert: false })
+      }
+      // client_returned_d1: nova sessão de cliente no dia seguinte à ativação
+      if (tier === 'client' && isNewSession) {
+        const { data: clientRow } = await adminClient
+          .from('clients')
+          .select('activated_at')
+          .eq('user_id', user.id)
+          .eq('active', true)
+          .maybeSingle()
+        if (clientRow?.activated_at) {
+          const d1 = new Date(clientRow.activated_at)
+          d1.setUTCDate(d1.getUTCDate() + 1)
+          const isD1 = d1.toISOString().slice(0, 10) === new Date().toISOString().slice(0, 10)
+          if (isD1) await captureServerEvent(user.id, 'client_returned_d1')
+        }
+      }
+    })
+
+    after(flushLogs())
     return NextResponse.json({ result, updatedMessages, sessionId })
   } catch (error) {
     const message = error instanceof Error ? error.message : "Erro interno"
+    after(flushLogs())
     return NextResponse.json({ error: message }, { status: 500 })
   }
 }

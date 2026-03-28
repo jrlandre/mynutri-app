@@ -4,6 +4,7 @@ import { requireExpert, isResponse, CLIENT_LIMIT } from '@/lib/painel/guard'
 import { randomUUID } from 'crypto'
 import { Resend } from 'resend'
 import ClientInviteEmail from '@/emails/ClientInviteEmail'
+import { logger } from '@/lib/logger'
 
 export async function POST(request: NextRequest): Promise<NextResponse> {
   try {
@@ -106,7 +107,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
           react: ClientInviteEmail({ expertName: expert.name, inviteUrl: invite_url }),
         })
       } catch (err) {
-        console.error('[invite] Falha ao enviar email:', err)
+        logger.error('invite', 'Falha ao enviar email de convite', { error: err, expertId: expert.id, email })
       }
     }
 

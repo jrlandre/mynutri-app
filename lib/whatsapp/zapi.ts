@@ -1,10 +1,12 @@
+import { logger } from "@/lib/logger"
+
 const BASE_URL = "https://api.z-api.io/instances"
 
 export async function sendMessage(phone: string, text: string): Promise<void> {
   const { ZAPI_INSTANCE_ID, ZAPI_TOKEN, ZAPI_SECURITY_TOKEN } = process.env
 
   if (!ZAPI_INSTANCE_ID || !ZAPI_TOKEN || !ZAPI_SECURITY_TOKEN) {
-    console.warn("[zapi] Credenciais não configuradas — mensagem não enviada")
+    logger.warn('zapi', 'Credenciais não configuradas — mensagem não enviada')
     return
   }
 

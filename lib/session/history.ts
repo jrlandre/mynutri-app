@@ -1,4 +1,5 @@
 import type { Message } from "@/types"
+import { logger } from "@/lib/logger"
 
 const TTL_SECONDS = 60 * 60 * 24 * 7 // 7 dias
 
@@ -9,7 +10,7 @@ const hasKV = !!(process.env.KV_REST_API_URL && process.env.KV_REST_API_TOKEN)
 export async function getHistory(phone: string): Promise<Message[]> {
   if (!hasKV) {
     if (process.env.NODE_ENV === "development") {
-      console.warn("[session] KV não configurado — usando Map em memória (dev only)")
+      logger.warn('session', 'KV não configurado — usando Map em memória (dev only)')
     }
     return devStore.get(phone) ?? []
   }

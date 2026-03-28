@@ -6,6 +6,7 @@ import { adminClient } from '@/lib/supabase/admin'
 import { Resend } from 'resend'
 import Stripe from 'stripe'
 import ExpertWelcomeEmail from '@/emails/ExpertWelcomeEmail'
+import { logger } from '@/lib/logger'
 
 async function checkAdmin() {
   const supabase = await createClient()
@@ -43,7 +44,7 @@ export async function toggleExpertStatus(expertId: string, newStatus: boolean) {
         const stripeErr = err as { code?: string; statusCode?: number }
         const alreadyCanceled = stripeErr?.code === 'resource_missing' || stripeErr?.statusCode === 404
         if (!alreadyCanceled) {
-          console.error('[sudo] Erro ao cancelar assinatura Stripe:', err)
+          logger.error('sudo', 'Erro ao cancelar assinatura Stripe', { error: err, expertId })
           throw new Error('Falha ao cancelar assinatura no Stripe. Tente novamente ou cancele diretamente no painel Stripe.')
         }
       }
