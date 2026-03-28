@@ -18,9 +18,19 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       email?: string
       plan?: string
       ref?: string
+      utm?: {
+        utm_source?: string
+        utm_medium?: string
+        utm_campaign?: string
+        utm_content?: string
+        utm_term?: string
+      }
+      fbc?: string
+      fbp?: string
+      pixel_event_id?: string
     }
 
-    const { subdomain, name, email, plan, ref } = body
+    const { subdomain, name, email, plan, ref, utm, fbc, fbp, pixel_event_id } = body
 
     if (!subdomain || !name || !email || !plan) {
       return NextResponse.json({ error: "Todos os campos são obrigatórios." }, { status: 400 })
@@ -73,7 +83,20 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       mode: "subscription",
       line_items: [{ price: priceId, quantity: 1 }],
       customer_email: email,
-      metadata: { subdomain, name, email, ref_code: ref ?? "" },
+      metadata: {
+        subdomain,
+        name,
+        email,
+        ref_code: ref ?? "",
+        utm_source: utm?.utm_source ?? "",
+        utm_medium: utm?.utm_medium ?? "",
+        utm_campaign: utm?.utm_campaign ?? "",
+        utm_content: utm?.utm_content ?? "",
+        utm_term: utm?.utm_term ?? "",
+        fbc: fbc ?? "",
+        fbp: fbp ?? "",
+        pixel_event_id: pixel_event_id ?? "",
+      },
       allow_promotion_codes: true,
       success_url: `https://${appDomain}/obrigado?session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: `https://${appDomain}/assinar`,

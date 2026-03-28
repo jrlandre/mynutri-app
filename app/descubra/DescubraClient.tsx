@@ -1,5 +1,6 @@
 'use client'
 
+import { useEffect } from 'react'
 import Link from 'next/link'
 import { motion } from 'framer-motion'
 
@@ -37,6 +38,21 @@ const FOOTER_LINKS = [
 ]
 
 export function DescubraClient() {
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search)
+    const source = params.get('utm_source')
+    if (!source) return
+    const utm = {
+      utm_source: source,
+      utm_medium: params.get('utm_medium') ?? '',
+      utm_campaign: params.get('utm_campaign') ?? '',
+      utm_content: params.get('utm_content') ?? '',
+      utm_term: params.get('utm_term') ?? '',
+    }
+    const maxAge = 30 * 24 * 60 * 60
+    document.cookie = `utm_params=${encodeURIComponent(JSON.stringify(utm))}; max-age=${maxAge}; path=/; samesite=lax`
+  }, [])
+
   return (
     <div className="min-h-dvh bg-background text-foreground flex flex-col">
       {/* ── Nav ─────────────────────────────────────────────────────── */}

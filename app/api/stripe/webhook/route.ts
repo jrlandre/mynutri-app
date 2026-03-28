@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse, after } from "next/server"
 import { flushLogs } from "@/lib/axiom"
+import { sendCAPIEvent } from "@/lib/meta-capi"
 import Stripe from "stripe"
 import { adminClient } from "@/lib/supabase/admin"
 import { Resend } from "resend"
@@ -221,7 +222,11 @@ async function createReferralRecords(
 // ─── handleCheckoutCompleted ──────────────────────────────────────────────────
 
 async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
-  const { subdomain, name, email } = session.metadata ?? {}
+  const {
+    subdomain, name, email,
+    utm_source, utm_medium, utm_campaign, utm_content, utm_term,
+    fbc, fbp, pixel_event_id,
+  } = session.metadata ?? {}
   const stripe_customer_id = typeof session.customer === "string" ? session.customer : null
   const stripe_subscription_id = typeof session.subscription === "string" ? session.subscription : null
 
@@ -294,6 +299,11 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
       active: true,
       plan: "standard",
       subscription_period,
+      utm_source: utm_source || null,
+      utm_medium: utm_medium || null,
+      utm_campaign: utm_campaign || null,
+      utm_content: utm_content || null,
+      utm_term: utm_term || null,
     })
 
   if (insertError) {
@@ -302,6 +312,19 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
   }
 
   logger.info('stripe/webhook', 'Expert criado com sucesso', { subdomain, email })
+
+  const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? ''
+  const amountBRL = (session.amount_total ?? 0) / 100
+  after(sendCAPIEvent({
+    event_name: 'Purchase',
+    event_id: pixel_event_id || session.id,
+    user_email: email,
+    fbc: fbc || undefined,
+    fbp: fbp || undefined,
+    value: amountBRL,
+    currency: session.currency?.toUpperCase() ?? 'BRL',
+    source_url: `${appUrl}/assinar`,
+  }))
 
   // Referral attribution — usar subdomain (único) para garantir o expert correto
   const { data: newExpert } = await adminClient

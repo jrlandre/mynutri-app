@@ -26,9 +26,17 @@ export default function AssinarClient({ appDomain, defaultEmail = "", defaultRef
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   const SUBDOMAIN_REGEX = /^[a-z0-9][a-z0-9-]{1,28}[a-z0-9]$/
+  const pixelEventId = useRef(`vc_${Date.now()}_${Math.random().toString(36).slice(2)}`)
 
   useEffect(() => {
     posthog.capture('expert_viewed_pricing')
+  }, [])
+
+  useEffect(() => {
+    const fbq = (window as unknown as { fbq?: (...a: unknown[]) => void }).fbq
+    if (fbq) {
+      fbq('track', 'ViewContent', { content_name: 'Página de Assinatura' }, { eventID: pixelEventId.current })
+    }
   }, [])
 
   useEffect(() => {
@@ -70,14 +78,32 @@ export default function AssinarClient({ appDomain, defaultEmail = "", defaultRef
     setError("")
 
     try {
-      const refCode = defaultRef
-        || document.cookie.split('; ').find(r => r.startsWith('ref_code='))?.split('=')[1]
-        || ''
+      function getCookie(name: string): string {
+        return document.cookie.split('; ').find(r => r.startsWith(`${name}=`))?.split('=').slice(1).join('=') ?? ''
+      }
+
+      const refCode = defaultRef || getCookie('ref_code') || ''
+
+      let utmParams: Record<string, string> | undefined
+      try {
+        const raw = getCookie('utm_params')
+        if (raw) utmParams = JSON.parse(decodeURIComponent(raw)) as Record<string, string>
+      } catch { /* ignora */ }
 
       const res = await fetch("/api/assinar", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ subdomain, name, email, plan, ref: refCode }),
+        body: JSON.stringify({
+          subdomain,
+          name,
+          email,
+          plan,
+          ref: refCode,
+          utm: utmParams,
+          fbc: getCookie('_fbc'),
+          fbp: getCookie('_fbp'),
+          pixel_event_id: `checkout_${Date.now()}`,
+        }),
       })
       const data = await res.json() as { url?: string; error?: string }
 
