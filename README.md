@@ -1,7 +1,7 @@
-# mynutri.food
+# mynutri.pro
 
-Assistente de compras nutricional com IA.
-Analisa frutas, vegetais e rótulos em tempo real.
+Assistente nutricional com IA.
+Analisa frutas, vegetais, rótulos, refeições completas... em tempo real.
 
 ## Stack
 - Next.js + TypeScript strict
