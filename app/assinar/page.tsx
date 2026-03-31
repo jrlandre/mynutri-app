@@ -8,7 +8,7 @@ const productJsonLd = {
   '@type': 'Product',
   name: 'MyNutri Expert Plan',
   description:
-    'Espaço personalizado com IA para profissionais de saúde e performance atenderem seus clientes.',
+    'Espaço personalizado com IA para experts atenderem seus clientes.',
   offers: [
     {
       '@type': 'Offer',
@@ -29,7 +29,7 @@ const productJsonLd = {
 
 export const metadata = {
   title: 'Assine o MyNutri — Crie seu espaço com IA',
-  description: 'Profissionais de saúde e performance: crie seu espaço personalizado com IA para atender seus clientes.',
+  description: 'Experts: crie seu espaço personalizado com IA para atender seus clientes.',
   openGraph: {
     title: 'Assine o MyNutri — Crie seu espaço com IA',
     url: 'https://mynutri.pro/assinar',

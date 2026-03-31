@@ -9,6 +9,9 @@ interface Props {
 
 export const metadata = {
   title: "Cadastro confirmado — MyNutri",
+  openGraph: {
+    images: [{ url: '/og-default.png', width: 1200, height: 630, alt: 'MyNutri' }],
+  },
 }
 
 export default async function ObrigadoPage({ searchParams }: Props) {

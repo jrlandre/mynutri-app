@@ -44,12 +44,12 @@ next-env.d.ts
 # local testing & logs
 .playwright-mcp/
 dev.log
-/*.png
-!public/*.png
 *.png
 !public/*.png
+!app/apple-icon.png
 
 # local config
 .mcp.json
 .envrc
 .gemini/
+.qwen/

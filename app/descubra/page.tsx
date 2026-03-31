@@ -6,21 +6,21 @@ import { GTMScript } from '@/components/GTMScript'
 export const metadata: Metadata = {
   title: 'MyNutri — IA nutricional personalizada pelo seu expert',
   description:
-    'Profissionais de saúde e performance que querem oferecer algo diferente aos clientes. Crie seu espaço com IA personalizada.',
+    'Experts que querem oferecer algo diferente aos clientes. Crie seu espaço com IA personalizada.',
   openGraph: {
     title: 'MyNutri — IA nutricional personalizada pelo seu expert',
     description:
-      'Profissionais de saúde e performance que querem oferecer algo diferente aos clientes. Crie seu espaço com IA personalizada.',
+      'Experts que querem oferecer algo diferente aos clientes. Crie seu espaço com IA personalizada.',
     url: 'https://mynutri.pro/descubra',
     type: 'website',
-    images: [{ url: '/og-descubra.png', width: 1200, height: 630, alt: 'MyNutri' }],
+    images: [{ url: '/og-default.png', width: 1200, height: 630, alt: 'MyNutri' }],
   },
   twitter: {
     card: 'summary_large_image',
     title: 'MyNutri — IA nutricional personalizada pelo seu expert',
     description:
-      'Profissionais de saúde e performance que querem oferecer algo diferente aos clientes. Crie seu espaço com IA personalizada.',
-    images: ['/og-descubra.png'],
+      'Experts que querem oferecer algo diferente aos clientes. Crie seu espaço com IA personalizada.',
+    images: ['/og-default.png'],
   },
 }
 
@@ -30,7 +30,7 @@ const orgJsonLd = {
   name: 'MyNutri',
   url: 'https://mynutri.pro',
   description:
-    'Plataforma de orientação nutricional com IA personalizada por profissionais de saúde e performance.',
+    'Plataforma de orientação nutricional com IA personalizada por experts.',
 }
 
 export default function DescubraPage() {

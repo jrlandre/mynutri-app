@@ -18,9 +18,15 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   metadataBase: new URL('https://mynutri.pro'),
   title: "MyNutri",
-  description: "Assistente de Saúde & Performance",
+  description: "Assistente nutricional com IA customizada",
   verification: {
     google: 'Q0-9Pg-WhlhMPXQUKes4Nye2oFVWOiPUVrMKnevw7NA',
+  },
+  openGraph: {
+    siteName: "MyNutri",
+  },
+  twitter: {
+    card: 'summary_large_image',
   },
 }
 

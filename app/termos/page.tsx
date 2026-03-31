@@ -39,7 +39,7 @@ export default function TermosPage() {
         <section className="flex flex-col gap-2">
           <h2 className="font-semibold text-base">2. O que é o serviço</h2>
           <p>
-            O MyNutri conecta profissionais de saúde e performance (&ldquo;experts&rdquo;) com seus
+            O MyNutri conecta experts com seus
             clientes finais. O expert configura uma IA com seu método, linguagem e foco — e seus
             clientes usam essa IA para tirar dúvidas e obter orientações personalizadas.
           </p>
