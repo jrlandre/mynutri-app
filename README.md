@@ -1,4 +1,4 @@
-# mynutri.pro
+# mynutri
 
 Assistente nutricional com IA.
 Analisa frutas, vegetais, rótulos, refeições completas... em tempo real.
