@@ -150,11 +150,11 @@ export function DescubraClient() {
                 Para você, paciente
               </p>
               <h2 className="text-xl font-extrabold tracking-tight">
-                O método do seu profissional, disponível quando precisar
+                O método do seu expert, disponível quando precisar
               </h2>
               <p className="text-sm text-muted-foreground leading-relaxed">
                 No supermercado, na academia, às 23h. A IA responde com base nas diretrizes
-                do seu profissional — não com conselhos genéricos de internet.
+                do seu expert — não com conselhos genéricos de internet.
               </p>
             </div>
             <Link

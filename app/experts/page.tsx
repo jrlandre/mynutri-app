@@ -59,7 +59,7 @@ export default async function ExpertsPage({
         </div>
         <h1 className="text-xl font-extrabold tracking-tight">Experts parceiros</h1>
         <p className="text-sm text-muted-foreground mt-1">
-          Clientes desses profissionais têm acesso ilimitado ao MyNutri.
+          Clientes desses experts têm acesso ilimitado ao MyNutri.
         </p>
         <ExpertFilters
           cities={cities}
@@ -78,7 +78,7 @@ export default async function ExpertsPage({
             <p className="text-xs text-muted-foreground">
               {city || specialty
                 ? "Tente remover os filtros."
-                : "Em breve mais profissionais por aqui."}
+                : "Em breve mais experts por aqui."}
             </p>
           </div>
         ) : (
