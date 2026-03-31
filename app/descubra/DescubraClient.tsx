@@ -89,8 +89,8 @@ export function DescubraClient() {
                 a IA que você configurou
               </h1>
               <p className="text-base text-muted-foreground leading-relaxed max-w-md">
-                Nutricionistas e profissionais de performance que querem oferecer algo diferente:
-                uma IA personalizada para os seus pacientes — disponível 24h, no celular deles.
+                Experts que querem oferecer algo diferente: uma IA personalizada
+                para os seus pacientes — disponível 24h, no celular deles.
               </p>
             </div>
             <div className="flex flex-col sm:flex-row gap-3">
