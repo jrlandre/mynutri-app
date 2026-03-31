@@ -36,7 +36,7 @@ export default function PaywallScreen({ tenantSubdomain }: Props) {
           Seu acesso é ilimitado se você for cliente de um Expert parceiro.
         </p>
         <p className="text-lg font-semibold tracking-tight mt-1">
-          Você já realiza acompanhamento com um expert?
+          Você já realiza acompanhamento com algum expert?
         </p>
       </div>
 
