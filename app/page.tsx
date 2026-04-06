@@ -1,8 +1,17 @@
+import type { Metadata } from 'next'
 import { headers } from 'next/headers'
 import { adminClient } from '@/lib/supabase/admin'
 import { createClient } from '@/lib/supabase/server'
 import HomeClient from "@/components/HomeClient"
 import type { UserProfile } from "@/types"
+
+export const metadata: Metadata = {
+  title: 'MyNutri — Assistente nutricional com IA',
+  description: 'A IA que aplica o método do seu nutricionista. Respostas certas 24h, com o protocolo do seu expert.',
+  alternates: {
+    canonical: 'https://mynutri.pro',
+  },
+}
 
 export default async function Home() {
   const host = (await headers()).get('host') ?? ''

@@ -1,7 +1,12 @@
+import type { Metadata } from 'next'
 import { adminClient } from "@/lib/supabase/admin"
 import { createClient } from "@/lib/supabase/server"
 import HomeClient from "@/components/HomeClient"
 import type { UserProfile } from "@/types"
+
+export const metadata: Metadata = {
+  robots: { index: false },
+}
 
 export default async function SubdomainPage({
   params,
