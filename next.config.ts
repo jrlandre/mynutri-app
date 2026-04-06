@@ -7,6 +7,15 @@ const nextConfig: NextConfig = {
       { protocol: 'https', hostname: '*.supabase.in' },
     ],
   },
+  async redirects() {
+    return [
+      {
+        source: '/descubra/para-experts',
+        destination: '/para-experts',
+        permanent: true,
+      },
+    ]
+  },
   async rewrites() {
     return [
       {

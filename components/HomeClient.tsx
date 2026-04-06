@@ -208,6 +208,30 @@ export default function HomeClient({ tenantSubdomain, userProfile }: Props) {
       .catch(() => {})
   }, [userProfile])
 
+  // Adoção de sessão anônima após login
+  useEffect(() => {
+    if (!userProfile) return
+    const stored = sessionStorage.getItem('mynutri_anon_session')
+    if (!stored) return
+    try {
+      const saved = JSON.parse(stored) as { messages: Message[]; analyses: AnalysisResult[] }
+      sessionStorage.removeItem('mynutri_anon_session')
+      setSession({ messages: saved.messages, analyses: saved.analyses })
+      fetch('/api/chat/adopt-anon', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ messages: saved.messages }),
+      })
+        .then(r => r.json())
+        .then(({ sessionId: adoptedId }: { sessionId?: string }) => {
+          if (adoptedId) setSessionId(adoptedId)
+        })
+        .catch(() => {})
+    } catch {
+      sessionStorage.removeItem('mynutri_anon_session')
+    }
+  }, [userProfile])
+
   useEffect(() => {
     if (!userProfile) return
     const supabase = createClient()
@@ -915,7 +939,17 @@ export default function HomeClient({ tenantSubdomain, userProfile }: Props) {
       <section className="flex-1 overflow-y-auto px-4 py-3 flex flex-col">
         <AnimatePresence mode="wait">
           {loginGated ? (
-            <LoginGateScreen key="login-gate" />
+            <LoginGateScreen
+              key="login-gate"
+              onNavigate={() => {
+                if (session.analyses.length > 0) {
+                  sessionStorage.setItem('mynutri_anon_session', JSON.stringify({
+                    messages: session.messages,
+                    analyses: session.analyses,
+                  }))
+                }
+              }}
+            />
           ) : paywalled ? (
             <PaywallScreen key="paywall" tenantSubdomain={tenantSubdomain} />
           ) : isEmpty && !loading ? (

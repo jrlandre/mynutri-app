@@ -69,6 +69,14 @@ export default function PaywallScreen({ tenantSubdomain }: Props) {
       >
         Entrar com outra conta
       </button>
+
+      <button
+        onClick={() => router.push('/para-experts')}
+        className="flex flex-col items-center gap-0.5 text-xs text-muted-foreground hover:text-foreground transition-colors"
+      >
+        <span className="font-medium">Sou expert</span>
+        <span>Criar meu espaço</span>
+      </button>
     </motion.div>
   )
 }

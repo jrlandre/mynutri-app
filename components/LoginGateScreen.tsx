@@ -3,7 +3,7 @@
 import { motion } from "framer-motion"
 import { useRouter } from "next/navigation"
 
-export default function LoginGateScreen() {
+export default function LoginGateScreen({ onNavigate }: { onNavigate?: () => void }) {
   const router = useRouter()
 
   return (
@@ -23,14 +23,14 @@ export default function LoginGateScreen() {
 
       <div className="flex flex-col gap-2.5 w-full max-w-xs">
         <button
-          onClick={() => router.push('/auth')}
+          onClick={() => { onNavigate?.(); router.push('/auth') }}
           className="w-full flex flex-col items-center justify-center px-5 py-3 rounded-xl bg-primary text-primary-foreground hover:opacity-90 active:scale-[0.97] transition-all"
         >
           <span className="text-sm font-medium">Criar conta gratuita</span>
           <span className="text-xs opacity-75">3 análises por dia</span>
         </button>
         <button
-          onClick={() => router.push('/auth')}
+          onClick={() => { onNavigate?.(); router.push('/auth') }}
           className="w-full flex flex-col items-center justify-center px-5 py-3 rounded-xl border border-border bg-card hover:bg-muted active:scale-[0.97] transition-all"
         >
           <span className="text-sm font-medium">Já tenho conta</span>

@@ -37,7 +37,11 @@ const FOOTER_LINKS = [
   { label: 'Privacidade', href: '/privacidade' },
 ]
 
-export function DescubraClient() {
+interface Props {
+  isLoggedIn: boolean
+}
+
+export function DescubraClient({ isLoggedIn }: Props) {
   useEffect(() => {
     const params = new URLSearchParams(window.location.search)
     const source = params.get('utm_source')
@@ -59,18 +63,29 @@ export function DescubraClient() {
       <nav className="max-w-2xl mx-auto w-full px-4 pt-5 pb-4 flex items-center justify-between">
         <span className="text-xl font-extrabold tracking-tight">MyNutri</span>
         <div className="flex items-center gap-2">
-          <Link
-            href="/auth"
-            className="px-3 py-2 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
-          >
-            Entrar
-          </Link>
-          <Link
-            href="/assinar"
-            className="px-4 py-2 text-sm font-semibold rounded-xl bg-primary text-primary-foreground hover:opacity-90 active:scale-[0.98] transition-all"
-          >
-            Assinar
-          </Link>
+          {isLoggedIn ? (
+            <Link
+              href="/"
+              className="px-4 py-2 text-sm font-semibold rounded-xl bg-primary text-primary-foreground hover:opacity-90 active:scale-[0.98] transition-all"
+            >
+              Acessar O MyNutri
+            </Link>
+          ) : (
+            <>
+              <Link
+                href="/auth"
+                className="px-3 py-2 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
+              >
+                Entrar
+              </Link>
+              <Link
+                href="/assinar"
+                className="px-4 py-2 text-sm font-semibold rounded-xl bg-primary text-primary-foreground hover:opacity-90 active:scale-[0.98] transition-all"
+              >
+                Assinar
+              </Link>
+            </>
+          )}
         </div>
       </nav>
 
@@ -85,30 +100,31 @@ export function DescubraClient() {
           >
             <div className="flex flex-col gap-3">
               <h1 className="text-3xl font-extrabold tracking-tight leading-tight">
-                Dê aos seus clientes<br />
-                a IA que você configurou
+                A IA que aplica o método<br />
+                do especialista.
               </h1>
               <p className="text-base text-muted-foreground leading-relaxed max-w-md">
-                Experts que querem oferecer algo diferente: uma IA personalizada
-                para os seus pacientes — disponível 24h, no celular deles.
+                O método certo. A resposta certa. Na hora que precisar.
               </p>
             </div>
             <div className="flex flex-col sm:flex-row gap-3">
               <Link
-                href="/assinar"
+                href="/"
                 className="px-6 py-3.5 rounded-xl bg-primary text-primary-foreground text-sm font-semibold hover:opacity-90 active:scale-[0.98] transition-all text-center"
               >
-                Criar meu espaço
+                Acessar agora
               </Link>
-              <a
-                href="#como-funciona"
+              <Link
+                href="/para-experts"
                 className="px-6 py-3.5 rounded-xl border border-border bg-card text-sm font-medium hover:bg-muted active:scale-[0.98] transition-all text-center"
               >
-                Ver como funciona
-              </a>
+                Para experts
+              </Link>
             </div>
           </motion.div>
         </section>
+
+        {/* TODO: [backlog] adicionar vídeos de exemplo de uso */}
 
         {/* ── Como funciona ─────────────────────────────────────────── */}
         <section id="como-funciona" className="max-w-2xl mx-auto px-4 py-12 border-t border-border">
@@ -147,7 +163,7 @@ export function DescubraClient() {
           >
             <div className="flex flex-col gap-2">
               <p className="text-xs font-semibold text-primary uppercase tracking-widest">
-                Para você, paciente
+                Para você, cliente
               </p>
               <h2 className="text-xl font-extrabold tracking-tight">
                 O método do seu expert, disponível quando precisar
@@ -163,43 +179,6 @@ export function DescubraClient() {
             >
               Encontrar meu expert
             </Link>
-          </motion.div>
-        </section>
-
-        {/* ── Preço ────────────────────────────────────────────────── */}
-        <section className="max-w-2xl mx-auto px-4 py-12 border-t border-border">
-          <motion.div {...fadeUp()} className="flex flex-col gap-6">
-            <div>
-              <h2 className="text-xl font-extrabold tracking-tight">
-                Preço simples, sem surpresas
-              </h2>
-            </div>
-            <div className="grid grid-cols-2 gap-3">
-              <div className="flex flex-col gap-0.5 px-4 py-4 rounded-xl border border-border bg-card">
-                <span className="text-xs text-muted-foreground font-medium">Mensal</span>
-                <span className="text-2xl font-bold tracking-tight">R$249</span>
-                <span className="text-xs text-muted-foreground">por mês</span>
-              </div>
-              <div className="relative flex flex-col gap-0.5 px-4 py-4 rounded-xl border border-primary bg-primary/5 ring-1 ring-primary">
-                <span className="absolute top-2 right-2 text-[10px] font-semibold bg-emerald-100 text-emerald-700 px-1.5 py-0.5 rounded-full">
-                  −17%
-                </span>
-                <span className="text-xs text-muted-foreground font-medium">Anual</span>
-                <span className="text-2xl font-bold tracking-tight">R$207,50</span>
-                <span className="text-xs text-muted-foreground">por mês · R$2.490/ano</span>
-              </div>
-            </div>
-            <div className="flex flex-col gap-3">
-              <Link
-                href="/assinar"
-                className="w-full py-3.5 rounded-xl bg-primary text-primary-foreground text-sm font-semibold hover:opacity-90 active:scale-[0.98] transition-all text-center"
-              >
-                Começar agora
-              </Link>
-              <p className="text-xs text-center text-muted-foreground">
-                Pagamento seguro via Stripe. Cancele quando quiser.
-              </p>
-            </div>
           </motion.div>
         </section>
       </main>

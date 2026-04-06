@@ -1,25 +1,26 @@
 import type { Metadata } from 'next'
 import Script from 'next/script'
+import { createClient } from '@/lib/supabase/server'
 import { DescubraClient } from './DescubraClient'
 import { GTMScript } from '@/components/GTMScript'
 
 export const metadata: Metadata = {
-  title: 'MyNutri — IA nutricional personalizada pelo seu expert',
+  title: 'MyNutri — IA nutricional personalizada',
   description:
-    'Experts que querem oferecer algo diferente aos clientes. Crie seu espaço com IA personalizada.',
+    'A IA que aplica o método do especialista. Para clientes que querem respostas certas — e para experts que querem escalar sua metodologia.',
   openGraph: {
-    title: 'MyNutri — IA nutricional personalizada pelo seu expert',
+    title: 'MyNutri — IA nutricional personalizada',
     description:
-      'Experts que querem oferecer algo diferente aos clientes. Crie seu espaço com IA personalizada.',
+      'A IA que aplica o método do especialista. Para clientes que querem respostas certas — e para experts que querem escalar sua metodologia.',
     url: 'https://mynutri.pro/descubra',
     type: 'website',
     images: [{ url: '/og-default.png', width: 1200, height: 630, alt: 'MyNutri' }],
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'MyNutri — IA nutricional personalizada pelo seu expert',
+    title: 'MyNutri — IA nutricional personalizada',
     description:
-      'Experts que querem oferecer algo diferente aos clientes. Crie seu espaço com IA personalizada.',
+      'A IA que aplica o método do especialista. Para clientes que querem respostas certas — e para experts que querem escalar sua metodologia.',
     images: ['/og-default.png'],
   },
 }
@@ -33,7 +34,10 @@ const orgJsonLd = {
     'Plataforma de orientação nutricional com IA personalizada por experts.',
 }
 
-export default function DescubraPage() {
+export default async function DescubraPage() {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  const isLoggedIn = !!user
   const pixelId = process.env.NEXT_PUBLIC_META_PIXEL_ID
   return (
     <>
@@ -72,7 +76,7 @@ export default function DescubraPage() {
           </noscript>
         </>
       )}
-      <DescubraClient />
+      <DescubraClient isLoggedIn={isLoggedIn} />
     </>
   )
 }

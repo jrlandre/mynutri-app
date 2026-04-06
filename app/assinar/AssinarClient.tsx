@@ -142,7 +142,7 @@ export default function AssinarClient({ appDomain, defaultEmail = "", defaultRef
         <div className="flex flex-col gap-1">
           <h1 className="text-2xl font-extrabold tracking-tight">MyNutri</h1>
           <p className="text-sm text-muted-foreground leading-relaxed">
-            Seu espaço personalizado com IA para atender pacientes.
+            Seu espaço personalizado com IA para atender clientes.
           </p>
         </div>
 
@@ -246,11 +246,11 @@ export default function AssinarClient({ appDomain, defaultEmail = "", defaultRef
             disabled={!canSubmit}
             className="w-full py-3.5 rounded-xl bg-primary text-primary-foreground text-sm font-semibold hover:opacity-90 active:scale-[0.98] transition-all disabled:opacity-40 disabled:cursor-not-allowed"
           >
-            {loading ? "Aguarde..." : "Assinar e configurar meu espaço"}
+            {loading ? "Aguarde..." : "Começar grátis"}
           </button>
 
           <p className="text-xs text-center text-muted-foreground">
-            Pagamento seguro via Stripe. Cancele quando quiser.
+            14 dias grátis. Sem cobrança agora. Cancele quando quiser.
           </p>
         </form>
       </motion.div>

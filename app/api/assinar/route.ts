@@ -98,6 +98,9 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
         pixel_event_id: pixel_event_id ?? "",
       },
       allow_promotion_codes: true,
+      subscription_data: {
+        trial_period_days: 14,
+      },
       success_url: `https://${appDomain}/obrigado?session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: `https://${appDomain}/assinar`,
     })
