@@ -1,7 +1,9 @@
 "use client"
 
 import { useState, useEffect, useRef } from "react"
+import { useRouter } from "next/navigation"
 import { motion } from "framer-motion"
+import { ChevronLeft } from "lucide-react"
 import posthog from 'posthog-js'
 
 type Plan = "monthly" | "yearly"
@@ -15,6 +17,7 @@ interface Props {
 }
 
 export default function AssinarClient({ appDomain, defaultEmail = "", defaultRef = "" }: Props) {
+  const router = useRouter()
   const [subdomain, setSubdomain] = useState("")
   const [name, setName] = useState("")
   const [email, setEmail] = useState(defaultEmail)
@@ -138,6 +141,14 @@ export default function AssinarClient({ appDomain, defaultEmail = "", defaultRef
         transition={{ duration: 0.3 }}
         className="my-auto flex flex-col gap-8"
       >
+        <button
+          onClick={() => router.back()}
+          className="flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground transition-colors -mb-4 w-fit"
+        >
+          <ChevronLeft size={14} />
+          Voltar
+        </button>
+
         {/* Header */}
         <div className="flex flex-col gap-1">
           <h1 className="text-2xl font-extrabold tracking-tight">MyNutri</h1>

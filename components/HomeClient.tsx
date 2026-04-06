@@ -428,7 +428,7 @@ export default function HomeClient({ tenantSubdomain, userProfile }: Props) {
     const supabase = createClient()
     await supabase.auth.signOut()
     setSession({ messages: [], analyses: [] })
-    window.location.href = "/"
+    window.location.href = "/descubra"
   }
 
   async function submit(

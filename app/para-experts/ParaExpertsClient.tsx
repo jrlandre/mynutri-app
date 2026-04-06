@@ -92,7 +92,7 @@ export function ParaExpertsClient() {
         </Link>
         <div className="flex items-center gap-2">
           <Link
-            href="/auth"
+            href="/auth?next=/para-experts"
             className="px-3 py-2 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
           >
             Entrar
@@ -113,9 +113,9 @@ export function ParaExpertsClient() {
             initial={{ opacity: 0, y: 16 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.35 }}
-            className="flex flex-col gap-6"
+            className="flex flex-col gap-6 items-center text-center"
           >
-            <div className="flex flex-col gap-3">
+            <div className="flex flex-col gap-3 items-center">
               <span className="text-xs font-semibold text-primary uppercase tracking-widest">
                 Para experts
               </span>
@@ -128,10 +128,10 @@ export function ParaExpertsClient() {
                 Você expande, sem se dividir.
               </p>
             </div>
-            <div className="flex flex-col gap-2">
+            <div className="flex flex-col gap-2 items-center">
               <Link
                 href="/assinar"
-                className="self-start px-6 py-3.5 rounded-xl bg-primary text-primary-foreground text-sm font-semibold hover:opacity-90 active:scale-[0.98] transition-all"
+                className="px-6 py-3.5 rounded-xl bg-primary text-primary-foreground text-sm font-semibold hover:opacity-90 active:scale-[0.98] transition-all"
               >
                 Grátis por 14 dias
               </Link>
@@ -149,7 +149,7 @@ export function ParaExpertsClient() {
           <motion.div {...fadeUp()} className="flex flex-col gap-8">
             <div>
               <h2 className="text-xl font-extrabold tracking-tight">O que você ganha</h2>
-              <p className="text-sm text-muted-foreground mt-1">Como expert no O MyNutri.</p>
+              <p className="text-sm text-muted-foreground mt-1">Como expert no MyNutri.</p>
             </div>
             <div className="flex flex-col gap-3">
               {EXPERT_BENEFITS.map((item, i) => (

@@ -54,7 +54,7 @@ function EmailStep({ flow }: { flow: ReturnType<typeof useAuthFlow> }) {
     if (window.history.length > 1 && document.referrer.includes(window.location.host)) {
       router.back()
     } else {
-      router.push('/')
+      router.push('/descubra')
     }
   }
 

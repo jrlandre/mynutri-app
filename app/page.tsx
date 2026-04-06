@@ -1,5 +1,6 @@
 import type { Metadata } from 'next'
 import { headers } from 'next/headers'
+import { redirect } from 'next/navigation'
 import { adminClient } from '@/lib/supabase/admin'
 import { createClient } from '@/lib/supabase/server'
 import HomeClient from "@/components/HomeClient"
@@ -40,14 +41,14 @@ export default async function Home() {
 
     let expertQuery = adminClient
       .from('experts')
-      .select('id, photo_url')
+      .select('id, photo_url, subdomain')
       .eq('user_id', user.id)
       .eq('active', true)
 
     const [{ data: client }, { data: expert }, { data: adminCheck }] = await Promise.all([
       adminClient
         .from('clients')
-        .select('experts(name)')
+        .select('experts(name, subdomain)')
         .eq('user_id', user.id)
         .eq('active', true)
         .limit(1)
@@ -59,6 +60,20 @@ export default async function Home() {
         .eq('user_id', user.id)
         .maybeSingle(),
     ])
+
+    // Redirecionar usuários logados no main domain para o subdomain correto
+    if (!subdomain && appDomain && adminCheck?.is_admin !== true) {
+      if (expert?.subdomain) {
+        redirect(`https://${expert.subdomain}.${appDomain}/`)
+      } else {
+        const clientExpertSub = Array.isArray(client?.experts)
+          ? client?.experts[0]?.subdomain
+          : (client?.experts as { subdomain?: string } | null)?.subdomain
+        if (clientExpertSub) {
+          redirect(`https://${clientExpertSub}.${appDomain}/`)
+        }
+      }
+    }
 
     if (expert) {
       hasPanel = true
