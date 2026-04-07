@@ -134,12 +134,12 @@ export default function AssinarClient({ appDomain, defaultEmail = "", defaultRef
   const canSubmit = subdomain && name && email && plan && subdomainStatus === "available" && !loading
 
   return (
-    <main className="min-h-dvh bg-background max-w-sm mx-auto px-6 py-10 flex flex-col">
+    <main className="min-h-dvh bg-background max-w-2xl mx-auto px-6 py-10 flex flex-col">
       <motion.div
         initial={{ opacity: 0, y: 16 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.3 }}
-        className="my-auto flex flex-col gap-8"
+        className="my-auto w-full max-w-sm mx-auto flex flex-col gap-8"
       >
         <button
           onClick={() => router.back()}

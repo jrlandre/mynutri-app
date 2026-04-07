@@ -589,8 +589,14 @@ export default function HomeClient({ tenantSubdomain, userProfile }: Props) {
       maxRecordingTimerRef.current = setTimeout(() => {
         handleStopRecording()
       }, MAX_RECORDING_SECONDS * 1000)
-    } catch {
-      // permissão negada ou dispositivo indisponível
+    } catch (err) {
+      if (err instanceof DOMException && err.name === "NotAllowedError") {
+        setError("Permissão para microfone negada. Verifique as configurações do seu navegador.")
+      } else if (err instanceof TypeError) {
+        setError("Microfone não disponível neste contexto.")
+      } else {
+        setError("Não foi possível acessar o microfone.")
+      }
     }
   }
 
