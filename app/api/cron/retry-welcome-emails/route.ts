@@ -44,6 +44,7 @@ export async function GET(request: Request): Promise<NextResponse> {
   const results = []
 
   for (const expert of experts) {
+    if (!expert.user_id) continue
     // Busca email via Auth Admin API (padrão do projeto — auth.users não é acessível via PostgREST join)
     const { data: userData } = await adminClient.auth.admin.getUserById(expert.user_id)
     const email = userData.user?.email
