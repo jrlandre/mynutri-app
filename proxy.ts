@@ -17,12 +17,20 @@ import type { NextRequest } from 'next/server'
 import { adminClient } from '@/lib/supabase/admin'
 import { logger } from '@/lib/logger'
 
+// Cache de tenant em memória — reutilizado entre requests no mesmo Edge worker.
+// TTL de 5 min: troca-off entre conexões ao DB e propagação de mudanças no painel.
+const tenantCache = new Map<string, { value: string | null; exp: number }>()
+const TENANT_TTL_MS = 5 * 60 * 1000
+
 async function resolveTenant(request: NextRequest): Promise<string | null> {
   const host = request.headers.get('host') ?? ''
   const appDomain = (process.env.NEXT_PUBLIC_APP_URL ?? '').replace(/^https?:\/\//, '').replace(/\/$/, '').replace(/\./g, '\\.')
   const match = appDomain ? host.match(new RegExp(`^([^.]+)\\.${appDomain}$`)) : null
   if (!match) return null
   const subdomain = match[1]
+
+  const cached = tenantCache.get(host)
+  if (cached && cached.exp > Date.now()) return cached.value
 
   const { data } = await adminClient
     .from('experts')
@@ -31,13 +39,12 @@ async function resolveTenant(request: NextRequest): Promise<string | null> {
     .eq('active', true)
     .maybeSingle()
 
-  if (!data) return null
+  const value = data
+    ? JSON.stringify({ subdomain, expertName: data.name, systemPrompt: data.system_prompt ?? '' })
+    : null
 
-  return JSON.stringify({
-    subdomain,
-    expertName: data.name,
-    systemPrompt: data.system_prompt ?? '',
-  })
+  tenantCache.set(host, { value, exp: Date.now() + TENANT_TTL_MS })
+  return value
 }
 
 // Rate limiting lazy — só ativa se KV estiver configurado
