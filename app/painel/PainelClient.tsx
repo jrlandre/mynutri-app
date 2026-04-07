@@ -284,6 +284,7 @@ function TabVitrine({ expert, onSave, onPhotoChange }: {
   const [links, setLinks] = useState<ContactLink[]>(expert.contact_links ?? [])
   const [saving, setSaving] = useState(false)
   const [saved, setSaved] = useState(false)
+  const [saveError, setSaveError] = useState<string | null>(null)
   const linksContainerRef = useRef<HTMLDivElement>(null)
 
   // Autoscroll quando adicionar link
@@ -340,7 +341,7 @@ function TabVitrine({ expert, onSave, onPhotoChange }: {
   }
 
   function addLink() {
-    setLinks(prev => [...prev, { type: "whatsapp", label: "", url: "" }])
+    setLinks(prev => [...prev, { type: "WhatsApp", label: "", url: "" }])
   }
 
   function removeLink(i: number) {
@@ -354,24 +355,29 @@ function TabVitrine({ expert, onSave, onPhotoChange }: {
   async function handleSave(e: React.FormEvent) {
     e.preventDefault()
     setSaving(true)
-    
+    setSaveError(null)
+
     // Fallback: se o rótulo estiver vazio, usa o tipo diretamente
     const processedLinks = links.map(link => ({
       ...link,
       label: link.label.trim() || link.type
     }))
-      
-    await onSave({ 
-      name, 
-      specialty: specialty || null, 
-      city: city || null, 
-      listed, 
-      contact_links: processedLinks
-    })
-    
-    setSaving(false)
-    setSaved(true)
-    setTimeout(() => setSaved(false), 2000)
+
+    try {
+      await onSave({
+        name,
+        specialty: specialty || null,
+        city: city || null,
+        listed,
+        contact_links: processedLinks
+      })
+      setSaved(true)
+      setTimeout(() => setSaved(false), 2000)
+    } catch (err) {
+      setSaveError(err instanceof Error ? err.message : "Erro ao salvar. Tente novamente.")
+    } finally {
+      setSaving(false)
+    }
   }
 
   const hasChanges = 
@@ -498,6 +504,9 @@ function TabVitrine({ expert, onSave, onPhotoChange }: {
         )}
       </div>
 
+      {saveError && (
+        <p className="text-sm text-destructive bg-destructive/10 rounded-lg px-4 py-3">{saveError}</p>
+      )}
       <button
         type="submit"
         disabled={saving || !hasChanges || !name.trim()}
@@ -772,7 +781,10 @@ export default function PainelClient({ expert: initialExpert, initialClients, in
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(data),
     })
-    const json = await res.json() as { expert?: Expert }
+    const json = await res.json() as { expert?: Expert; error?: string }
+    if (!res.ok) {
+      throw new Error(json.error ?? "Erro ao salvar")
+    }
     if (json.expert) {
       setExpert(json.expert)
       if (tab === 'Exibição') {

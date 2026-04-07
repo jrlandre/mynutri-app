@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { revalidatePath } from 'next/cache'
 import { adminClient } from '@/lib/supabase/admin'
 import { requireExpert, isResponse } from '@/lib/painel/guard'
 
@@ -53,6 +54,7 @@ export async function PATCH(request: NextRequest): Promise<NextResponse> {
 
     if (error) throw new Error(error.message)
 
+    revalidatePath('/experts')
     return NextResponse.json({ expert: data })
   } catch (e) {
     return NextResponse.json({ error: e instanceof Error ? e.message : 'Erro interno' }, { status: 500 })
