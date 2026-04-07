@@ -30,6 +30,9 @@ const productJsonLd = {
 export const metadata = {
   title: 'Assine o MyNutri — Crie seu espaço com IA',
   description: '14 dias grátis para começar. Configure seu espaço com IA para seus clientes — sem cobrança agora.',
+  alternates: {
+    canonical: 'https://mynutri.pro/assinar',
+  },
   openGraph: {
     title: 'Assine o MyNutri — Crie seu espaço com IA',
     url: 'https://mynutri.pro/assinar',

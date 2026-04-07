@@ -4,6 +4,7 @@ import { ChevronLeft } from 'lucide-react'
 
 export const metadata: Metadata = {
   title: 'Política de Privacidade — MyNutri',
+  alternates: { canonical: 'https://mynutri.pro/privacidade' },
 }
 
 export default function PrivacidadePage() {

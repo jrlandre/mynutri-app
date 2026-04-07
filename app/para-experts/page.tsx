@@ -5,6 +5,9 @@ export const metadata: Metadata = {
   title: 'Para Experts — MyNutri',
   description:
     'Configure uma vez. Seus clientes têm respostas 24h com o seu protocolo. Grátis por 14 dias.',
+  alternates: {
+    canonical: 'https://mynutri.pro/para-experts',
+  },
   openGraph: {
     title: 'Para Experts — MyNutri',
     description:

@@ -9,6 +9,9 @@ import type { Expert } from "@/types"
 export const metadata: Metadata = {
   title: 'Encontre seu Expert — MyNutri',
   description: 'Clientes de experts parceiros têm acesso ilimitado ao assistente de nutrição com IA.',
+  alternates: {
+    canonical: 'https://mynutri.pro/experts',
+  },
   openGraph: {
     title: 'Encontre seu Expert — MyNutri',
     description: 'Clientes de experts parceiros têm acesso ilimitado ao assistente de nutrição com IA.',

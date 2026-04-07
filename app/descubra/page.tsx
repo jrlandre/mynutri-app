@@ -8,6 +8,9 @@ export const metadata: Metadata = {
   title: 'MyNutri — IA nutricional personalizada',
   description:
     'A IA que aplica o método do especialista. Para clientes que querem respostas certas — e para experts que querem escalar sua metodologia.',
+  alternates: {
+    canonical: 'https://mynutri.pro/descubra',
+  },
   openGraph: {
     title: 'MyNutri — IA nutricional personalizada',
     description:

@@ -9,9 +9,7 @@ import type { UserProfile } from "@/types"
 export const metadata: Metadata = {
   title: 'MyNutri — Assistente nutricional com IA',
   description: 'A IA que aplica o método do seu nutricionista. Respostas certas 24h, com o protocolo do seu expert.',
-  alternates: {
-    canonical: 'https://mynutri.pro',
-  },
+  robots: { index: false, follow: false },
 }
 
 export default async function Home() {

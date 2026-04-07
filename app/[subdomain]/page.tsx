@@ -1,4 +1,6 @@
 import type { Metadata } from 'next'
+import { redirect } from 'next/navigation'
+import { notFound } from 'next/navigation'
 import { adminClient } from "@/lib/supabase/admin"
 import { createClient } from "@/lib/supabase/server"
 import HomeClient from "@/components/HomeClient"
@@ -22,12 +24,13 @@ export default async function SubdomainPage({
     .eq("active", true)
     .maybeSingle()
 
-  if (!data) {
-    return (
-      <main className="min-h-dvh flex items-center justify-center px-6">
-        <p className="text-sm text-muted-foreground">Expert não encontrado.</p>
-      </main>
-    )
+  if (!data) notFound()
+
+  const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? ''
+  const appDomain = appUrl.replace(/^https?:\/\//, '').replace(/\/$/, '')
+  if (appDomain && !appDomain.includes('localhost')) {
+    const protocol = appUrl.startsWith('https') ? 'https' : 'http'
+    redirect(`${protocol}://${subdomain}.${appDomain}`)
   }
 
   const supabase = await createClient()

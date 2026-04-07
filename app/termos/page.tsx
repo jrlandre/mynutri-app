@@ -4,6 +4,7 @@ import { ChevronLeft } from 'lucide-react'
 
 export const metadata: Metadata = {
   title: 'Termos de Uso — MyNutri',
+  alternates: { canonical: 'https://mynutri.pro/termos' },
 }
 
 export default function TermosPage() {
