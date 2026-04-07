@@ -3,6 +3,7 @@ import { adminClient } from "@/lib/supabase/admin"
 import { Resend } from "resend"
 import ExpertWelcomeEmail from "@/emails/ExpertWelcomeEmail"
 import { logger } from "@/lib/logger"
+import { flushLogs } from "@/lib/axiom"
 
 export async function GET(request: Request): Promise<NextResponse> {
   const authHeader = request.headers.get("authorization")
@@ -14,6 +15,7 @@ export async function GET(request: Request): Promise<NextResponse> {
   }
 
   if (!process.env.RESEND_API_KEY) {
+    await flushLogs()
     return NextResponse.json({ error: "Resend API key missing" }, { status: 500 })
   }
 
@@ -23,31 +25,28 @@ export async function GET(request: Request): Promise<NextResponse> {
   // Buscar experts criados nos últimos 7 dias que não receberam o email de boas-vindas
   const { data: experts, error } = await adminClient
     .from("experts")
-    .select(`
-      id,
-      user_id,
-      subdomain,
-      name,
-      users:user_id ( email )
-    `)
+    .select("id, user_id, subdomain, name")
     .eq("welcome_email_sent", false)
     .gte("created_at", new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString())
     .limit(50)
 
   if (error) {
     logger.error('cron/retry-welcome-emails', 'Erro ao buscar experts', { error })
+    await flushLogs()
     return NextResponse.json({ error: error.message }, { status: 500 })
   }
 
   if (!experts || experts.length === 0) {
+    await flushLogs()
     return NextResponse.json({ message: "Nenhum email pendente." })
   }
 
   const results = []
 
   for (const expert of experts) {
-    const user = (expert.users as unknown as { email: string })
-    const email = user?.email
+    // Busca email via Auth Admin API (padrão do projeto — auth.users não é acessível via PostgREST join)
+    const { data: userData } = await adminClient.auth.admin.getUserById(expert.user_id)
+    const email = userData.user?.email
     if (!email) continue
 
     const panelUrl = `https://${expert.subdomain}.${appDomain}/painel?tab=exibicao`
@@ -83,5 +82,6 @@ export async function GET(request: Request): Promise<NextResponse> {
     }
   }
 
+  await flushLogs()
   return NextResponse.json({ message: "Processamento concluído", results })
 }
