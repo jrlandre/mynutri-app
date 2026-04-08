@@ -306,6 +306,8 @@ function TabVitrine({ expert, onSave, onPhotoChange }: {
   const [saving, setSaving] = useState(false)
   const [saved, setSaved] = useState(false)
   const [saveError, setSaveError] = useState<string | null>(null)
+  const [hintUrls, setHintUrls] = useState<Record<number, string>>({})
+  const hintTimers = useRef<Record<number, ReturnType<typeof setTimeout>>>({})
   const linksContainerRef = useRef<HTMLDivElement>(null)
 
   // Autoscroll quando adicionar link
@@ -367,10 +369,26 @@ function TabVitrine({ expert, onSave, onPhotoChange }: {
 
   function removeLink(i: number) {
     setLinks(prev => prev.filter((_, idx) => idx !== i))
+    // limpa timer e hint do link removido
+    if (hintTimers.current[i]) clearTimeout(hintTimers.current[i])
+    setHintUrls(prev => { const n = { ...prev }; delete n[i]; return n })
   }
 
   function updateLink(i: number, field: keyof ContactLink, value: string) {
     setLinks(prev => prev.map((l, idx) => idx === i ? { ...l, [field]: value } : l))
+    if (field === "url") {
+      if (hintTimers.current[i]) clearTimeout(hintTimers.current[i])
+      // URL ficou válida → esconde hint imediatamente
+      // URL ainda inválida → aguarda 900ms antes de mostrar
+      const currentType = links[i]?.type ?? ""
+      if (!getUrlHint(currentType, value)) {
+        setHintUrls(prev => ({ ...prev, [i]: value }))
+      } else {
+        hintTimers.current[i] = setTimeout(() => {
+          setHintUrls(prev => ({ ...prev, [i]: value }))
+        }, 900)
+      }
+    }
   }
 
   async function handleSave(e: React.FormEvent) {
@@ -475,7 +493,7 @@ function TabVitrine({ expert, onSave, onPhotoChange }: {
         ) : (
           <div ref={linksContainerRef} className="flex flex-col gap-3">
             {links.map((link, i) => {
-              const urlHint = getUrlHint(link.type, link.url)
+              const urlHint = getUrlHint(link.type, hintUrls[i] ?? "")
               return (
               <div key={i} className="relative p-4 rounded-2xl bg-muted/30 border border-border flex flex-col gap-3 group">
                 <button 
@@ -524,9 +542,20 @@ function TabVitrine({ expert, onSave, onPhotoChange }: {
                         : "border-border focus:ring-ring/40"
                     }`}
                   />
-                  {urlHint && (
-                    <p className="text-[11px] text-amber-600 ml-1">{urlHint}</p>
-                  )}
+                  <AnimatePresence>
+                    {urlHint && (
+                      <motion.p
+                        key="url-hint"
+                        initial={{ opacity: 0, y: -4 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: -4 }}
+                        transition={{ duration: 0.18 }}
+                        className="text-[11px] text-amber-600 ml-1"
+                      >
+                        {urlHint}
+                      </motion.p>
+                    )}
+                  </AnimatePresence>
                 </div>
               </div>
               )
