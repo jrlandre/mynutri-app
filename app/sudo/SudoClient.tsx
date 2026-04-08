@@ -9,6 +9,8 @@ import {
   changeExpertPlan,
   resendWelcomeEmail,
   createExpertBypass,
+  createDemoExpert,
+  deleteExpert,
   setCommission,
   markReferralsPaid,
   setPromoterStatus,
@@ -169,6 +171,17 @@ function TabExperts({ experts, clientCountByExpert }: {
   const [createError, setCreateError] = useState<string | null>(null)
   const [createLoading, setCreateLoading] = useState(false)
 
+  // Demo
+  const [showDemoForm, setShowDemoForm] = useState(false)
+  const [demoForm, setDemoForm] = useState({ name: "", subdomain: "" })
+  const [demoError, setDemoError] = useState<string | null>(null)
+  const [demoLoading, setDemoLoading] = useState(false)
+  const [demoCreated, setDemoCreated] = useState<string | null>(null) // subdomain após criação
+
+  // Delete
+  const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null)
+  const [deleteError, setDeleteError] = useState<{ id: string; message: string } | null>(null)
+
   const appDomain = (process.env.NEXT_PUBLIC_APP_URL ?? "mynutri.pro").replace(/^https?:\/\//, "").replace(/\/$/, "")
 
   function handleToggleStatus(expertId: string, newStatus: boolean) {
@@ -209,9 +222,43 @@ function TabExperts({ experts, clientCountByExpert }: {
     setCreateLoading(false)
   }
 
+  async function handleCreateDemo(e: React.FormEvent) {
+    e.preventDefault()
+    setDemoLoading(true)
+    setDemoError(null)
+    try {
+      await createDemoExpert(demoForm)
+      setDemoCreated(demoForm.subdomain)
+      setDemoForm({ name: "", subdomain: "" })
+    } catch (err) {
+      setDemoError(err instanceof Error ? err.message : "Erro ao criar demo")
+    }
+    setDemoLoading(false)
+  }
+
+  function handleDeleteConfirm(expertId: string) {
+    setDeleteError(null)
+    setLoadingId(expertId + "-delete")
+    startTransition(async () => {
+      try {
+        await deleteExpert(expertId)
+      } catch (err) {
+        setDeleteError({ id: expertId, message: err instanceof Error ? err.message : "Erro ao excluir" })
+      }
+      setLoadingId(null)
+      setConfirmDeleteId(null)
+    })
+  }
+
   return (
     <div className="flex flex-col gap-3 pt-4">
-      <div className="flex justify-end">
+      <div className="flex justify-end gap-3">
+        <button
+          onClick={() => { setShowDemoForm(true); setDemoCreated(null); setDemoError(null) }}
+          className="text-xs text-muted-foreground font-medium hover:opacity-70 transition-opacity"
+        >
+          + Criar demo
+        </button>
         <button
           onClick={() => setShowCreateForm(true)}
           className="text-xs text-primary font-medium hover:opacity-70 transition-opacity"
@@ -314,13 +361,101 @@ function TabExperts({ experts, clientCountByExpert }: {
                 </a>
               </>
             )}
+            {!expert.stripe_customer_id && !expert.lifetime && (clientCountByExpert[expert.id] ?? 0) === 0 && (
+              <>
+                <span className="text-muted-foreground/40">·</span>
+                {confirmDeleteId === expert.id ? (
+                  <span className="flex items-center gap-1.5">
+                    <span className="text-xs text-destructive">Excluir?</span>
+                    <button
+                      onClick={() => handleDeleteConfirm(expert.id)}
+                      disabled={loadingId === expert.id + "-delete"}
+                      className="text-xs text-destructive font-medium hover:opacity-70 transition-opacity disabled:opacity-50"
+                    >
+                      {loadingId === expert.id + "-delete" ? "..." : "Sim"}
+                    </button>
+                    <button
+                      onClick={() => { setConfirmDeleteId(null); setDeleteError(null) }}
+                      className="text-xs text-muted-foreground hover:text-foreground transition-colors"
+                    >
+                      Não
+                    </button>
+                  </span>
+                ) : (
+                  <button
+                    onClick={() => { setConfirmDeleteId(expert.id); setDeleteError(null) }}
+                    disabled={!!loadingId}
+                    className="text-xs text-destructive/70 hover:text-destructive transition-colors disabled:opacity-50"
+                  >
+                    Excluir
+                  </button>
+                )}
+              </>
+            )}
           </div>
+          {deleteError?.id === expert.id && (
+            <p className="text-xs text-destructive">{deleteError.message}</p>
+          )}
         </div>
       ))}
 
       {experts.length === 0 && (
         <p className="text-sm text-muted-foreground text-center py-8">Nenhum expert cadastrado.</p>
       )}
+
+      {/* Criar demo modal */}
+      <AnimatePresence>
+        {showDemoForm && (
+          <Modal title="Criar expert demo" onClose={() => { setShowDemoForm(false); setDemoCreated(null); setDemoError(null) }}>
+            {demoCreated ? (
+              <div className="flex flex-col gap-3">
+                <p className="text-xs text-muted-foreground">Demo criado com sucesso. Acesse o painel abaixo enquanto logado como sudo.</p>
+                <a
+                  href={`https://${demoCreated}.${appDomain}/painel`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center justify-center gap-1.5 w-full py-2.5 rounded-xl bg-primary text-primary-foreground text-sm font-medium hover:opacity-90 transition-opacity"
+                >
+                  Abrir painel de {demoCreated} <ExternalLink size={13} />
+                </a>
+                <button
+                  onClick={() => { setShowDemoForm(false); setDemoCreated(null) }}
+                  className="text-xs text-muted-foreground hover:text-foreground transition-colors text-center"
+                >
+                  Fechar
+                </button>
+              </div>
+            ) : (
+              <form onSubmit={handleCreateDemo} className="flex flex-col gap-3">
+                <input
+                  type="text"
+                  placeholder="Nome (ex: Dra. Ana Lima)"
+                  required
+                  value={demoForm.name}
+                  onChange={e => setDemoForm(p => ({ ...p, name: e.target.value }))}
+                  className="px-3 py-2.5 rounded-xl border border-border bg-background text-sm focus:outline-none focus:ring-2 focus:ring-ring/40"
+                />
+                <input
+                  type="text"
+                  placeholder="Subdomínio (ex: ana)"
+                  required
+                  value={demoForm.subdomain}
+                  onChange={e => setDemoForm(p => ({ ...p, subdomain: e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, '') }))}
+                  className="px-3 py-2.5 rounded-xl border border-border bg-background text-sm focus:outline-none focus:ring-2 focus:ring-ring/40"
+                />
+                {demoError && <p className="text-xs text-destructive">{demoError}</p>}
+                <button
+                  type="submit"
+                  disabled={demoLoading}
+                  className="w-full py-2.5 rounded-xl bg-primary text-primary-foreground text-sm font-medium hover:opacity-90 disabled:opacity-50 transition-opacity"
+                >
+                  {demoLoading ? "Criando..." : "Criar demo"}
+                </button>
+              </form>
+            )}
+          </Modal>
+        )}
+      </AnimatePresence>
 
       {/* Criar expert sem billing modal */}
       <AnimatePresence>
