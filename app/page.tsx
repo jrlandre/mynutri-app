@@ -1,9 +1,11 @@
+import { Suspense } from 'react'
 import type { Metadata } from 'next'
 import { headers } from 'next/headers'
 import { redirect } from 'next/navigation'
 import { adminClient } from '@/lib/supabase/admin'
 import { createClient } from '@/lib/supabase/server'
 import HomeClient from "@/components/HomeClient"
+import { SubdomainNotFoundToast } from '@/components/SubdomainNotFoundToast'
 import type { UserProfile } from "@/types"
 
 export const metadata: Metadata = {
@@ -26,7 +28,11 @@ export default async function Home() {
       .eq('subdomain', subdomain)
       .eq('active', true)
       .maybeSingle()
-    if (data) tenantSubdomain = subdomain
+    if (data) {
+      tenantSubdomain = subdomain
+    } else {
+      redirect(`${process.env.NEXT_PUBLIC_APP_URL}/?subdomain_not_found=1`)
+    }
   }
 
   const supabase = await createClient()
@@ -93,5 +99,10 @@ export default async function Home() {
     }
   }
 
-  return <HomeClient tenantSubdomain={tenantSubdomain} userProfile={userProfile} />
+  return (
+    <>
+      <Suspense><SubdomainNotFoundToast /></Suspense>
+      <HomeClient tenantSubdomain={tenantSubdomain} userProfile={userProfile} />
+    </>
+  )
 }
