@@ -550,6 +550,10 @@ export default function HomeClient({ tenantSubdomain, userProfile }: Props) {
   }
 
   async function handleStartRecording() {
+    if (!navigator.mediaDevices?.getUserMedia) {
+      setError("Gravação de áudio não é suportada neste navegador.")
+      return
+    }
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true })
       const recorder = new MediaRecorder(stream)
@@ -590,12 +594,19 @@ export default function HomeClient({ tenantSubdomain, userProfile }: Props) {
         handleStopRecording()
       }, MAX_RECORDING_SECONDS * 1000)
     } catch (err) {
-      if (err instanceof DOMException && err.name === "NotAllowedError") {
+      const name = err instanceof DOMException ? err.name : null
+      if (name === "NotAllowedError" || name === "PermissionDeniedError") {
         setError("Permissão para microfone negada. Verifique as configurações do seu navegador.")
+      } else if (name === "NotFoundError" || name === "DevicesNotFoundError") {
+        setError("Nenhum microfone encontrado.")
+      } else if (name === "NotReadableError" || name === "TrackStartError") {
+        setError("Microfone em uso por outro aplicativo.")
+      } else if (name === "SecurityError") {
+        setError("Acesso ao microfone bloqueado. A página precisa ser acessada via HTTPS.")
       } else if (err instanceof TypeError) {
-        setError("Microfone não disponível neste contexto.")
+        setError("Gravação de áudio não é suportada neste contexto.")
       } else {
-        setError("Não foi possível acessar o microfone.")
+        setError("Não foi possível iniciar a gravação.")
       }
     }
   }
@@ -942,7 +953,7 @@ export default function HomeClient({ tenantSubdomain, userProfile }: Props) {
       </AnimatePresence>
 
       {/* Histórico / Estado vazio */}
-      <section className="flex-1 overflow-y-auto px-4 py-3 flex flex-col">
+      <section className="flex-1 overflow-y-auto px-4 py-3 flex flex-col relative">
         <AnimatePresence mode="wait">
           {loginGated ? (
             <LoginGateScreen
@@ -1128,15 +1139,15 @@ export default function HomeClient({ tenantSubdomain, userProfile }: Props) {
           )}
         </AnimatePresence>
 
-        {/* Erro */}
+        {/* Erro — absolute para não participar do flex e não deslocar conteúdo */}
         <AnimatePresence>
           {error && (
             <motion.p
               key="error"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              className="text-sm text-destructive bg-destructive/10 rounded-lg p-3 mt-2"
+              initial={{ opacity: 0, y: 4 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: 4 }}
+              className="absolute bottom-3 left-0 right-0 mx-4 text-sm text-destructive bg-destructive/10 rounded-lg p-3 z-10"
             >
               {error}
             </motion.p>
