@@ -436,12 +436,14 @@ function TabVitrine({ expert, onSave, onPhotoChange }: {
     setSaving(true)
     setSaveError(null)
 
-    // Normaliza atalhos (ex: "11999..." → "https://wa.me/...") e preenche rótulo vazio
-    const processedLinks = links.map(link => ({
-      ...link,
-      label: link.label.trim() || link.type,
-      url: normalizeContactUrl(link.type, link.url),
-    }))
+    // Ignora links sem URL, normaliza atalhos e preenche rótulo vazio
+    const processedLinks = links
+      .filter(link => link.url.trim())
+      .map(link => ({
+        ...link,
+        label: link.label.trim() || link.type,
+        url: normalizeContactUrl(link.type, link.url),
+      }))
 
     try {
       await onSave({
