@@ -273,22 +273,62 @@ function TabInicio({ expert, clients, onInvite, onToggleActive, onDelete }: {
 // ─── Helpers de URL para links de contato ────────────────────────────────────
 
 const URL_PLACEHOLDER: Record<string, string> = {
-  WhatsApp:  "https://wa.me/5511999999999",
-  Instagram: "https://instagram.com/seu_usuario",
-  "E-mail":  "mailto:contato@email.com",
-  Website:   "https://meusite.com.br",
+  WhatsApp:  "11999999999",
+  Instagram: "@seu_usuario",
+  "E-mail":  "contato@email.com",
+  Website:   "meusite.com.br",
 }
 
-const VALID_PROTOCOLS = ["https://", "http://", "mailto:", "tel:"]
+/** Converte atalhos digitados pelo usuário para URLs válidas antes de salvar */
+function normalizeContactUrl(type: string, raw: string): string {
+  const v = raw.trim()
+  if (!v) return v
+  switch (type) {
+    case "WhatsApp": {
+      if (v.startsWith("https://wa.me/") || v.startsWith("http://wa.me/")) return v
+      const digits = v.replace(/\D/g, "")
+      if (!digits) return v
+      const num = digits.startsWith("55") ? digits : `55${digits}`
+      return `https://wa.me/${num}`
+    }
+    case "Instagram": {
+      if (v.startsWith("https://") || v.startsWith("http://")) return v
+      if (v.startsWith("@")) return `https://instagram.com/${v.slice(1)}`
+      if (v.startsWith("instagram.com/") || v.startsWith("www.instagram.com/")) return `https://${v}`
+      return v // ambíguo sem @, deixa o usuário ver o hint
+    }
+    case "E-mail": {
+      if (v.startsWith("mailto:")) return v
+      if (v.includes("@") && !v.includes(" ")) return `mailto:${v}`
+      return v
+    }
+    case "Website": {
+      if (v.startsWith("https://") || v.startsWith("http://")) return v
+      if (v.includes(".") && !v.includes(" ")) return `https://${v}`
+      return v
+    }
+    default:
+      return v
+  }
+}
 
+/** Retorna hint de formato quando o valor não é reconhecível (shorthand OU URL) */
 function getUrlHint(type: string, url: string): string | null {
   if (!url) return null
-  if (VALID_PROTOCOLS.some(p => url.startsWith(p))) return null
-  if (type === "WhatsApp")  return "Formato: https://wa.me/55DDD..."
-  if (type === "Instagram") return "Formato: https://instagram.com/usuario"
-  if (type === "E-mail")    return "Formato: mailto:contato@email.com"
-  if (type === "Website")   return "Formato: https://meusite.com.br"
-  return "Comece com https://, http://, mailto: ou tel:"
+  // Valores já normalizáveis → sem hint
+  if (type === "WhatsApp" && /^[+\d\s\-().]+$/.test(url)) return null
+  if (type === "WhatsApp" && (url.startsWith("https://wa.me/") || url.startsWith("http://wa.me/"))) return null
+  if (type === "Instagram" && (url.startsWith("@") || url.startsWith("instagram.com/") || url.startsWith("www.instagram.com/") || url.startsWith("https://") || url.startsWith("http://"))) return null
+  if (type === "E-mail" && (url.startsWith("mailto:") || (url.includes("@") && !url.includes(" ")))) return null
+  if (type === "Website" && (url.startsWith("https://") || url.startsWith("http://") || (url.includes(".") && !url.includes(" ")))) return null
+  // Formato genérico com protocolo → ok
+  if (["https://", "http://", "mailto:", "tel:"].some(p => url.startsWith(p))) return null
+  // Não reconhecível → hint contextual
+  if (type === "WhatsApp")  return "Ex: 11999999999 ou +5511999999999"
+  if (type === "Instagram") return "Ex: @usuario ou instagram.com/usuario"
+  if (type === "E-mail")    return "Ex: contato@email.com"
+  if (type === "Website")   return "Ex: meusite.com.br"
+  return "Formato inválido"
 }
 
 // ─── Aba Vitrine ──────────────────────────────────────────────────────────────
@@ -396,10 +436,11 @@ function TabVitrine({ expert, onSave, onPhotoChange }: {
     setSaving(true)
     setSaveError(null)
 
-    // Fallback: se o rótulo estiver vazio, usa o tipo diretamente
+    // Normaliza atalhos (ex: "11999..." → "https://wa.me/...") e preenche rótulo vazio
     const processedLinks = links.map(link => ({
       ...link,
-      label: link.label.trim() || link.type
+      label: link.label.trim() || link.type,
+      url: normalizeContactUrl(link.type, link.url),
     }))
 
     try {
