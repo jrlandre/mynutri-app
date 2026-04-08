@@ -270,6 +270,27 @@ function TabInicio({ expert, clients, onInvite, onToggleActive, onDelete }: {
   )
 }
 
+// ─── Helpers de URL para links de contato ────────────────────────────────────
+
+const URL_PLACEHOLDER: Record<string, string> = {
+  WhatsApp:  "https://wa.me/5511999999999",
+  Instagram: "https://instagram.com/seu_usuario",
+  "E-mail":  "mailto:contato@email.com",
+  Website:   "https://meusite.com.br",
+}
+
+const VALID_PROTOCOLS = ["https://", "http://", "mailto:", "tel:"]
+
+function getUrlHint(type: string, url: string): string | null {
+  if (!url) return null
+  if (VALID_PROTOCOLS.some(p => url.startsWith(p))) return null
+  if (type === "WhatsApp")  return "Formato: https://wa.me/55DDD..."
+  if (type === "Instagram") return "Formato: https://instagram.com/usuario"
+  if (type === "E-mail")    return "Formato: mailto:contato@email.com"
+  if (type === "Website")   return "Formato: https://meusite.com.br"
+  return "Comece com https://, http://, mailto: ou tel:"
+}
+
 // ─── Aba Vitrine ──────────────────────────────────────────────────────────────
 
 function TabVitrine({ expert, onSave, onPhotoChange }: {
@@ -453,7 +474,9 @@ function TabVitrine({ expert, onSave, onPhotoChange }: {
           </div>
         ) : (
           <div ref={linksContainerRef} className="flex flex-col gap-3">
-            {links.map((link, i) => (
+            {links.map((link, i) => {
+              const urlHint = getUrlHint(link.type, link.url)
+              return (
               <div key={i} className="relative p-4 rounded-2xl bg-muted/30 border border-border flex flex-col gap-3 group">
                 <button 
                   type="button" 
@@ -494,12 +517,20 @@ function TabVitrine({ expert, onSave, onPhotoChange }: {
                   <input
                     value={link.url}
                     onChange={e => updateLink(i, "url", e.target.value)}
-                    placeholder="https://..."
-                    className="px-3 py-2 rounded-xl border border-border bg-card text-sm focus:outline-none focus:ring-2 focus:ring-ring/40"
+                    placeholder={URL_PLACEHOLDER[link.type] ?? "https://..."}
+                    className={`px-3 py-2 rounded-xl border bg-card text-sm focus:outline-none focus:ring-2 transition-colors ${
+                      urlHint
+                        ? "border-amber-400 focus:ring-amber-400/40"
+                        : "border-border focus:ring-ring/40"
+                    }`}
                   />
+                  {urlHint && (
+                    <p className="text-[11px] text-amber-600 ml-1">{urlHint}</p>
+                  )}
                 </div>
               </div>
-            ))}
+              )
+            })}
           </div>
         )}
       </div>
