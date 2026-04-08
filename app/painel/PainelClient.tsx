@@ -572,7 +572,12 @@ function TabVitrine({ expert, onSave, onPhotoChange }: {
                 </div>
 
                 <div className="flex flex-col gap-1.5">
-                  <label className="text-[10px] font-bold text-muted-foreground uppercase ml-1">URL / Link</label>
+                  <label className="text-[10px] font-bold text-muted-foreground uppercase ml-1">
+                    {link.type === "WhatsApp"  ? "Número do WhatsApp" :
+                     link.type === "Instagram" ? "Perfil do Instagram" :
+                     link.type === "E-mail"    ? "Endereço de e-mail" :
+                     link.type === "Website"   ? "Endereço do site"   : "Link"}
+                  </label>
                   <input
                     value={link.url}
                     onChange={e => updateLink(i, "url", e.target.value)}
