@@ -1,10 +1,16 @@
 import { cache } from 'react'
+import { notFound } from 'next/navigation'
 import type { Metadata } from 'next'
 import Image from 'next/image'
 import Link from "next/link"
 import { ChevronLeft } from "lucide-react"
 import { adminClient } from "@/lib/supabase/admin"
 import type { Expert } from "@/types"
+
+const SAFE_PROTOCOLS = ['https://', 'http://', 'mailto:', 'tel:']
+function safeUrl(url: string): string | undefined {
+  return SAFE_PROTOCOLS.some(p => url.startsWith(p)) ? url : undefined
+}
 
 const AVATAR_COLORS = [
   "bg-rose-200 text-rose-800",
@@ -86,13 +92,7 @@ export default async function ExpertProfilePage({
   const { handle } = await params
   const expert = await getExpert(handle)
 
-  if (!expert) {
-    return (
-      <main className="min-h-dvh flex items-center justify-center px-6">
-        <p className="text-sm text-muted-foreground">Perfil não encontrado.</p>
-      </main>
-    )
-  }
+  if (!expert) notFound()
 
   const colorClass = avatarColor(expert.name)
   const inits = initials(expert.name)
@@ -168,18 +168,22 @@ export default async function ExpertProfilePage({
               <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide px-1">
                 Contato
               </p>
-              {expert.contact_links.map((link, i) => (
-                <a
-                  key={i}
-                  href={link.url}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="flex items-center justify-between gap-3 px-4 py-3 rounded-xl border border-border bg-card text-sm font-medium hover:bg-muted active:scale-[0.98] transition-all"
-                >
-                  {link.label}
-                  <span className="text-muted-foreground text-xs shrink-0">↗</span>
-                </a>
-              ))}
+              {expert.contact_links.map((link, i) => {
+                const href = safeUrl(link.url)
+                if (!href) return null
+                return (
+                  <a
+                    key={i}
+                    href={href}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-center justify-between gap-3 px-4 py-3 rounded-xl border border-border bg-card text-sm font-medium hover:bg-muted active:scale-[0.98] transition-all"
+                  >
+                    {link.label}
+                    <span className="text-muted-foreground text-xs shrink-0">↗</span>
+                  </a>
+                )
+              })}
             </div>
           )}
         </div>
