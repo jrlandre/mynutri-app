@@ -215,7 +215,11 @@ async function createReferralRecords(
   })
 
   if (records.length > 0) {
-    await adminClient.from("referrals").insert(records)
+    const { error } = await adminClient.from("referrals").insert(records)
+    if (error) {
+      logger.error('stripe/webhook', 'Falha ao inserir referrals no checkout', { error: error.message, referredExpertId })
+      throw new Error(`Falha ao inserir referrals: ${error.message}`)
+    }
   }
 }
 
@@ -560,5 +564,9 @@ async function handleRecurringInvoice(invoice: Stripe.Invoice) {
     })
   )
 
-  await adminClient.from("referrals").insert(newRecords)
+  const { error: insertError } = await adminClient.from("referrals").insert(newRecords)
+  if (insertError) {
+    logger.error('stripe/webhook', 'Falha ao inserir referrals na renovação', { error: insertError.message, invoiceId: invoice.id })
+    throw new Error(`Falha ao inserir referrals: ${insertError.message}`)
+  }
 }
