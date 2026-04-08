@@ -19,8 +19,12 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       return NextResponse.json({ error: 'Formato inválido. Use JPEG, PNG ou WebP.' }, { status: 400 })
     }
 
-    // O arquivo chega aqui via Base64, já comprimido pelo navegador.
-    // Não limitamos o tamanho original pois a compressão no client garante a eficiência.
+    // ~4MB raw = ~5.4MB base64 — limite generoso considerando que o client comprime antes de enviar
+    const MAX_BASE64_CHARS = 5_500_000
+    if (typeof photo !== 'string' || photo.length > MAX_BASE64_CHARS) {
+      return NextResponse.json({ error: 'Arquivo muito grande.' }, { status: 400 })
+    }
+
     const ext = mimeType.split('/')[1].replace('jpeg', 'jpg')
     const path = `${expert.user_id}/avatar.${ext}`
     const buffer = Buffer.from(photo, 'base64')

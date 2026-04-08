@@ -10,7 +10,7 @@ export default async function ConvitePage({ params }: Props) {
 
   const { data: client } = await adminClient
     .from('clients')
-    .select('id, email, activated_at, expert_id')
+    .select('id, email, activated_at, expert_id, token_expires_at')
     .eq('magic_link_token', token)
     .maybeSingle()
 
@@ -20,6 +20,17 @@ export default async function ConvitePage({ params }: Props) {
         <div className="text-center flex flex-col gap-2">
           <p className="text-lg font-semibold">Convite inválido</p>
           <p className="text-sm text-muted-foreground">Este link não existe ou já expirou.</p>
+        </div>
+      </main>
+    )
+  }
+
+  if (client.token_expires_at && new Date(client.token_expires_at as string) < new Date()) {
+    return (
+      <main className="min-h-dvh flex items-center justify-center px-6">
+        <div className="text-center flex flex-col gap-2">
+          <p className="text-lg font-semibold">Convite expirado</p>
+          <p className="text-sm text-muted-foreground">Este link não é mais válido. Solicite um novo convite ao seu Expert.</p>
         </div>
       </main>
     )
