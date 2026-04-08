@@ -51,7 +51,8 @@ export default function PaywallScreen({ tenantSubdomain }: Props) {
         <button
           onClick={() => {
             if (tenantSubdomain) {
-              window.location.href = `https://mynutri.pro/experts/${tenantSubdomain}`
+              const base = process.env.NEXT_PUBLIC_APP_URL ?? 'https://mynutri.pro'
+              window.location.href = `${base}/experts/${tenantSubdomain}`
             } else {
               router.push('/experts')
             }
