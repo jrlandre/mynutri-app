@@ -13,14 +13,14 @@ const productJsonLd = {
     {
       '@type': 'Offer',
       name: 'Mensal',
-      price: '100.00',
+      price: '300.00',
       priceCurrency: 'USD',
       availability: 'https://schema.org/InStock',
     },
     {
       '@type': 'Offer',
       name: 'Anual',
-      price: '1000.00',
+      price: '3000.00',
       priceCurrency: 'USD',
       availability: 'https://schema.org/InStock',
     },
