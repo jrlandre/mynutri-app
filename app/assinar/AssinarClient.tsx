@@ -222,7 +222,7 @@ export default function AssinarClient({ appDomain, defaultEmail = "", defaultRef
                 }`}
               >
                 <span className="text-xs text-muted-foreground font-medium">Mensal</span>
-                <span className="text-lg font-bold tracking-tight">$300</span>
+                <span className="text-lg font-bold tracking-tight">$597</span>
                 <span className="text-xs text-muted-foreground">por mês</span>
               </button>
 
@@ -240,8 +240,8 @@ export default function AssinarClient({ appDomain, defaultEmail = "", defaultRef
                   -17%
                 </span>
                 <span className="text-xs text-muted-foreground font-medium">Anual</span>
-                <span className="text-lg font-bold tracking-tight">$250</span>
-                <span className="text-xs text-muted-foreground">por mês · $3.000/ano</span>
+                <span className="text-lg font-bold tracking-tight">$497</span>
+                <span className="text-xs text-muted-foreground">por mês · $5.964/ano</span>
               </button>
             </div>
           </div>
