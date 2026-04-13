@@ -3,6 +3,7 @@ import { Plus_Jakarta_Sans, Geist_Mono } from "next/font/google"
 import "./globals.css"
 import { ClientErrorHandler } from "@/components/ClientErrorHandler"
 import { PostHogProvider } from "@/providers/PostHogProvider"
+import { getLocale } from 'next-intl/server'
 
 const jakarta = Plus_Jakarta_Sans({
   variable: "--font-geist-sans",
@@ -30,14 +31,16 @@ export const metadata: Metadata = {
   },
 }
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode
 }>) {
+  const locale = await getLocale().catch(() => 'pt')
+  const lang = locale === 'en' ? 'en' : 'pt-BR'
   return (
     <html
-      lang="pt-BR"
+      lang={lang}
       className={`${jakarta.variable} ${geistMono.variable}`}
     >
       <body className="antialiased">

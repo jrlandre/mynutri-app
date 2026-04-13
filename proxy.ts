@@ -1,21 +1,22 @@
 /**
  * PROXY — Next.js 16+ convention (substitui middleware.ts)
  *
- * Este arquivo é detectado e executado automaticamente pelo Next.js 16
- * como o arquivo de proxy da aplicação. O nome CORRETO é "proxy.ts"
- * (não "middleware.ts"). O export principal deve se chamar "proxy",
- * não "middleware".
- *
  * Referência: https://nextjs.org/docs/messages/middleware-to-proxy
- * Confirmação: .next/dev/server/middleware.js referencia este arquivo
- * como INNER_MIDDLEWARE_MODULE em tempo de compilação.
- *
  * NÃO renomear para middleware.ts.
+ *
+ * Responsabilidades:
+ * 1. Rotas de API (qualquer host): injetar x-tenant-config + rate limiting
+ * 2. Páginas em subdomínio (ana.mynutri.pro): pass-through
+ * 3. Páginas no domínio principal: roteamento de locale via next-intl
  */
 import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
+import createNextIntlMiddleware from 'next-intl/middleware'
+import { routing } from './i18n/routing'
 import { adminClient } from '@/lib/supabase/admin'
 import { logger } from '@/lib/logger'
+
+const intlHandler = createNextIntlMiddleware(routing)
 
 // Cache de tenant em memória — reutilizado entre requests no mesmo Edge worker.
 // TTL de 5 min: troca-off entre conexões ao DB e propagação de mudanças no painel.
@@ -62,51 +63,62 @@ async function buildLimiters() {
 }
 
 export async function proxy(request: NextRequest) {
-  // Resolver tenant e injetar no request (lido pela API route via x-tenant-config)
-  const tenantJson = await resolveTenant(request)
-  const requestHeaders = new Headers(request.headers)
-  if (tenantJson) {
-    requestHeaders.set('x-tenant-config', tenantJson)
-  }
+  const { pathname } = request.nextUrl
+  const host = request.headers.get('host') ?? ''
+  const appDomain = (process.env.NEXT_PUBLIC_APP_URL ?? '')
+    .replace(/^https?:\/\//, '').replace(/\/$/, '')
 
-  // Gera ID único por request para correlação de logs ponta-a-ponta
-  requestHeaders.set('x-request-id', crypto.randomUUID())
+  const isApiRoute = pathname.startsWith('/api/')
+  const isSubdomain = appDomain && host !== appDomain && host.endsWith(`.${appDomain}`)
 
-  // Rate limiting aplicado somente ao endpoint de IA (/api/analyze).
-  // Rotas baratas (histórico, auth, painel, etc.) não são limitadas aqui —
-  // cada uma delas é uma query simples ao banco sem custo de API externa.
-  const isAnalyze = request.nextUrl.pathname.startsWith('/api/analyze')
-  if (isAnalyze) {
-    try {
-      const limiters = await buildLimiters()
-      if (limiters) {
-        const globalLimit = await limiters.global.limit("ratelimit_global")
-        if (!globalLimit.success) {
-          return NextResponse.json(
-            { error: "limite_atingido", message: "Muitas análises em pouco tempo. Tente novamente em alguns minutos.", retryAfter: 60 },
-            { status: 429 }
-          )
-        }
+  // ── Rotas de API: tenant resolution + rate limiting ────────────────────────
+  if (isApiRoute) {
+    const tenantJson = await resolveTenant(request)
+    const requestHeaders = new Headers(request.headers)
+    if (tenantJson) requestHeaders.set('x-tenant-config', tenantJson)
+    requestHeaders.set('x-request-id', crypto.randomUUID())
 
-        const ip = (request.headers.get("x-forwarded-for") ?? "").split(",")[0].trim() || null
-        if (ip) {
-          const ipLimit = await limiters.ip.limit(`ratelimit_ip_${ip}`)
-          if (!ipLimit.success) {
+    const isAnalyze = pathname.startsWith('/api/analyze')
+    if (isAnalyze) {
+      try {
+        const limiters = await buildLimiters()
+        if (limiters) {
+          const globalLimit = await limiters.global.limit("ratelimit_global")
+          if (!globalLimit.success) {
             return NextResponse.json(
               { error: "limite_atingido", message: "Muitas análises em pouco tempo. Tente novamente em alguns minutos.", retryAfter: 60 },
               { status: 429 }
             )
           }
+          const ip = (request.headers.get("x-forwarded-for") ?? "").split(",")[0].trim() || null
+          if (ip) {
+            const ipLimit = await limiters.ip.limit(`ratelimit_ip_${ip}`)
+            if (!ipLimit.success) {
+              return NextResponse.json(
+                { error: "limite_atingido", message: "Muitas análises em pouco tempo. Tente novamente em alguns minutos.", retryAfter: 60 },
+                { status: 429 }
+              )
+            }
+          }
         }
+      } catch {
+        // KV indisponível — continua sem rate limiting
       }
-    } catch {
-      // KV indisponível ou mal configurado — continua sem rate limiting
     }
+
+    return NextResponse.next({ request: { headers: requestHeaders } })
   }
 
-  return NextResponse.next({ request: { headers: requestHeaders } })
+  // ── Páginas em subdomínio: pass-through (sem locale routing) ───────────────
+  if (isSubdomain) {
+    return NextResponse.next()
+  }
+
+  // ── Páginas no domínio principal: roteamento de locale (next-intl) ─────────
+  return intlHandler(request)
 }
 
 export const config = {
-  matcher: '/api/:path*',
+  // Cobre páginas públicas + API; exclui rotas de app autenticado, _next e arquivos estáticos
+  matcher: ['/((?!_next|painel|sudo|r/|.*\\..*).*)'],
 }

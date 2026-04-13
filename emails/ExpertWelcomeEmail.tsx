@@ -6,17 +6,42 @@ import {
 interface Props {
   name: string
   panelUrl: string
+  locale?: 'pt' | 'en'
 }
 
-export default function ExpertWelcomeEmail({ name, panelUrl }: Props) {
+const copy = {
+  pt: {
+    lang: 'pt-BR',
+    preview: (firstName: string) => `Boas-vindas ao MyNutri, ${firstName}! Seu painel está pronto.`,
+    heading: (firstName: string) => `Boas-vindas, ${firstName}!`,
+    body: 'Sua conta MyNutri está configurada. A partir de agora, seus clientes têm acesso a um assistente de saúde com IA personalizado para o seu acompanhamento.',
+    cardLabel: 'Seu painel',
+    cta: 'Acessar meu painel',
+    note: 'Você também deve ter recebido um email separado para definir sua senha — é necessário para acessar o painel pela primeira vez.',
+    footer: 'MyNutri · Dúvidas? Responda este email.',
+  },
+  en: {
+    lang: 'en',
+    preview: (firstName: string) => `Welcome to MyNutri, ${firstName}! Your panel is ready.`,
+    heading: (firstName: string) => `Welcome, ${firstName}!`,
+    body: 'Your MyNutri account is set up. From now on, your clients have access to a personalized AI health assistant built around your methodology.',
+    cardLabel: 'Your panel',
+    cta: 'Access my panel',
+    note: 'You should also have received a separate email to set your password — required for your first login.',
+    footer: 'MyNutri · Questions? Reply to this email.',
+  },
+}
+
+export default function ExpertWelcomeEmail({ name, panelUrl, locale = 'pt' }: Props) {
   const firstName = name.split(' ')[0]
+  const c = copy[locale] ?? copy.pt
 
   return (
-    <Html lang="pt-BR">
+    <Html lang={c.lang}>
       <Head>
         <style>{`@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');`}</style>
       </Head>
-      <Preview>Boas-vindas ao MyNutri, {firstName}! Seu painel está pronto.</Preview>
+      <Preview>{c.preview(firstName)}</Preview>
       <Body style={body}>
         <Container style={container}>
           <Section style={header}>
@@ -25,35 +50,27 @@ export default function ExpertWelcomeEmail({ name, panelUrl }: Props) {
           <Section style={accentLine}>&nbsp;</Section>
 
           <Section style={content}>
-            <Heading style={h1}>Boas-vindas, {firstName}!</Heading>
-            <Text style={text}>
-              Sua conta MyNutri está configurada. A partir de agora, seus clientes têm acesso
-              a um assistente de saúde com IA personalizado para o seu acompanhamento.
-            </Text>
+            <Heading style={h1}>{c.heading(firstName)}</Heading>
+            <Text style={text}>{c.body}</Text>
 
             <Section style={card}>
-              <Text style={cardLabel}>Seu painel</Text>
+              <Text style={cardLabel}>{c.cardLabel}</Text>
               <Text style={cardUrl}>{panelUrl}</Text>
             </Section>
 
             <Section style={{ textAlign: 'center' as const, margin: '32px 0' }}>
               <Button href={panelUrl} style={button}>
-                Acessar meu painel
+                {c.cta}
               </Button>
             </Section>
 
-            <Text style={note}>
-              Você também deve ter recebido um email separado para definir sua senha —
-              é necessário para acessar o painel pela primeira vez.
-            </Text>
+            <Text style={note}>{c.note}</Text>
           </Section>
 
           <Hr style={hr} />
 
           <Section>
-            <Text style={footer}>
-              MyNutri · Dúvidas? Responda este email.
-            </Text>
+            <Text style={footer}>{c.footer}</Text>
           </Section>
         </Container>
       </Body>

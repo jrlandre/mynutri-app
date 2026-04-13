@@ -227,10 +227,11 @@ async function createReferralRecords(
 
 async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
   const {
-    subdomain, name, email,
+    subdomain, name, email, locale,
     utm_source, utm_medium, utm_campaign, utm_content, utm_term,
     fbc, fbp, pixel_event_id,
   } = session.metadata ?? {}
+  const expertLocale: 'pt' | 'en' = locale === 'en' ? 'en' : 'pt'
   const stripe_customer_id = typeof session.customer === "string" ? session.customer : null
   const stripe_subscription_id = typeof session.subscription === "string" ? session.subscription : null
 
@@ -348,11 +349,15 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
   if (process.env.RESEND_API_KEY) {
     try {
       const resend = new Resend(process.env.RESEND_API_KEY)
+      const firstName = name.split(" ")[0]
+      const subject = expertLocale === 'en'
+        ? `Welcome to MyNutri, ${firstName}!`
+        : `Boas-vindas ao MyNutri, ${firstName}!`
       await resend.emails.send({
         from: process.env.RESEND_FROM_EMAIL ?? "MyNutri <noreply@mynutri.pro>",
         to: email,
-        subject: `Boas-vindas ao MyNutri, ${name.split(" ")[0]}!`,
-        react: ExpertWelcomeEmail({ name, panelUrl }),
+        subject,
+        react: ExpertWelcomeEmail({ name, panelUrl, locale: expertLocale }),
       })
 
       await adminClient

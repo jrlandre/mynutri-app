@@ -17,6 +17,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       name?: string
       email?: string
       plan?: string
+      locale?: string
       ref?: string
       utm?: {
         utm_source?: string
@@ -30,7 +31,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       pixel_event_id?: string
     }
 
-    const { subdomain, name, email, plan, ref, utm, fbc, fbp, pixel_event_id } = body
+    const { subdomain, name, email, plan, locale, ref, utm, fbc, fbp, pixel_event_id } = body
 
     if (!subdomain || !name || !email || !plan) {
       return NextResponse.json({ error: "Todos os campos são obrigatórios." }, { status: 400 })
@@ -87,6 +88,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
         subdomain,
         name,
         email,
+        locale: (locale === 'en' ? 'en' : 'pt'),
         ref_code: ref ?? "",
         utm_source: utm?.utm_source ?? "",
         utm_medium: utm?.utm_medium ?? "",
@@ -101,8 +103,12 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       subscription_data: {
         trial_period_days: 14,
       },
-      success_url: `https://${appDomain}/obrigado?session_id={CHECKOUT_SESSION_ID}`,
-      cancel_url: `https://${appDomain}/assinar`,
+      success_url: locale === 'en'
+        ? `https://${appDomain}/en/thank-you?session_id={CHECKOUT_SESSION_ID}`
+        : `https://${appDomain}/obrigado?session_id={CHECKOUT_SESSION_ID}`,
+      cancel_url: locale === 'en'
+        ? `https://${appDomain}/en/sign-up`
+        : `https://${appDomain}/assinar`,
     })
 
     return NextResponse.json({ url: session.url })
