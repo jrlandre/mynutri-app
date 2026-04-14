@@ -29,7 +29,7 @@ export default function TermosPage() {
           <h2 className="font-semibold text-base">1. Quem somos</h2>
           <p>
             O MyNutri é uma plataforma de orientação nutricional com inteligência artificial,
-            operada por pessoa física com CNPJ em processo de abertura. Dúvidas e solicitações:
+            operada por pessoa física, CPF 506.292.298-48. Dúvidas e solicitações:
             <a href="mailto:suporte@mynutri.pro" className="text-primary hover:underline ml-1">
               suporte@mynutri.pro
             </a>
@@ -40,12 +40,12 @@ export default function TermosPage() {
         <section className="flex flex-col gap-2">
           <h2 className="font-semibold text-base">2. O que é o serviço</h2>
           <p>
-            O MyNutri conecta experts com seus
-            clientes finais. O expert configura uma IA com seu método, linguagem e foco — e seus
+            O MyNutri conecta nutricionistas com seus
+            clientes finais. O nutricionista configura uma IA com seu método, linguagem e foco — e seus
             clientes usam essa IA para tirar dúvidas e obter orientações personalizadas.
           </p>
           <p>
-            O serviço funciona via subdomínio exclusivo do expert (ex:{' '}
+            O serviço funciona via subdomínio exclusivo do nutricionista (ex:{' '}
             <span className="font-mono text-xs bg-muted px-1.5 py-0.5 rounded">
               seunome.mynutri.pro
             </span>
@@ -78,9 +78,9 @@ export default function TermosPage() {
         </section>
 
         <section className="flex flex-col gap-2">
-          <h2 className="font-semibold text-base">5. Responsabilidades do expert</h2>
+          <h2 className="font-semibold text-base">5. Responsabilidades do nutricionista</h2>
           <p>
-            O expert é responsável por configurar corretamente a IA com informações precisas e
+            O nutricionista é responsável por configurar corretamente a IA com informações precisas e
             adequadas ao seu método. Ele também é responsável por convidar apenas clientes que
             concordam com estes termos e que estejam aptos a usar o serviço.
           </p>
@@ -89,13 +89,13 @@ export default function TermosPage() {
         <section className="flex flex-col gap-2">
           <h2 className="font-semibold text-base">6. Planos e cancelamento</h2>
           <p>
-            O expert contrata um plano mensal ou anual via Stripe. O cancelamento pode ser feito
+            O nutricionista contrata um plano mensal ou anual via Stripe. O cancelamento pode ser feito
             a qualquer momento pelo painel ou pelo suporte.
           </p>
           <p>
-            Ao cancelar, o ambiente personalizado do expert é desativado e o subdomínio sai do ar.
-            Os clientes vinculados serão notificados e poderão continuar usando o MyNutri pelo plano
-            gratuito (3 orientações por dia), sem as configurações do expert.
+            Ao cancelar, o ambiente personalizado do nutricionista é desativado e o subdomínio sai do ar.
+            Os clientes vinculados perdem o acesso ao espaço personalizado e poderão continuar usando
+            o MyNutri pelo plano gratuito (3 orientações por dia), sem as configurações do nutricionista.
           </p>
         </section>
 

@@ -49,7 +49,9 @@ export default function PrivacidadePage() {
           <ul className="list-disc pl-5 flex flex-col gap-1 text-muted-foreground">
             <li><span className="text-foreground font-medium">Google (Gemini API)</span> — processamento das mensagens para gerar as respostas da IA</li>
             <li><span className="text-foreground font-medium">Supabase</span> — armazenamento seguro dos dados da conta e histórico</li>
-            <li><span className="text-foreground font-medium">Stripe</span> — processamento de pagamentos (experts)</li>
+            <li><span className="text-foreground font-medium">Stripe</span> — processamento de pagamentos (nutricionistas)</li>
+            <li><span className="text-foreground font-medium">Resend</span> — envio de e-mails transacionais (boas-vindas, convites)</li>
+            <li><span className="text-foreground font-medium">Vercel</span> — hospedagem e infraestrutura da aplicação</li>
             <li><span className="text-foreground font-medium">PostHog</span> — métricas de uso do produto, sem dados de saúde</li>
           </ul>
           <p className="text-muted-foreground">
@@ -67,7 +69,7 @@ export default function PrivacidadePage() {
           <h2 className="font-semibold text-base">3. Propriedade dos dados</h2>
           <p>
             Os dados do cliente final (histórico de conversas, análises) <strong>pertencem ao
-            próprio cliente</strong>, não ao expert que o convidou. O expert tem acesso apenas às
+            próprio cliente</strong>, não ao nutricionista que o convidou. O nutricionista tem acesso apenas às
             informações necessárias para gerenciar seus convites (e-mail e status de ativação).
           </p>
         </section>
@@ -108,6 +110,7 @@ export default function PrivacidadePage() {
           <p>Utilizamos os seguintes tipos de cookies:</p>
           <ul className="list-disc pl-5 flex flex-col gap-1 text-muted-foreground">
             <li><span className="text-foreground font-medium">Sessão de autenticação (Supabase)</span> — necessário para manter você logado</li>
+            <li><span className="text-foreground font-medium">NEXT_LOCALE</span> — armazena sua preferência de idioma (PT/EN)</li>
             <li><span className="text-foreground font-medium">utm_params</span> — armazena a origem da sua visita para atribuição de marketing (30 dias)</li>
             <li><span className="text-foreground font-medium">PostHog (_ph_*)</span> — métricas de uso do produto, sem dados de saúde</li>
             <li><span className="text-foreground font-medium">Meta Pixel (_fbc, _fbp)</span> — presentes apenas nas páginas de marketing (<span className="font-mono text-xs bg-muted px-1 py-0.5 rounded">/descubra</span>, <span className="font-mono text-xs bg-muted px-1 py-0.5 rounded">/assinar</span>), para medição de campanhas publicitárias. Não utilizados nas páginas do aplicativo.</li>
