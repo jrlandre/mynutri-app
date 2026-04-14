@@ -19,18 +19,18 @@ export default function TermosPage() {
         </Link>
         <div>
           <h1 className="text-2xl font-extrabold tracking-tight">Termos de Uso</h1>
-          <p className="text-sm text-muted-foreground mt-1">Última atualização: março de 2026</p>
+          <p className="text-sm text-muted-foreground mt-1">Última atualização: abril de 2026</p>
         </div>
       </div>
 
       <div className="flex flex-col gap-6 text-sm leading-relaxed">
 
         <section className="flex flex-col gap-2">
-          <h2 className="font-semibold text-base">1. Quem somos</h2>
+          <h2 className="font-semibold text-base">1. O serviço</h2>
           <p>
-            O MyNutri é uma plataforma de orientação nutricional com inteligência artificial,
-            operada por pessoa física, CPF 506.292.298-48. Dúvidas e solicitações:
-            <a href="mailto:suporte@mynutri.pro" className="text-primary hover:underline ml-1">
+            O MyNutri é uma plataforma de orientação nutricional com inteligência artificial que conecta
+            nutricionistas com seus clientes. Dúvidas e solicitações:{' '}
+            <a href="mailto:suporte@mynutri.pro" className="text-primary hover:underline">
               suporte@mynutri.pro
             </a>
             .
@@ -38,71 +38,32 @@ export default function TermosPage() {
         </section>
 
         <section className="flex flex-col gap-2">
-          <h2 className="font-semibold text-base">2. O que é o serviço</h2>
+          <h2 className="font-semibold text-base">2. Orientação, não diagnóstico</h2>
           <p>
-            O MyNutri conecta nutricionistas com seus
-            clientes finais. O nutricionista configura uma IA com seu método, linguagem e foco — e seus
-            clientes usam essa IA para tirar dúvidas e obter orientações personalizadas.
+            O MyNutri oferece <strong>orientação nutricional</strong> com base no método do nutricionista
+            escolhido. Ele <strong>não substitui consulta médica, diagnóstico clínico ou tratamento de
+            saúde</strong>. Em caso de dúvidas sobre condições de saúde específicas, consulte um
+            profissional habilitado.
           </p>
           <p>
-            O serviço funciona via subdomínio exclusivo do nutricionista (ex:{' '}
-            <span className="font-mono text-xs bg-muted px-1.5 py-0.5 rounded">
-              seunome.mynutri.pro
-            </span>
-            ) e também pelo aplicativo principal em{' '}
-            <span className="font-mono text-xs bg-muted px-1.5 py-0.5 rounded">mynutri.pro</span>.
+            As respostas geradas pela inteligência artificial são probabilísticas e <strong>podem conter
+            imprecisões</strong>. O usuário é responsável por validar qualquer orientação com seu
+            profissional de saúde antes de adotá-la.
           </p>
         </section>
 
         <section className="flex flex-col gap-2">
-          <h2 className="font-semibold text-base">3. Requisito de idade</h2>
+          <h2 className="font-semibold text-base">3. Plano e cancelamento</h2>
           <p>
-            O uso do MyNutri é restrito a pessoas com <strong>18 anos ou mais</strong>. Ao criar
-            uma conta, você confirma que atende a esse requisito.
+            O nutricionista contrata um plano via Stripe. O cancelamento pode ser feito a qualquer
+            momento pelo painel ou pelo suporte. Ao cancelar, o ambiente personalizado é desativado.
           </p>
         </section>
 
         <section className="flex flex-col gap-2">
-          <h2 className="font-semibold text-base">4. Orientação, não diagnóstico</h2>
+          <h2 className="font-semibold text-base">4. Lei aplicável</h2>
           <p>
-            O MyNutri oferece <strong>orientação nutricional geral</strong> com base no método do
-            expert escolhido. Ele <strong>não substitui consulta médica, diagnóstico clínico ou
-            tratamento de saúde</strong>. Em caso de dúvidas sobre condições de saúde específicas,
-            consulte um profissional habilitado.
-          </p>
-          <p>
-            As respostas geradas pela inteligência artificial são probabilísticas e <strong>podem
-            conter imprecisões</strong>. O usuário é responsável por validar qualquer orientação
-            com seu profissional de saúde antes de adotá-la.
-          </p>
-        </section>
-
-        <section className="flex flex-col gap-2">
-          <h2 className="font-semibold text-base">5. Responsabilidades do nutricionista</h2>
-          <p>
-            O nutricionista é responsável por configurar corretamente a IA com informações precisas e
-            adequadas ao seu método. Ele também é responsável por convidar apenas clientes que
-            concordam com estes termos e que estejam aptos a usar o serviço.
-          </p>
-        </section>
-
-        <section className="flex flex-col gap-2">
-          <h2 className="font-semibold text-base">6. Planos e cancelamento</h2>
-          <p>
-            O nutricionista contrata um plano mensal ou anual via Stripe. O cancelamento pode ser feito
-            a qualquer momento pelo painel ou pelo suporte.
-          </p>
-          <p>
-            Ao cancelar, o ambiente personalizado do nutricionista é desativado e o subdomínio sai do ar.
-            Os clientes vinculados perdem o acesso ao espaço personalizado e poderão continuar usando
-            o MyNutri pelo plano gratuito (3 orientações por dia), sem as configurações do nutricionista.
-          </p>
-        </section>
-
-        <section className="flex flex-col gap-2">
-          <h2 className="font-semibold text-base">7. Foro e lei aplicável</h2>
-          <p>
-            Estes termos são regidos pela legislação brasileira. Fica eleito o foro da cidade de
+            Estes termos são regidos pela legislação brasileira. Fica eleito o foro da comarca de
             São Paulo/SP para resolução de conflitos, salvo disposição legal em contrário.
           </p>
         </section>

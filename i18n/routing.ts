@@ -6,7 +6,7 @@ export const routing = defineRouting({
   localePrefix: 'as-needed',
   pathnames: {
     '/': '/',
-    '/assinar': { pt: '/assinar', en: '/sign-up' },
+    '/assinar': { pt: '/assinar', en: '/subscribe' },
     '/obrigado': { pt: '/obrigado', en: '/thank-you' },
     '/descubra': { pt: '/descubra', en: '/discover' },
     '/para-experts': { pt: '/para-experts', en: '/for-experts' },

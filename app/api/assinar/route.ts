@@ -107,7 +107,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
         ? `https://${appDomain}/en/thank-you?session_id={CHECKOUT_SESSION_ID}`
         : `https://${appDomain}/obrigado?session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: locale === 'en'
-        ? `https://${appDomain}/en/sign-up`
+        ? `https://${appDomain}/en/subscribe`
         : `https://${appDomain}/assinar`,
     })
 

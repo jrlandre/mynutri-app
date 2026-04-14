@@ -10,6 +10,6 @@ export const PRICING = {
     perYear: '$970',
     monthlyEquivalent: '$80',
     savings: '$194',
-    label: '12 meses pelo preço de 10',
+    savingsMonths: 2,
   },
 } as const

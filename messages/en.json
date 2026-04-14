@@ -85,6 +85,7 @@
     "plan_per_year": "per year",
     "plan_per_year_suffix": "year",
     "plan_yearly_badge": "-17%",
+    "plan_yearly_label": "2 months free",
     "submit": "Start for free",
     "submit_loading": "Please wait...",
     "trial_note": "14-day free trial. No charge now. Cancel anytime.",
@@ -248,7 +249,8 @@
     "err_load_history": "Error loading history. Please try again.",
     "err_load_session": "Error loading conversation. Please try again.",
     "err_rate_limit_analyze": "Too many analyses. Please try again.",
-    "err_unknown": "Unknown error"
+    "err_unknown": "Unknown error",
+    "subdomain_not_found": "Nutritionist space not found"
   },
   "Paywall": {
     "title": "Oops, you've used all your requests...",

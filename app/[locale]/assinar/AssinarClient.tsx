@@ -245,7 +245,7 @@ export default function AssinarClient({ appDomain, locale, defaultEmail = "", de
                 </span>
                 <span className="text-xs text-muted-foreground font-medium">{t('plan_yearly')}</span>
                 <span className="text-lg font-bold tracking-tight">{PRICING.yearly.display}</span>
-                <span className="text-xs text-muted-foreground">{t('plan_per_year')} · {PRICING.yearly.label}</span>
+                <span className="text-xs text-muted-foreground">{t('plan_per_year')} · {t('plan_yearly_label')}</span>
               </button>
             </div>
           </div>

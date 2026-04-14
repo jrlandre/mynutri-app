@@ -85,6 +85,7 @@
     "plan_per_year": "por ano",
     "plan_per_year_suffix": "ano",
     "plan_yearly_badge": "-17%",
+    "plan_yearly_label": "2 meses grátis",
     "submit": "Começar grátis",
     "submit_loading": "Aguarde...",
     "trial_note": "14 dias grátis. Sem cobrança agora. Cancele quando quiser.",
@@ -248,7 +249,8 @@
     "err_load_history": "Erro ao carregar histórico. Tente novamente.",
     "err_load_session": "Erro ao carregar a conversa. Tente novamente.",
     "err_rate_limit_analyze": "Muitas análises em pouco tempo. Tente novamente.",
-    "err_unknown": "Erro desconhecido"
+    "err_unknown": "Erro desconhecido",
+    "subdomain_not_found": "Espaço de nutricionista não encontrado"
   },
   "Paywall": {
     "title": "Poxa, você esgotou suas solicitações...",

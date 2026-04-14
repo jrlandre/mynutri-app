@@ -4,8 +4,10 @@ import { useEffect, useState } from 'react'
 import { useSearchParams, useRouter } from 'next/navigation'
 import { motion, AnimatePresence } from 'framer-motion'
 import { X } from 'lucide-react'
+import { useTranslations } from 'next-intl'
 
 export function SubdomainNotFoundToast() {
+  const t = useTranslations('Chat')
   const searchParams = useSearchParams()
   const router = useRouter()
   const [visible, setVisible] = useState(false)
@@ -27,7 +29,7 @@ export function SubdomainNotFoundToast() {
           exit={{ opacity: 0, y: 16 }}
           className="fixed bottom-5 left-1/2 -translate-x-1/2 z-50 flex items-center gap-3 rounded-xl border border-border bg-card px-4 py-3 shadow-lg text-sm whitespace-nowrap"
         >
-          <span>Subdomínio de expert não encontrado</span>
+          <span>{t('subdomain_not_found')}</span>
           <button
             onClick={() => setVisible(false)}
             className="text-muted-foreground hover:text-foreground transition-colors"
