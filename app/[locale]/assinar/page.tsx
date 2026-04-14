@@ -32,8 +32,8 @@ async function getProductJsonLd(locale: string) {
   return {
     '@context': 'https://schema.org',
     '@type': 'Product',
-    name: 'MyNutri Expert Plan',
-    description: 'Espaço personalizado com IA para experts atenderem seus clientes.',
+    name: 'MyNutri Standard Plan',
+    description: 'Your personalized AI space for serving clients. Exclusive subdomain, client management panel, and custom AI.',
     offers: [
       {
         '@type': 'Offer',
