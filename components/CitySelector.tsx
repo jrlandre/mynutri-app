@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef } from "react"
 import { ChevronDown } from "lucide-react"
+import { useTranslations } from 'next-intl'
 
 const ESTADOS_BR = [
   { uf: "AC", nome: "Acre" },
@@ -49,6 +50,7 @@ export function CitySelector({
   value: string
   onChange: (v: string) => void
 }) {
+  const t = useTranslations('CitySelector')
   const parsed = parseCity(value)
   const [uf, setUf] = useState(parsed.uf)
   const [search, setSearch] = useState(parsed.city)
@@ -103,7 +105,7 @@ export function CitySelector({
 
   return (
     <div className="flex flex-col gap-1.5">
-      <label className="text-sm font-medium">Cidade</label>
+      <label className="text-sm font-medium">{t('city_label')}</label>
       <div className="flex gap-2">
         {/* Estado / UF */}
         <div className="relative shrink-0">
@@ -112,7 +114,7 @@ export function CitySelector({
             onChange={e => handleUFChange(e.target.value)}
             className="h-full pl-3 pr-7 py-3 rounded-xl border border-border bg-card text-sm focus:outline-none focus:ring-2 focus:ring-ring/40 appearance-none min-w-[72px]"
           >
-            <option value="">UF</option>
+            <option value="">{t('state_label')}</option>
             {ESTADOS_BR.map(e => (
               <option key={e.uf} value={e.uf}>
                 {e.uf}
@@ -139,10 +141,10 @@ export function CitySelector({
             disabled={!uf}
             placeholder={
               !uf
-                ? "Selecione o estado"
+                ? t('state_placeholder')
                 : loading
-                ? "Carregando cidades..."
-                : "Buscar cidade..."
+                ? t('loading')
+                : t('search')
             }
             autoComplete="off"
             className="w-full px-4 py-3 rounded-xl border border-border bg-card text-sm focus:outline-none focus:ring-2 focus:ring-ring/40 disabled:opacity-40 disabled:cursor-not-allowed"
@@ -167,7 +169,7 @@ export function CitySelector({
 
           {open && uf && !loading && cities.length > 0 && filtered.length === 0 && (
             <div className="absolute top-full left-0 right-0 mt-1 bg-card border border-border rounded-xl shadow-lg z-50 px-4 py-3 text-sm text-muted-foreground">
-              Nenhuma cidade encontrada
+              {t('not_found')}
             </div>
           )}
         </div>

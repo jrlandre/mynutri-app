@@ -6,7 +6,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { useTranslations } from 'next-intl'
 import { useAuthFlow } from '@/hooks/useAuthFlow'
 import type { OAuthProvider } from '@/hooks/useAuthFlow'
-import Link from 'next/link'
+import { Link } from '@/i18n/navigation'
 
 const variants = {
   enter: { opacity: 0, y: 10 },

@@ -6,6 +6,7 @@ import { ChevronLeft } from "lucide-react"
 import { useTranslations } from 'next-intl'
 import { useRouter } from '@/i18n/navigation'
 import posthog from 'posthog-js'
+import { PRICING } from '@/lib/config/pricing'
 
 type Plan = "monthly" | "yearly"
 type SubdomainStatus = "idle" | "checking" | "available" | "unavailable" | "invalid"
@@ -225,7 +226,7 @@ export default function AssinarClient({ appDomain, locale, defaultEmail = "", de
                 }`}
               >
                 <span className="text-xs text-muted-foreground font-medium">{t('plan_monthly')}</span>
-                <span className="text-lg font-bold tracking-tight">$600</span>
+                <span className="text-lg font-bold tracking-tight">{PRICING.monthly.display}</span>
                 <span className="text-xs text-muted-foreground">{t('plan_per_month')}</span>
               </button>
 
@@ -243,8 +244,8 @@ export default function AssinarClient({ appDomain, locale, defaultEmail = "", de
                   {t('plan_yearly_badge')}
                 </span>
                 <span className="text-xs text-muted-foreground font-medium">{t('plan_yearly')}</span>
-                <span className="text-lg font-bold tracking-tight">$500</span>
-                <span className="text-xs text-muted-foreground">{t('plan_per_month')} · $6.000/{t('plan_per_year_suffix')}</span>
+                <span className="text-lg font-bold tracking-tight">{PRICING.yearly.display}</span>
+                <span className="text-xs text-muted-foreground">{t('plan_per_year')} · {PRICING.yearly.label}</span>
               </button>
             </div>
           </div>

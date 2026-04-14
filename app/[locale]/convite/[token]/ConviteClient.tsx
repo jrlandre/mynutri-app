@@ -2,6 +2,7 @@
 
 import { useState } from "react"
 import { createClient } from "@/lib/supabase/client"
+import { useTranslations } from 'next-intl'
 
 interface Props {
   token: string
@@ -21,6 +22,7 @@ function GoogleIcon() {
 }
 
 export default function ConviteClient({ token, email: initialEmail, expertName }: Props) {
+  const t = useTranslations('Convite')
   const [email, setEmail] = useState(initialEmail)
   const [loading, setLoading] = useState(false)
   const [oauthLoading, setOauthLoading] = useState(false)
@@ -41,7 +43,7 @@ export default function ConviteClient({ token, email: initialEmail, expertName }
     })
 
     if (otpError) {
-      setError('Não foi possível enviar o e-mail. Tente novamente.')
+      setError(t('error_send'))
     } else {
       setSent(true)
     }
@@ -62,28 +64,31 @@ export default function ConviteClient({ token, email: initialEmail, expertName }
     <main className="min-h-dvh max-w-sm mx-auto flex flex-col items-center px-6 py-10">
       <div className="my-auto flex flex-col items-center gap-6 text-center w-full">
         <div className="flex flex-col gap-1.5">
-          <p className="text-xs text-muted-foreground uppercase tracking-wider font-medium">Convite</p>
+          <p className="text-xs text-muted-foreground uppercase tracking-wider font-medium">{t('badge')}</p>
           <h1 className="text-xl font-extrabold tracking-tight">
-            {expertName} te convidou para o MyNutri
+            {t('invited_by', { expertName })}
           </h1>
           <p className="text-sm text-muted-foreground leading-relaxed text-balance">
-            Clientes de Experts parceiros têm acesso ilimitado ao assistente de análise nutricional.
+            {t('access_desc')}
           </p>
         </div>
 
         {sent ? (
           <div className="flex flex-col gap-2 w-full">
             <div className="rounded-xl border border-border bg-card px-5 py-4">
-              <p className="text-sm font-medium">Verifique seu e-mail</p>
+              <p className="text-sm font-medium">{t('check_email_title')}</p>
               <p className="text-xs text-muted-foreground mt-1">
-                Enviamos um link de acesso para <span className="font-medium text-foreground">{email}</span>.
+                {t.rich('check_email_desc', {
+                  email,
+                  bold: (chunks) => <span className="font-medium text-foreground">{chunks}</span>,
+                })}
               </p>
             </div>
             <button
               onClick={() => setSent(false)}
               className="text-xs text-muted-foreground hover:text-foreground transition-colors"
             >
-              Usar outro e-mail
+              {t('use_other_email')}
             </button>
           </div>
         ) : (
@@ -94,26 +99,26 @@ export default function ConviteClient({ token, email: initialEmail, expertName }
               className="w-full flex items-center justify-center gap-3 py-3 rounded-xl border border-border bg-card hover:bg-muted transition-colors text-sm font-medium disabled:opacity-50"
             >
               <GoogleIcon />
-              Continuar com Google
+              {t('google_continue')}
             </button>
 
             <div className="flex items-center gap-3">
               <div className="flex-1 h-px bg-border" />
-              <span className="text-xs text-muted-foreground">ou</span>
+              <span className="text-xs text-muted-foreground">{t('or')}</span>
               <div className="flex-1 h-px bg-border" />
             </div>
 
             <form onSubmit={handleAccept} className="flex flex-col gap-3">
               <div className="flex flex-col gap-1.5">
                 <label htmlFor="email" className="text-xs text-muted-foreground text-left">
-                  Seu e-mail
+                  {t('email_label')}
                 </label>
                 <input
                   id="email"
                   type="email"
                   value={email}
                   onChange={e => setEmail(e.target.value)}
-                  placeholder="seu@email.com"
+                  placeholder={t('email_placeholder')}
                   required
                   className="w-full px-4 py-3 rounded-xl border border-border bg-card text-sm focus:outline-none focus:ring-2 focus:ring-ring/40"
                 />
@@ -128,7 +133,7 @@ export default function ConviteClient({ token, email: initialEmail, expertName }
                 disabled={loading || oauthLoading || !email}
                 className="w-full py-3 rounded-xl bg-primary text-primary-foreground text-sm font-medium hover:opacity-90 active:scale-[0.97] transition-all disabled:opacity-50"
               >
-                {loading ? 'Enviando...' : 'Aceitar convite por e-mail'}
+                {loading ? t('sending') : t('accept')}
               </button>
             </form>
           </div>

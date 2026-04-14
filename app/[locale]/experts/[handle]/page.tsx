@@ -4,6 +4,7 @@ import type { Metadata } from 'next'
 import Image from 'next/image'
 import { ChevronLeft } from "lucide-react"
 import { Link } from '@/i18n/navigation'
+import { getTranslations } from 'next-intl/server'
 import { adminClient } from "@/lib/supabase/admin"
 import type { Expert } from "@/types"
 
@@ -62,11 +63,11 @@ export async function generateMetadata({
   return {
     title: `${expert.name} — MyNutri`,
     description,
-    alternates: { canonical: `https://mynutri.pro/experts/${handle}` },
+    alternates: { canonical: `https://mynutri.pro/nutricionistas/${handle}` },
     openGraph: {
       title: `${expert.name} — MyNutri`,
       description,
-      url: `https://mynutri.pro/experts/${handle}`,
+      url: `https://mynutri.pro/nutricionistas/${handle}`,
       type: 'profile',
       images: expert.photo_url
         ? [{ url: expert.photo_url, alt: expert.name }]
@@ -78,9 +79,10 @@ export async function generateMetadata({
 export default async function ExpertProfilePage({
   params,
 }: {
-  params: Promise<{ handle: string }>
+  params: Promise<{ locale: string; handle: string }>
 }) {
-  const { handle } = await params
+  const { locale, handle } = await params
+  const t = await getTranslations({ locale, namespace: 'ExpertProfile' })
   const expert = await getExpert(handle)
 
   if (!expert) notFound()
@@ -94,7 +96,7 @@ export default async function ExpertProfilePage({
     name: expert.name,
     ...(expert.specialty ? { jobTitle: expert.specialty } : {}),
     ...(expert.city ? { address: { '@type': 'PostalAddress', addressLocality: expert.city } } : {}),
-    url: `https://mynutri.pro/experts/${handle}`,
+    url: `https://mynutri.pro/nutricionistas/${handle}`,
     ...(expert.photo_url ? { image: expert.photo_url } : {}),
   }
 
@@ -111,7 +113,7 @@ export default async function ExpertProfilePage({
             className="flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground transition-colors w-fit"
           >
             <ChevronLeft size={16} />
-            Encontre um Expert
+            {t('back')}
           </Link>
         </div>
 
@@ -143,16 +145,16 @@ export default async function ExpertProfilePage({
 
           <div className="w-full rounded-xl border border-border bg-card px-4 py-3 text-center">
             <p className="text-sm text-muted-foreground leading-relaxed">
-              Clientes deste Expert têm{" "}
-              <span className="text-foreground font-medium">acesso ilimitado ao MyNutri</span>{" "}
-              como parte do acompanhamento.
+              {t('access_prefix')}{" "}
+              <span className="text-foreground font-medium">{t('access_highlight')}</span>{" "}
+              {t('access_suffix')}
             </p>
           </div>
 
           {expert.contact_links?.length > 0 && (
             <div className="w-full flex flex-col gap-2">
               <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide px-1">
-                Contato
+                {t('contact')}
               </p>
               {expert.contact_links.map((link, i) => {
                 const href = safeUrl(link.url)

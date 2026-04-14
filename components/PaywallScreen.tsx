@@ -1,17 +1,19 @@
 "use client"
 
 import { motion } from "framer-motion"
-import { useRouter } from "next/navigation"
+import { useTranslations } from 'next-intl'
+import { useRouter } from '@/i18n/navigation'
 
 interface Props {
   tenantSubdomain?: string
 }
 
 export default function PaywallScreen({ tenantSubdomain }: Props) {
+  const t = useTranslations('Paywall')
   const router = useRouter()
 
   function handleShare() {
-    const text = "Estou usando o MyNutri para fazer escolhas mais conscientes no mercado. Peça ao seu Expert para liberar acesso ilimitado pra você!"
+    const text = t('share_text')
     const url = "https://mynutri.pro"
 
     if (navigator.share) {
@@ -30,13 +32,13 @@ export default function PaywallScreen({ tenantSubdomain }: Props) {
     >
       <div className="flex flex-col gap-2">
         <p className="text-lg font-semibold tracking-tight">
-          Poxa, você esgotou suas solicitações...
+          {t('title')}
         </p>
         <p className="text-sm text-muted-foreground leading-relaxed text-balance">
-          Seu acesso é ilimitado se você for cliente de um Expert parceiro.
+          {t('desc')}
         </p>
         <p className="text-lg font-semibold tracking-tight mt-1">
-          Você já realiza acompanhamento com algum expert?
+          {t('question')}
         </p>
       </div>
 
@@ -45,8 +47,8 @@ export default function PaywallScreen({ tenantSubdomain }: Props) {
           onClick={handleShare}
           className="w-full flex flex-col items-center justify-center px-5 py-3 rounded-xl bg-primary text-primary-foreground hover:opacity-90 active:scale-[0.97] transition-all"
         >
-          <span className="text-sm font-medium">Sim</span>
-          <span className="text-xs opacity-75">Solicitar acesso</span>
+          <span className="text-sm font-medium">{t('yes')}</span>
+          <span className="text-xs opacity-75">{t('yes_sub')}</span>
         </button>
         <button
           onClick={() => {
@@ -59,8 +61,8 @@ export default function PaywallScreen({ tenantSubdomain }: Props) {
           }}
           className="w-full flex flex-col items-center justify-center px-5 py-3 rounded-xl border border-border bg-card hover:bg-muted active:scale-[0.97] transition-all"
         >
-          <span className="text-sm font-medium">Ainda não</span>
-          <span className="text-xs text-muted-foreground">Encontre um Expert</span>
+          <span className="text-sm font-medium">{t('no')}</span>
+          <span className="text-xs text-muted-foreground">{t('no_sub')}</span>
         </button>
       </div>
 
@@ -68,15 +70,15 @@ export default function PaywallScreen({ tenantSubdomain }: Props) {
         onClick={() => router.push('/auth')}
         className="text-xs text-muted-foreground hover:text-foreground transition-colors"
       >
-        Entrar com outra conta
+        {t('other_account')}
       </button>
 
       <button
         onClick={() => router.push('/para-experts')}
         className="flex flex-col items-center gap-0.5 text-xs text-muted-foreground hover:text-foreground transition-colors"
       >
-        <span className="font-medium">Sou expert</span>
-        <span>Criar meu espaço</span>
+        <span className="font-medium">{t('expert_cta')}</span>
+        <span>{t('expert_sub')}</span>
       </button>
     </motion.div>
   )

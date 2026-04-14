@@ -6,15 +6,41 @@ import {
 interface Props {
   expertName: string
   inviteUrl: string
+  locale?: 'pt' | 'en'
 }
 
-export default function ClientInviteEmail({ expertName, inviteUrl }: Props) {
+const copy = {
+  pt: {
+    lang: 'pt-BR',
+    preview: (name: string) => `${name} te convidou para o MyNutri`,
+    heading: 'Você foi convidado!',
+    body1: (name: string) => `te convidou para usar o MyNutri — seu assistente de saúde com inteligência artificial.`,
+    body2: (name: string) => `Como cliente de ${name}, você terá acesso ilimitado ao MyNutri como parte do seu acompanhamento.`,
+    cta: 'Aceitar convite',
+    copy_label: 'Ou copie e cole este link no seu navegador:',
+    footer: 'MyNutri · Este convite é pessoal e intransferível.',
+  },
+  en: {
+    lang: 'en',
+    preview: (name: string) => `${name} invited you to MyNutri`,
+    heading: "You've been invited!",
+    body1: (name: string) => `invited you to use MyNutri — your AI-powered health assistant.`,
+    body2: (name: string) => `As a client of ${name}, you'll have unlimited access to MyNutri as part of your care.`,
+    cta: 'Accept invite',
+    copy_label: 'Or copy and paste this link into your browser:',
+    footer: 'MyNutri · This invite is personal and non-transferable.',
+  },
+} as const
+
+export default function ClientInviteEmail({ expertName, inviteUrl, locale = 'pt' }: Props) {
+  const c = copy[locale] ?? copy.pt
+
   return (
-    <Html lang="pt-BR">
+    <Html lang={c.lang}>
       <Head>
         <style>{`@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');`}</style>
       </Head>
-      <Preview>{expertName} te convidou para o MyNutri</Preview>
+      <Preview>{c.preview(expertName)}</Preview>
       <Body style={body}>
         <Container style={container}>
           <Section style={header}>
@@ -23,24 +49,22 @@ export default function ClientInviteEmail({ expertName, inviteUrl }: Props) {
           <Section style={accentLine}>&nbsp;</Section>
 
           <Section style={content}>
-            <Heading style={h1}>Você foi convidado!</Heading>
+            <Heading style={h1}>{c.heading}</Heading>
             <Text style={text}>
-              <strong>{expertName}</strong> te convidou para usar o MyNutri —
-              seu assistente de saúde com inteligência artificial.
+              <strong>{expertName}</strong> {c.body1(expertName)}
             </Text>
             <Text style={text}>
-              Como cliente de {expertName}, você terá acesso ilimitado ao MyNutri
-              como parte do seu acompanhamento.
+              {c.body2(expertName)}
             </Text>
 
             <Section style={{ textAlign: 'center' as const, margin: '32px 0' }}>
               <Button href={inviteUrl} style={button}>
-                Aceitar convite
+                {c.cta}
               </Button>
             </Section>
 
             <Text style={small}>
-              Ou copie e cole este link no seu navegador:
+              {c.copy_label}
             </Text>
             <Text style={link}>{inviteUrl}</Text>
           </Section>
@@ -49,7 +73,7 @@ export default function ClientInviteEmail({ expertName, inviteUrl }: Props) {
 
           <Section>
             <Text style={footer}>
-              MyNutri · Este convite é pessoal e intransferível.
+              {c.footer}
             </Text>
           </Section>
         </Container>

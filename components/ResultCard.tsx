@@ -3,6 +3,7 @@
 import { useState } from "react"
 import Markdown from "react-markdown"
 import remarkGfm from "remark-gfm"
+import { useTranslations } from 'next-intl'
 import type { AnalysisResult, InputType, ConfidenceLevel } from "@/types"
 
 interface ResultCardProps {
@@ -12,10 +13,10 @@ interface ResultCardProps {
   disabled?: boolean
 }
 
-const typeConfig: Record<InputType, { icon: string; label: string; accent: string }> = {
-  produce:      { icon: "🌿", label: "Alimento",  accent: "border-l-green-500"  },
-  label:        { icon: "🏷️", label: "Rótulo",    accent: "border-l-amber-500"  },
-  conversation: { icon: "💬", label: "Conversa",  accent: "border-l-blue-400"   },
+const typeAccent: Record<InputType, { icon: string; accent: string }> = {
+  produce:      { icon: "🌿", accent: "border-l-green-500"  },
+  label:        { icon: "🏷️", accent: "border-l-amber-500"  },
+  conversation: { icon: "💬", accent: "border-l-blue-400"   },
 }
 
 const confidenceStyle: Record<ConfidenceLevel, string> = {
@@ -24,23 +25,30 @@ const confidenceStyle: Record<ConfidenceLevel, string> = {
   Baixa: "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400",
 }
 
-const confidenceLabel: Record<ConfidenceLevel, string> = {
-  Alta:  "Confiança alta",
-  Média: "Confiança média",
-  Baixa: "Confiança baixa",
-}
-
 const INPUT_TYPE_OPTIONS: InputType[] = ["produce", "label", "conversation"]
 
 export default function ResultCard({ result, analysisIndex, onCorrectType, disabled }: ResultCardProps) {
+  const t = useTranslations('ResultCard')
   const [selectedType, setSelectedType] = useState<InputType>(result.inputType)
+
+  const typeLabels: Record<InputType, string> = {
+    produce: t('type_produce'),
+    label: t('type_label'),
+    conversation: t('type_conversation'),
+  }
+
+  const confidenceLabels: Record<ConfidenceLevel, string> = {
+    Alta: t('confidence_high'),
+    Média: t('confidence_medium'),
+    Baixa: t('confidence_low'),
+  }
 
   function handleTypeChange(newType: InputType) {
     setSelectedType(newType)
     onCorrectType(analysisIndex, newType)
   }
 
-  const config = typeConfig[selectedType]
+  const config = typeAccent[selectedType]
 
   const cleanedRaw = result.raw
     .replace(/\*{0,2}CONFIANÇA:\*{0,2}[\s*]*(Alta|Média|Baixa)[^\n]*/gi, "")
@@ -63,15 +71,15 @@ export default function ResultCard({ result, analysisIndex, onCorrectType, disab
           onKeyDown={(e) => { if (e.key === "Escape") e.currentTarget.blur() }}
           className="text-xs font-medium border border-border rounded-md px-2 py-0.5 bg-background cursor-pointer [outline:none] focus:ring-0 disabled:opacity-50 hover:bg-muted transition-colors"
         >
-          {INPUT_TYPE_OPTIONS.map((t) => (
-            <option key={t} value={t}>
-              {typeConfig[t].label}
+          {INPUT_TYPE_OPTIONS.map((type) => (
+            <option key={type} value={type}>
+              {typeLabels[type]}
             </option>
           ))}
         </select>
 
         <span className={`ml-auto text-xs font-medium px-2 py-0.5 rounded-full ${confidenceStyle[result.confidence]}`}>
-          {confidenceLabel[result.confidence]}
+          {confidenceLabels[result.confidence]}
         </span>
 
         {result.confidenceReason && (

@@ -67,6 +67,7 @@ interface Expert {
   stripe_coupon_id?: string | null
   stripe_customer_id?: string | null
   subscription_period?: 'monthly' | 'yearly' | null
+  locale?: 'pt' | 'en'
 }
 
 interface Client {

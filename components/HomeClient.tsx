@@ -3,7 +3,8 @@
 import { useState, useRef, useEffect, useCallback } from "react"
 import { usePostHog } from 'posthog-js/react'
 import { AnimatePresence, motion } from "framer-motion"
-import Link from "next/link"
+import { Link, useRouter } from '@/i18n/navigation'
+import { useTranslations } from 'next-intl'
 import { LogOut, LayoutDashboard, ShieldCheck, History, X, MessageSquare, Trash, Play, Pause, LifeBuoy } from "lucide-react"
 import { createClient } from "@/lib/supabase/client"
 import SessionHistory from "@/components/SessionHistory"
@@ -24,20 +25,14 @@ interface SessionMeta {
   updated_at: string
 }
 
-function groupSessions(sessions: SessionMeta[]): { label: string; items: SessionMeta[] }[] {
+function groupSessions(sessions: SessionMeta[], labels: string[]): { label: string; items: SessionMeta[] }[] {
   const now = new Date()
   const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate())
   const startOfYesterday = new Date(startOfToday.getTime() - 86400000)
   const startOf7Days = new Date(startOfToday.getTime() - 6 * 86400000)
   const startOf30Days = new Date(startOfToday.getTime() - 29 * 86400000)
 
-  const buckets: { label: string; items: SessionMeta[] }[] = [
-    { label: "Hoje", items: [] },
-    { label: "Ontem", items: [] },
-    { label: "Últimos 7 dias", items: [] },
-    { label: "Últimos 30 dias", items: [] },
-    { label: "Mais antigo", items: [] },
-  ]
+  const buckets: { label: string; items: SessionMeta[] }[] = labels.map(l => ({ label: l, items: [] }))
 
   for (const s of sessions) {
     const d = new Date(s.updated_at)
@@ -120,6 +115,8 @@ function StopIcon({ className }: { className?: string }) {
 }
 
 export default function HomeClient({ tenantSubdomain, userProfile }: Props) {
+  const t = useTranslations('Chat')
+  const router = useRouter()
   const [session, setSession] = useState<SessionState>({ messages: [], analyses: [] })
   const [sessionId, setSessionId] = useState<string | null>(null)
   const [historyOpen, setHistoryOpen] = useState(false)
@@ -299,15 +296,15 @@ export default function HomeClient({ tenantSubdomain, userProfile }: Props) {
         const data = await res.json() as { sessions?: SessionMeta[] }
         setSessionsList(data.sessions ?? [])
       } else if (res.status === 401) {
-        setHistoryError("Sessão expirada. Recarregue a página.")
+        setHistoryError(t('err_session_expired'))
       } else if (res.status === 429) {
-        setHistoryError("Muitas requisições em pouco tempo. Aguarde alguns minutos.")
+        setHistoryError(t('err_rate_limit'))
       } else {
-        setHistoryError("Erro ao carregar histórico. Tente novamente.")
+        setHistoryError(t('err_load_history'))
       }
     } catch (e) {
       reportError('Erro ao carregar histórico de sessões', e)
-      setHistoryError("Erro ao carregar histórico. Tente novamente.")
+      setHistoryError(t('err_load_history'))
     } finally {
       setLoadingHistory(false)
     }
@@ -376,15 +373,15 @@ export default function HomeClient({ tenantSubdomain, userProfile }: Props) {
         setSession(prevSession)
         setSessionId(prevSessionId)
         setError(res.status === 429
-          ? "Muitas requisições em pouco tempo. Aguarde alguns minutos."
-          : "Erro ao carregar a conversa. Tente novamente."
+          ? t('err_rate_limit')
+          : t('err_load_session')
         )
       }
     } catch (e) {
       reportError('Erro ao carregar sessão', e)
       setSession(prevSession)
       setSessionId(prevSessionId)
-      setError("Erro ao carregar a conversa. Tente novamente.")
+      setError(t('err_load_session'))
     } finally {
       setLoading(false)
     }
@@ -397,7 +394,7 @@ export default function HomeClient({ tenantSubdomain, userProfile }: Props) {
     const supabase = createClient()
     const { error } = await supabase.auth.updateUser({ password: setupPasswordValue })
     if (error) {
-      setSetupPasswordError('Não foi possível definir a senha. Tente novamente.')
+      setSetupPasswordError(t('password_error'))
     } else {
       setSetupPasswordDone(true)
       setHasPassword(true)
@@ -428,7 +425,7 @@ export default function HomeClient({ tenantSubdomain, userProfile }: Props) {
     const supabase = createClient()
     await supabase.auth.signOut()
     setSession({ messages: [], analyses: [] })
-    window.location.href = "/descubra"
+    router.push('/descubra')
   }
 
   async function submit(
@@ -462,7 +459,7 @@ export default function HomeClient({ tenantSubdomain, userProfile }: Props) {
             }
             return
           }
-          throw new Error(data.message ?? "Muitas análises em pouco tempo. Tente novamente.")
+          throw new Error(data.message ?? t('err_rate_limit_analyze'))
         }
         throw new Error(data.message ?? data.error ?? `Erro ${res.status}`)
       }
@@ -481,7 +478,7 @@ export default function HomeClient({ tenantSubdomain, userProfile }: Props) {
         analyses: [...prev.analyses, data.result],
       }))
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Erro desconhecido")
+      setError(e instanceof Error ? e.message : t('err_unknown'))
     } finally {
       setLoading(false)
     }
@@ -530,7 +527,7 @@ export default function HomeClient({ tenantSubdomain, userProfile }: Props) {
         return { messages, analyses }
       })
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Erro desconhecido")
+      setError(e instanceof Error ? e.message : t('err_unknown'))
     } finally {
       setLoading(false)
     }
@@ -651,7 +648,7 @@ export default function HomeClient({ tenantSubdomain, userProfile }: Props) {
       <header className="px-4 pt-5 pb-3.5 flex-shrink-0 flex items-center justify-between border-b border-border bg-background z-10">
         <div>
           <h1 className="text-xl font-extrabold leading-tight tracking-tight">MyNutri</h1>
-          <p className="text-xs text-muted-foreground leading-tight">Assistente de escolhas nutricionais</p>
+          <p className="text-xs text-muted-foreground leading-tight">{t('subtitle')}</p>
         </div>
         
         <div className="flex items-center gap-3">
@@ -659,7 +656,7 @@ export default function HomeClient({ tenantSubdomain, userProfile }: Props) {
             <button
               onClick={() => setHistoryOpen(true)}
               className="w-10 h-10 rounded-full border border-border flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
-              aria-label="Ver histórico"
+              aria-label={t('history_aria')}
             >
               <History size={18} />
             </button>
@@ -695,7 +692,7 @@ export default function HomeClient({ tenantSubdomain, userProfile }: Props) {
                       >
                         <div className="px-4 py-3 border-b border-border">
                           <p className="text-sm font-medium truncate">
-                            {userProfile.name || "Usuário"}
+                            {userProfile.name || t('user_fallback')}
                           </p>
                           <p className="text-xs text-muted-foreground truncate">
                             {userProfile.email}
@@ -703,7 +700,7 @@ export default function HomeClient({ tenantSubdomain, userProfile }: Props) {
                           {userProfile.expertName && (
                             <div className="mt-2 inline-flex items-center gap-1.5 px-2 py-1 rounded-md bg-primary/10 text-primary text-xs font-medium">
                               <span className="w-1.5 h-1.5 rounded-full bg-primary" />
-                              Expert: {userProfile.expertName}
+                              {t('expert_label')} {userProfile.expertName}
                             </div>
                           )}
                         </div>
@@ -714,7 +711,7 @@ export default function HomeClient({ tenantSubdomain, userProfile }: Props) {
                               className="w-full text-left px-3 py-2 text-sm hover:bg-muted rounded-lg transition-colors flex items-center gap-2"
                               onClick={() => setMenuOpen(false)}
                             >
-                              <LayoutDashboard size={16} className="text-muted-foreground" /> Acessar painel
+                              <LayoutDashboard size={16} className="text-muted-foreground" /> {t('menu_panel')}
                             </Link>
                           )}
                           {userProfile.isSudo && (
@@ -723,7 +720,7 @@ export default function HomeClient({ tenantSubdomain, userProfile }: Props) {
                               className="w-full text-left px-3 py-2 text-sm hover:bg-muted rounded-lg transition-colors flex items-center gap-2"
                               onClick={() => setMenuOpen(false)}
                             >
-                              <ShieldCheck size={16} className="text-muted-foreground" /> Sudo
+                              <ShieldCheck size={16} className="text-muted-foreground" /> Sudo {/* sudo — PT only by design */}
                             </Link>
                           )}
                           {hasPassword === false && !setupPasswordDone && hasGoogleLinked !== true && (
@@ -732,7 +729,7 @@ export default function HomeClient({ tenantSubdomain, userProfile }: Props) {
                               className="w-full text-left px-3 py-2 text-sm hover:bg-muted rounded-lg transition-colors flex items-center gap-2"
                             >
                               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-muted-foreground flex-shrink-0"><rect width="18" height="11" x="3" y="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
-                              Definir senha
+                              {t('menu_set_password')}
                             </button>
                           )}
                           {hasPassword === false && !setupPasswordDone && hasGoogleLinked === false && (
@@ -746,7 +743,7 @@ export default function HomeClient({ tenantSubdomain, userProfile }: Props) {
                                 <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05"/>
                                 <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/>
                               </svg>
-                              Conectar com Google
+                              {t('menu_connect_google')}
                             </button>
                           )}
                           <a
@@ -754,7 +751,7 @@ export default function HomeClient({ tenantSubdomain, userProfile }: Props) {
                             className="w-full text-left px-3 py-2 text-sm hover:bg-muted rounded-lg transition-colors flex items-center gap-2"
                             onClick={() => setMenuOpen(false)}
                           >
-                            <LifeBuoy size={16} className="text-muted-foreground" /> Suporte
+                            <LifeBuoy size={16} className="text-muted-foreground" /> {t('menu_support')}
                           </a>
                           <button
                             onClick={() => {
@@ -763,7 +760,7 @@ export default function HomeClient({ tenantSubdomain, userProfile }: Props) {
                             }}
                             className="w-full text-left px-3 py-2 text-sm text-destructive hover:bg-destructive/10 rounded-lg transition-colors flex items-center gap-2"
                           >
-                            <LogOut size={16} /> Sair
+                            <LogOut size={16} /> {t('menu_logout')}
                           </button>
                         </div>
                       </motion.div>
@@ -776,7 +773,7 @@ export default function HomeClient({ tenantSubdomain, userProfile }: Props) {
                 href="/auth"
                 className="text-sm font-medium px-4 py-2.5 rounded-xl bg-secondary border border-border hover:bg-secondary/80 transition-colors"
               >
-                Entrar
+                {t('sign_in')}
               </Link>
             )}
           </div>
@@ -802,7 +799,7 @@ export default function HomeClient({ tenantSubdomain, userProfile }: Props) {
               className="absolute left-0 top-0 bottom-0 w-[85%] max-w-sm bg-card border-r border-border z-50 flex flex-col shadow-2xl"
             >
               <div className="p-4 border-b border-border flex items-center justify-between">
-                <h2 className="font-semibold">Histórico de Sessões</h2>
+                <h2 className="font-semibold">{t('history_title')}</h2>
                 <button
                   onClick={() => setHistoryOpen(false)}
                   className="p-2 -mr-2 rounded-full hover:bg-muted text-muted-foreground"
@@ -816,7 +813,7 @@ export default function HomeClient({ tenantSubdomain, userProfile }: Props) {
                   className="w-full flex items-center gap-2 px-4 py-3 rounded-xl bg-primary text-primary-foreground font-medium hover:opacity-90 transition-opacity"
                 >
                   <MessageSquare size={16} />
-                  Nova conversa
+                  {t('new_conversation')}
                 </button>
               </div>
               <div className="flex-1 overflow-y-auto px-2 pb-4">
@@ -833,12 +830,12 @@ export default function HomeClient({ tenantSubdomain, userProfile }: Props) {
                       onClick={() => void fetchSessions()}
                       className="text-xs text-primary hover:underline"
                     >
-                      Tentar novamente
+                      {t('retry')}
                     </button>
                   </div>
                 ) : sessionsList.length > 0 ? (
                   <div className="flex flex-col gap-4 py-1">
-                    {groupSessions(sessionsList).map((group) => (
+                    {groupSessions(sessionsList, [t('today'), t('yesterday'), t('last_7'), t('last_30'), t('older')]).map((group) => (
                       <div key={group.label}>
                         <p className="px-3 mb-1 text-xs font-medium text-muted-foreground/60 uppercase tracking-wide">{group.label}</p>
                         <div className="flex flex-col gap-0.5">
@@ -848,7 +845,7 @@ export default function HomeClient({ tenantSubdomain, userProfile }: Props) {
                               onClick={() => loadSession(s.id)}
                               className={`text-left px-3 py-2 rounded-lg text-sm transition-colors truncate ${s.id === sessionId ? 'bg-secondary text-foreground font-medium' : 'text-muted-foreground hover:bg-muted/50 hover:text-foreground'}`}
                             >
-                              {s.title || "Nova Conversa"}
+                              {s.title || t('session_title_fallback')}
                             </button>
                           ))}
                         </div>
@@ -857,7 +854,7 @@ export default function HomeClient({ tenantSubdomain, userProfile }: Props) {
                   </div>
                 ) : (
                   <div className="p-4 text-center text-sm text-muted-foreground">
-                    Nenhuma conversa anterior.
+                    {t('no_sessions')}
                   </div>
                 )}
               </div>
@@ -880,7 +877,7 @@ export default function HomeClient({ tenantSubdomain, userProfile }: Props) {
               {!setupPasswordOpen ? (
                 <div className="flex items-center justify-between gap-3">
                   <p className="text-xs text-muted-foreground leading-relaxed">
-                    Quer definir uma senha para acessar sem link no e-mail?
+                    {t('password_banner_desc')}
                   </p>
                   <div className="flex gap-3 shrink-0">
                     <button
@@ -903,24 +900,24 @@ export default function HomeClient({ tenantSubdomain, userProfile }: Props) {
                       }}
                       className="text-xs text-muted-foreground hover:text-foreground transition-colors"
                     >
-                      Agora não
+                      {t('password_banner_later')}
                     </button>
                     <button
                       onClick={() => { setSetupPasswordFromMenu(false); setSetupPasswordOpen(true) }}
                       className="text-xs font-medium text-primary hover:opacity-70 transition-opacity"
                     >
-                      Definir
+                      {t('password_banner_set')}
                     </button>
                   </div>
                 </div>
               ) : (
                 <form onSubmit={handleSetPassword} className="flex items-center gap-2">
-                  <p className="text-xs font-medium shrink-0">Criar senha:</p>
+                  <p className="text-xs font-medium shrink-0">{t('password_create_label')}</p>
                   <input
                     type="password"
                     value={setupPasswordValue}
                     onChange={e => setSetupPasswordValue(e.target.value)}
-                    placeholder="Mínimo 6 caracteres"
+                    placeholder={t('password_min')}
                     minLength={6}
                     required
                     autoFocus
@@ -935,14 +932,14 @@ export default function HomeClient({ tenantSubdomain, userProfile }: Props) {
                       onClick={() => { setSetupPasswordOpen(false); if (setupPasswordFromMenu) setDismissedPasswordBanner(true) }}
                       className="px-3 py-1.5 rounded-lg border border-border text-xs font-medium hover:bg-muted transition-colors"
                     >
-                      Cancelar
+                      {t('password_cancel')}
                     </button>
                     <button
                       type="submit"
                       disabled={setupPasswordLoading || setupPasswordValue.length < 6}
                       className="px-3 py-1.5 rounded-lg bg-primary text-primary-foreground text-xs font-medium hover:opacity-90 transition-opacity disabled:opacity-50"
                     >
-                      {setupPasswordLoading ? 'Salvando...' : 'Salvar'}
+                      {setupPasswordLoading ? t('password_saving') : t('password_save')}
                     </button>
                   </div>
                 </form>
@@ -988,7 +985,7 @@ export default function HomeClient({ tenantSubdomain, userProfile }: Props) {
                       className="flex-1 flex items-center justify-center gap-2.5 px-5 py-3.5 rounded-xl bg-secondary border border-border text-secondary-foreground text-sm font-medium hover:bg-secondary/80 active:scale-[0.97] transition-all cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-secondary"
                     >
                       <CameraIcon className="opacity-70 flex-shrink-0" />
-                      Imagem
+                      {t('image_btn')}
                     </button>
                   </ImagePickerTrigger>
                   <button
@@ -1004,7 +1001,7 @@ export default function HomeClient({ tenantSubdomain, userProfile }: Props) {
                     {isRecording ? (
                       <><StopIcon className="flex-shrink-0" />{formatAudioTime(recordingElapsed)}</>
                     ) : (
-                      <><MicIcon className="opacity-70 flex-shrink-0" />Áudio</>
+                      <><MicIcon className="opacity-70 flex-shrink-0" />{t('audio_btn')}</>
                     )}
                   </button>
                 </div>
@@ -1015,7 +1012,7 @@ export default function HomeClient({ tenantSubdomain, userProfile }: Props) {
                     <button
                       type="button"
                       onClick={handleDiscardAudio}
-                      aria-label="Descartar áudio"
+                      aria-label={t('aria_discard_audio')}
                       className="w-8 h-8 flex items-center justify-center rounded-full text-destructive hover:bg-destructive/10 transition-colors flex-shrink-0 ml-0.5 cursor-pointer"
                     >
                       <Trash size={15} />
@@ -1023,7 +1020,7 @@ export default function HomeClient({ tenantSubdomain, userProfile }: Props) {
                     <button
                       type="button"
                       onClick={handleTogglePlayback}
-                      aria-label={audioPlayer.isPlaying ? "Pausar" : "Reproduzir"}
+                      aria-label={audioPlayer.isPlaying ? t('aria_pause') : t('aria_play')}
                       className="w-7 h-7 flex items-center justify-center rounded-full bg-primary/10 text-primary hover:bg-primary/20 transition-colors flex-shrink-0 ml-1 cursor-pointer"
                     >
                       {audioPlayer.isPlaying ? <Pause size={13} /> : <Play size={13} />}
@@ -1043,7 +1040,7 @@ export default function HomeClient({ tenantSubdomain, userProfile }: Props) {
                     <button
                       type="button"
                       onClick={handleSendAudio}
-                      aria-label="Enviar áudio"
+                      aria-label={t('aria_send_audio')}
                       className="w-8 h-8 flex items-center justify-center rounded-full bg-primary text-primary-foreground flex-shrink-0 cursor-pointer hover:opacity-90 transition-opacity"
                     >
                       <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
@@ -1061,7 +1058,7 @@ export default function HomeClient({ tenantSubdomain, userProfile }: Props) {
                       type="text"
                       value={isRecording ? "" : inputText}
                       onChange={(e) => { if (!isRecording) setInputText(e.target.value) }}
-                      placeholder={isRecording ? "Gravando áudio..." : "Escreva sua dúvida..."}
+                      placeholder={isRecording ? t('placeholder_recording') : t('placeholder_text')}
                       disabled={loading || isRecording}
                       className="flex-1 text-sm bg-transparent focus:outline-none disabled:opacity-50 min-w-0 placeholder:text-muted-foreground"
                     />
@@ -1069,7 +1066,7 @@ export default function HomeClient({ tenantSubdomain, userProfile }: Props) {
                       <button
                         type="button"
                         onClick={handleStopRecording}
-                        aria-label="Parar gravação"
+                        aria-label={t('aria_stop')}
                         className="w-8 h-8 flex items-center justify-center rounded-full bg-destructive text-white flex-shrink-0 hover:opacity-90 cursor-pointer transition-opacity"
                       >
                         <StopIcon />
@@ -1078,7 +1075,7 @@ export default function HomeClient({ tenantSubdomain, userProfile }: Props) {
                       <button
                         type="submit"
                         disabled={loading || !inputText.trim()}
-                        aria-label="Enviar mensagem"
+                        aria-label={t('aria_send')}
                         className="w-8 h-8 flex items-center justify-center rounded-full bg-primary text-primary-foreground disabled:opacity-40 transition-opacity flex-shrink-0 hover:opacity-90 cursor-pointer disabled:cursor-not-allowed"
                       >
                         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
@@ -1175,7 +1172,7 @@ export default function HomeClient({ tenantSubdomain, userProfile }: Props) {
             <button
               type="button"
               disabled={loading || isRecording || !!pendingAudio}
-              aria-label="Adicionar imagem"
+              aria-label={t('aria_add_image')}
               className="w-8 h-8 flex items-center justify-center rounded-full text-muted-foreground hover:text-foreground hover:bg-muted disabled:opacity-40 transition-colors flex-shrink-0 my-0.5 ml-0.5 cursor-pointer disabled:cursor-not-allowed"
             >
               <CameraIcon />
@@ -1185,7 +1182,7 @@ export default function HomeClient({ tenantSubdomain, userProfile }: Props) {
             type="button"
             onClick={pendingAudio ? handleDiscardAudio : handleStartRecording}
             disabled={loading || isRecording}
-            aria-label={pendingAudio ? "Descartar áudio" : "Gravar áudio"}
+            aria-label={pendingAudio ? t('aria_discard_audio') : t('aria_record_audio')}
             className={`w-8 h-8 flex items-center justify-center rounded-full disabled:opacity-40 transition-colors flex-shrink-0 my-0.5 cursor-pointer disabled:cursor-not-allowed ${
               pendingAudio
                 ? "text-destructive hover:text-destructive hover:bg-destructive/10"
@@ -1242,7 +1239,7 @@ export default function HomeClient({ tenantSubdomain, userProfile }: Props) {
             <button
               type="button"
               onClick={handleSendAudio}
-              aria-label="Enviar áudio"
+              aria-label={t('aria_send_audio')}
               className="w-8 h-8 flex items-center justify-center rounded-full bg-primary text-primary-foreground flex-shrink-0 my-0.5 mr-0.5 hover:opacity-90 cursor-pointer transition-opacity"
             >
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">

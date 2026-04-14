@@ -3,6 +3,7 @@ import type { Metadata } from 'next'
 import { getTranslations } from 'next-intl/server'
 import { createClient } from "@/lib/supabase/server"
 import AssinarClient from "./AssinarClient"
+import { PRICING } from '@/lib/config/pricing'
 import { GTMScript } from '@/components/GTMScript'
 
 export async function generateMetadata({
@@ -37,14 +38,14 @@ async function getProductJsonLd(locale: string) {
       {
         '@type': 'Offer',
         name: t('jsonld_monthly_name'),
-        price: '600.00',
+        price: PRICING.monthly.amount.toFixed(2),
         priceCurrency: 'USD',
         availability: 'https://schema.org/InStock',
       },
       {
         '@type': 'Offer',
         name: t('jsonld_annual_name'),
-        price: '6000.00',
+        price: PRICING.yearly.amount.toFixed(2),
         priceCurrency: 'USD',
         availability: 'https://schema.org/InStock',
       },

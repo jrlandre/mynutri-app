@@ -2,6 +2,7 @@
 
 import React, { useState, useRef, useCallback, useEffect } from 'react'
 import { AnimatePresence, motion } from 'framer-motion'
+import { useTranslations } from 'next-intl'
 import { compressImage } from '@/lib/compress-image'
 import { validateImageFile } from '@/lib/validateImageFile'
 import { usePickerStrategy } from '@/hooks/usePickerStrategy'
@@ -53,6 +54,7 @@ function GalleryIcon() {
 }
 
 export function ImagePickerTrigger({ onImageSelected, onError, children }: Props) {
+  const t = useTranslations('ImagePicker')
   const strategy = usePickerStrategy()
   
   const [sheetOpen, setSheetOpen] = useState(false)
@@ -129,27 +131,27 @@ export function ImagePickerTrigger({ onImageSelected, onError, children }: Props
   async function processFile(file: File) {
     const validation = await validateImageFile(file)
     if (!validation.valid) {
-      onError?.(validation.error ?? 'Imagem inválida.')
+      onError?.(validation.error ?? t('invalid_image'))
       return
     }
     try {
       const base64 = await compressImage(file)
       onImageSelected(base64, 'image/jpeg')
     } catch {
-      onError?.('Não foi possível processar a imagem. Tente outra.')
+      onError?.(t('err_process'))
     }
   }
 
   async function handleFileInputChange(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0]
-    e.target.value = '' 
+    e.target.value = ''
     if (!file) return
     closeSheet()
-    
+
     try {
       await processFile(file)
     } catch (err) {
-      onError?.(err instanceof Error ? err.message : 'Falha inesperada ao processar imagem.')
+      onError?.(err instanceof Error ? err.message : t('err_process_fallback'))
     }
   }
 
@@ -185,7 +187,7 @@ export function ImagePickerTrigger({ onImageSelected, onError, children }: Props
         try {
           await processFile(file)
         } catch (err) {
-          onError?.(err instanceof Error ? err.message : 'Falha ao processar imagem.')
+          onError?.(err instanceof Error ? err.message : t('err_process_short'))
         }
         return
       } catch (err) {
@@ -225,10 +227,10 @@ export function ImagePickerTrigger({ onImageSelected, onError, children }: Props
       if (!mountedRef.current) return
       
       const name = err instanceof Error ? err.name : ''
-      if (name === 'NotFoundError') setMenuError('Nenhuma câmera conectada.')
-      else if (name === 'NotAllowedError') setMenuError('Permissão de câmera negada.')
-      else if (name === 'NotReadableError') setMenuError('A câmera já está em uso por outro aplicativo.')
-      else setMenuError('Erro desconhecido ao acessar a câmera.')
+      if (name === 'NotFoundError') setMenuError(t('no_camera'))
+      else if (name === 'NotAllowedError') setMenuError(t('camera_denied'))
+      else if (name === 'NotReadableError') setMenuError(t('camera_in_use'))
+      else setMenuError(t('camera_error'))
     } finally {
       isRequestingCamera.current = false
       if (mountedRef.current) setIsStartingCamera(false)
@@ -304,7 +306,7 @@ export function ImagePickerTrigger({ onImageSelected, onError, children }: Props
               key="img-sheet" 
               role="dialog" 
               aria-modal="true" 
-              aria-label="Opções de envio de imagem"
+              aria-label={t('dialog_aria')}
               onKeyDown={(e) => e.key === 'Escape' && closeSheet()}
               initial={{ y: '100%' }} 
               animate={{ y: 0 }} 
@@ -313,7 +315,7 @@ export function ImagePickerTrigger({ onImageSelected, onError, children }: Props
               className="fixed bottom-0 left-1/2 -translate-x-1/2 z-50 w-full max-w-2xl bg-background rounded-t-2xl shadow-xl"
             >
               <div className="w-10 h-1 bg-muted rounded-full mx-auto mt-3 mb-2" />
-              <p className="text-center text-xs font-medium text-muted-foreground uppercase tracking-wide mb-3 px-6">Adicionar imagem</p>
+              <p className="text-center text-xs font-medium text-muted-foreground uppercase tracking-wide mb-3 px-6">{t('add_image')}</p>
               
               <div className="flex flex-col px-4 pb-8 gap-2">
                 {menuError && (
@@ -332,9 +334,9 @@ export function ImagePickerTrigger({ onImageSelected, onError, children }: Props
                     <CameraIcon />
                   </div>
                   <div>
-                    <div className="text-sm font-medium">Câmera</div>
+                    <div className="text-sm font-medium">{t('camera_label')}</div>
                     <div className="text-xs text-muted-foreground">
-                      Tirar uma foto agora
+                      {t('camera_desc')}
                     </div>
                   </div>
                 </button>
@@ -347,8 +349,8 @@ export function ImagePickerTrigger({ onImageSelected, onError, children }: Props
                     <GalleryIcon />
                   </div>
                   <div>
-                    <div className="text-sm font-medium">Galeria / Arquivos</div>
-                    <div className="text-xs text-muted-foreground">Escolher do dispositivo</div>
+                    <div className="text-sm font-medium">{t('gallery_label')}</div>
+                    <div className="text-xs text-muted-foreground">{t('gallery_desc')}</div>
                   </div>
                 </button>
 
@@ -356,7 +358,7 @@ export function ImagePickerTrigger({ onImageSelected, onError, children }: Props
                   onClick={closeSheet}
                   className="text-sm text-muted-foreground py-3 hover:text-foreground transition-colors"
                 >
-                  Cancelar
+                  {t('cancel')}
                 </button>
               </div>
             </motion.div>
@@ -371,7 +373,7 @@ export function ImagePickerTrigger({ onImageSelected, onError, children }: Props
             key="webcam-overlay" 
             role="dialog"
             aria-modal="true"
-            aria-label="Câmera do navegador"
+            aria-label={t('camera_browser_aria')}
             onKeyDown={(e) => e.key === 'Escape' && handleCloseWebcam()}
             initial={{ opacity: 0 }} 
             animate={{ opacity: 1 }} 
@@ -392,13 +394,13 @@ export function ImagePickerTrigger({ onImageSelected, onError, children }: Props
                 onClick={handleCloseWebcam}
                 className="px-6 py-3 rounded-xl border border-white/30 text-white text-sm font-medium hover:bg-white/10 transition-colors"
               >
-                Cancelar
+                {t('cancel')}
               </button>
               <button
                 onClick={handleWebcamCapture}
                 className="px-6 py-3 rounded-xl bg-white text-black text-sm font-semibold hover:bg-white/90 active:scale-[0.97] transition-all"
               >
-                Tirar foto
+                {t('take_photo')}
               </button>
             </div>
           </motion.div>

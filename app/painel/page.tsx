@@ -3,6 +3,7 @@ import { redirect } from 'next/navigation'
 import { Suspense } from 'react'
 import Link from 'next/link'
 import { ChevronLeft } from 'lucide-react'
+import { NextIntlClientProvider } from 'next-intl'
 import { createClient } from '@/lib/supabase/server'
 import { adminClient } from '@/lib/supabase/admin'
 import PainelClient from './PainelClient'
@@ -85,6 +86,9 @@ export default async function PainelPage() {
     )
   }
 
+  const expertLocale: 'pt' | 'en' = ((expert as Record<string, unknown>).locale as string) === 'en' ? 'en' : 'pt'
+  const messages = (await import(`@/messages/${expertLocale}.json`)).default
+
   const [{ data: clients }, referralsResult] = await Promise.all([
     adminClient
       .from('clients')
@@ -102,11 +106,13 @@ export default async function PainelPage() {
 
   return (
     <Suspense>
-      <PainelClient
-        expert={expert as unknown as Expert}
-        initialClients={(clients ?? []) as Client[]}
-        initialReferrals={(referralsResult.data ?? []) as Referral[]}
-      />
+      <NextIntlClientProvider locale={expertLocale} messages={messages}>
+        <PainelClient
+          expert={expert as unknown as Expert}
+          initialClients={(clients ?? []) as Client[]}
+          initialReferrals={(referralsResult.data ?? []) as Referral[]}
+        />
+      </NextIntlClientProvider>
     </Suspense>
   )
 }
