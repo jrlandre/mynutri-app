@@ -2,6 +2,7 @@
 
 import { useState, useCallback, useEffect, useMemo } from 'react'
 import { useRouter } from 'next/navigation'
+import { useLocale } from 'next-intl'
 import { createClient } from '@/lib/supabase/client'
 
 function getNextUrl(): string {
@@ -23,6 +24,7 @@ interface State {
 }
 
 export function useAuthFlow() {
+  const locale = useLocale()
   const [state, setState] = useState<State>({
     step: 'email',
     email: '',
@@ -128,7 +130,7 @@ export function useAuthFlow() {
         email: state.email,
         password,
         options: {
-          emailRedirectTo: `${window.location.origin}/auth/callback?source=signup&next=${encodeURIComponent(next)}`,
+          emailRedirectTo: `${window.location.origin}/auth/callback?source=signup&locale=${locale}&next=${encodeURIComponent(next)}`,
         },
       })
       if (error) throw error
@@ -150,7 +152,7 @@ export function useAuthFlow() {
         type: 'signup',
         email: state.email,
         options: {
-          emailRedirectTo: `${window.location.origin}/auth/callback?source=signup&next=${encodeURIComponent(next)}`,
+          emailRedirectTo: `${window.location.origin}/auth/callback?source=signup&locale=${locale}&next=${encodeURIComponent(next)}`,
         },
       })
       if (error) throw error
@@ -172,7 +174,7 @@ export function useAuthFlow() {
         email: state.email,
         options: {
           shouldCreateUser: false,
-          emailRedirectTo: `${window.location.origin}/auth/callback?next=${encodeURIComponent(next)}`,
+          emailRedirectTo: `${window.location.origin}/auth/callback?locale=${locale}&next=${encodeURIComponent(next)}`,
         },
       })
       if (error) throw error

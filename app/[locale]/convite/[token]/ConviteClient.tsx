@@ -2,7 +2,7 @@
 
 import { useState } from "react"
 import { createClient } from "@/lib/supabase/client"
-import { useTranslations } from 'next-intl'
+import { useTranslations, useLocale } from 'next-intl'
 
 interface Props {
   token: string
@@ -23,6 +23,7 @@ function GoogleIcon() {
 
 export default function ConviteClient({ token, email: initialEmail, expertName }: Props) {
   const t = useTranslations('Convite')
+  const locale = useLocale()
   const [email, setEmail] = useState(initialEmail)
   const [loading, setLoading] = useState(false)
   const [oauthLoading, setOauthLoading] = useState(false)
@@ -35,7 +36,7 @@ export default function ConviteClient({ token, email: initialEmail, expertName }
     setError(null)
 
     const supabase = createClient()
-    const redirectTo = `${window.location.origin}/api/convite/activate?token=${token}`
+    const redirectTo = `${window.location.origin}/api/convite/activate?token=${token}&locale=${locale}`
 
     const { error: otpError } = await supabase.auth.signInWithOtp({
       email,
@@ -53,7 +54,7 @@ export default function ConviteClient({ token, email: initialEmail, expertName }
   async function handleGoogle() {
     setOauthLoading(true)
     const supabase = createClient()
-    const redirectTo = `${window.location.origin}/api/convite/activate?token=${token}`
+    const redirectTo = `${window.location.origin}/api/convite/activate?token=${token}&locale=${locale}`
     await supabase.auth.signInWithOAuth({
       provider: 'google',
       options: { redirectTo },

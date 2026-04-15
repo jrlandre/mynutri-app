@@ -3,11 +3,12 @@
 import { useState } from 'react'
 import { motion } from 'framer-motion'
 import { createClient } from '@/lib/supabase/client'
-import { useTranslations } from 'next-intl'
+import { useTranslations, useLocale } from 'next-intl'
 import { Link } from '@/i18n/navigation'
 
 export default function ForgotPasswordPage() {
   const t = useTranslations('ForgotPassword')
+  const locale = useLocale()
   const [email, setEmail] = useState('')
   const [loading, setLoading] = useState(false)
   const [sent, setSent] = useState(false)
@@ -20,7 +21,7 @@ export default function ForgotPasswordPage() {
 
     const supabase = createClient()
     const { error } = await supabase.auth.resetPasswordForEmail(email, {
-      redirectTo: `${window.location.origin}/auth/callback?type=recovery`,
+      redirectTo: `${window.location.origin}/auth/callback?type=recovery&locale=${locale}`,
     })
 
     if (error) {
