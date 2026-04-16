@@ -548,7 +548,7 @@ export default function HomeClient({ tenantSubdomain, userProfile }: Props) {
 
   async function handleStartRecording() {
     if (!navigator.mediaDevices?.getUserMedia) {
-      setError("Gravação de áudio não é suportada neste navegador.")
+      setError(t('err_mic_unsupported'))
       return
     }
     try {
@@ -593,17 +593,17 @@ export default function HomeClient({ tenantSubdomain, userProfile }: Props) {
     } catch (err) {
       const name = err instanceof DOMException ? err.name : null
       if (name === "NotAllowedError" || name === "PermissionDeniedError") {
-        setError("Permissão para microfone negada. Verifique as configurações do seu navegador.")
+        setError(t('err_mic_denied'))
       } else if (name === "NotFoundError" || name === "DevicesNotFoundError") {
-        setError("Nenhum microfone encontrado.")
+        setError(t('err_mic_notfound'))
       } else if (name === "NotReadableError" || name === "TrackStartError") {
-        setError("Microfone em uso por outro aplicativo.")
+        setError(t('err_mic_inuse'))
       } else if (name === "SecurityError") {
-        setError("Acesso ao microfone bloqueado. A página precisa ser acessada via HTTPS.")
+        setError(t('err_mic_https'))
       } else if (err instanceof TypeError) {
-        setError("Gravação de áudio não é suportada neste contexto.")
+        setError(t('err_mic_context'))
       } else {
-        setError("Não foi possível iniciar a gravação.")
+        setError(t('err_mic_start'))
       }
     }
   }

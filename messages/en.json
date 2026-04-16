@@ -153,7 +153,14 @@
     "resend": "Resend email",
     "resending": "Resending...",
     "resent": "Email resent ✓",
-    "use_other_email": "Use a different email"
+    "use_other_email": "Use a different email",
+    "err_invalid_credentials": "Email or password is incorrect.",
+    "err_email_not_confirmed": "Please confirm your email before signing in.",
+    "err_user_registered": "This email is already registered.",
+    "err_password_short": "Password must be at least 6 characters.",
+    "err_rate_limit": "Too many attempts. Please wait a few minutes.",
+    "err_rate_limit_flow": "Too many attempts. Please try again later.",
+    "err_check_email": "Error checking email. Please try again."
   },
   "ForgotPassword": {
     "title": "Forgot your password?",
@@ -250,7 +257,16 @@
     "err_load_session": "Error loading conversation. Please try again.",
     "err_rate_limit_analyze": "Too many analyses. Please try again.",
     "err_unknown": "Unknown error",
-    "subdomain_not_found": "Nutritionist space not found"
+    "subdomain_not_found": "Nutritionist space not found",
+    "err_mic_unsupported": "Audio recording is not supported in this browser.",
+    "err_mic_denied": "Microphone permission denied. Check your browser settings.",
+    "err_mic_notfound": "No microphone found.",
+    "err_mic_inuse": "Microphone is in use by another application.",
+    "err_mic_https": "Microphone access blocked. The page must be accessed via HTTPS.",
+    "err_mic_context": "Audio recording is not supported in this context.",
+    "err_mic_start": "Could not start recording.",
+    "bubble_image_alt": "Image sent",
+    "bubble_audio": "Audio sent"
   },
   "Paywall": {
     "title": "Oops, you've used all your requests...",

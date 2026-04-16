@@ -153,7 +153,14 @@
     "resend": "Reenviar e-mail",
     "resending": "Reenviando...",
     "resent": "E-mail reenviado ✓",
-    "use_other_email": "Usar outro e-mail"
+    "use_other_email": "Usar outro e-mail",
+    "err_invalid_credentials": "E-mail ou senha incorretos.",
+    "err_email_not_confirmed": "Confirme seu e-mail antes de entrar.",
+    "err_user_registered": "Este e-mail já está cadastrado.",
+    "err_password_short": "A senha deve ter pelo menos 6 caracteres.",
+    "err_rate_limit": "Muitas tentativas. Aguarde alguns minutos.",
+    "err_rate_limit_flow": "Muitas tentativas. Tente novamente mais tarde.",
+    "err_check_email": "Erro ao verificar e-mail. Tente novamente."
   },
   "ForgotPassword": {
     "title": "Esqueceu a senha?",
@@ -250,7 +257,16 @@
     "err_load_session": "Erro ao carregar a conversa. Tente novamente.",
     "err_rate_limit_analyze": "Muitas análises em pouco tempo. Tente novamente.",
     "err_unknown": "Erro desconhecido",
-    "subdomain_not_found": "Espaço de nutricionista não encontrado"
+    "subdomain_not_found": "Espaço de nutricionista não encontrado",
+    "err_mic_unsupported": "Gravação de áudio não é suportada neste navegador.",
+    "err_mic_denied": "Permissão para microfone negada. Verifique as configurações do seu navegador.",
+    "err_mic_notfound": "Nenhum microfone encontrado.",
+    "err_mic_inuse": "Microfone em uso por outro aplicativo.",
+    "err_mic_https": "Acesso ao microfone bloqueado. A página precisa ser acessada via HTTPS.",
+    "err_mic_context": "Gravação de áudio não é suportada neste contexto.",
+    "err_mic_start": "Não foi possível iniciar a gravação.",
+    "bubble_image_alt": "Imagem enviada",
+    "bubble_audio": "Áudio enviado"
   },
   "Paywall": {
     "title": "Poxa, você esgotou suas solicitações...",

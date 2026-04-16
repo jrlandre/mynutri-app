@@ -2,7 +2,7 @@
 
 import { useState, useCallback, useEffect, useMemo } from 'react'
 import { useRouter } from 'next/navigation'
-import { useLocale } from 'next-intl'
+import { useLocale, useTranslations } from 'next-intl'
 import { createClient } from '@/lib/supabase/client'
 
 function getNextUrl(): string {
@@ -25,6 +25,7 @@ interface State {
 
 export function useAuthFlow() {
   const locale = useLocale()
+  const t = useTranslations('Auth')
   const [state, setState] = useState<State>({
     step: 'email',
     email: '',
@@ -67,7 +68,7 @@ export function useAuthFlow() {
     try {
       const flowRes = await fetch('/api/auth/flow', { method: 'POST' })
       if (flowRes.status === 429) {
-        set({ loading: false, error: 'Muitas tentativas. Tente novamente mais tarde.' })
+        set({ loading: false, error: t('err_rate_limit_flow') })
         return
       }
       const flowData = await flowRes.json()
@@ -80,7 +81,7 @@ export function useAuthFlow() {
       })
 
       if (res.status === 429) {
-        set({ loading: false, error: 'Muitas tentativas. Tente novamente mais tarde.' })
+        set({ loading: false, error: t('err_rate_limit_flow') })
         return
       }
 
@@ -101,9 +102,9 @@ export function useAuthFlow() {
 
       setState(s => ({ ...s, step, email, flowId, loading: false }))
     } catch {
-      set({ loading: false, error: 'Erro ao verificar e-mail. Tente novamente.' })
+      set({ loading: false, error: t('err_check_email') })
     }
-  }, [])
+  }, [t])
 
   const handleLogin = useCallback(async (password: string) => {
     set({ loading: true, error: null })
@@ -118,7 +119,7 @@ export function useAuthFlow() {
       }
       router.push(getNextUrl())
     } catch (err: unknown) {
-      set({ loading: false, error: translateError(err) })
+      set({ loading: false, error: translateError(err, t) })
     }
   }, [state.email, router, supabase])
 
@@ -140,7 +141,7 @@ export function useAuthFlow() {
         set({ loading: false, step: 'verify', isNewUser: true })
       }
     } catch (err: unknown) {
-      set({ loading: false, error: translateError(err) })
+      set({ loading: false, error: translateError(err, t) })
     }
   }, [state.email, router, supabase])
 
@@ -158,7 +159,7 @@ export function useAuthFlow() {
       if (error) throw error
       set({ loading: false })
     } catch (err: unknown) {
-      set({ loading: false, error: translateError(err) })
+      set({ loading: false, error: translateError(err, t) })
     }
   }, [state.email, supabase])
 
@@ -180,7 +181,7 @@ export function useAuthFlow() {
       if (error) throw error
       set({ loading: false, step: 'verify', isNewUser: false })
     } catch (err: unknown) {
-      set({ loading: false, error: translateError(err) })
+      set({ loading: false, error: translateError(err, t) })
     }
   }, [state.email, supabase])
 
@@ -207,12 +208,12 @@ export function useAuthFlow() {
   }
 }
 
-function translateError(err: unknown): string {
+function translateError(err: unknown, t: (key: string) => string): string {
   const msg = err instanceof Error ? err.message : String(err)
-  if (msg.includes('Invalid login credentials')) return 'E-mail ou senha incorretos.'
-  if (msg.includes('Email not confirmed')) return 'Confirme seu e-mail antes de entrar.'
-  if (msg.includes('User already registered')) return 'Este e-mail já está cadastrado.'
-  if (msg.includes('Password should be at least')) return 'A senha deve ter pelo menos 6 caracteres.'
-  if (msg.includes('rate limit') || msg.includes('Rate limit')) return 'Muitas tentativas. Aguarde alguns minutos.'
+  if (msg.includes('Invalid login credentials')) return t('err_invalid_credentials')
+  if (msg.includes('Email not confirmed')) return t('err_email_not_confirmed')
+  if (msg.includes('User already registered')) return t('err_user_registered')
+  if (msg.includes('Password should be at least')) return t('err_password_short')
+  if (msg.includes('rate limit') || msg.includes('Rate limit')) return t('err_rate_limit')
   return msg
 }

@@ -109,8 +109,20 @@ export async function proxy(request: NextRequest) {
     return NextResponse.next({ request: { headers: requestHeaders } })
   }
 
-  // ── Páginas em subdomínio: pass-through (sem locale routing) ───────────────
+  // ── Páginas em subdomínio: rewrite interno com detecção de locale ──────────
+  // Sem isso, `/` não encontra `app/[locale]/page.tsx` e retorna 404, porque
+  // o intlHandler não roda em subdomínios e o segmento [locale] fica ausente.
+  // Detectamos o locale pelo Accept-Language do browser para suporte internacional.
   if (isSubdomain) {
+    const hasLocalePrefix = /^\/(pt|en)(\/|$)/.test(pathname)
+    if (!hasLocalePrefix) {
+      const acceptLang = request.headers.get('accept-language') ?? ''
+      const primaryLang = acceptLang.split(',')[0].split(';')[0].trim().toLowerCase()
+      const locale = primaryLang.startsWith('en') ? 'en' : 'pt'
+      const url = request.nextUrl.clone()
+      url.pathname = `/${locale}${pathname === '/' ? '' : pathname}`
+      return NextResponse.rewrite(url)
+    }
     return NextResponse.next()
   }
 
