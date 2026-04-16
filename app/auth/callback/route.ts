@@ -9,14 +9,16 @@ export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url)
   const code = searchParams.get('code')
   const type = searchParams.get('type')
+  const locale = searchParams.get('locale') === 'en' ? 'en' : null
 
   if (code) {
     const supabase = await createClient()
     await supabase.auth.exchangeCodeForSession(code)
 
-    // Recuperação de senha: redirecionar para a tela de reset
+    // Recuperação de senha: redirecionar para a tela de reset preservando locale
     if (type === 'recovery') {
-      return NextResponse.redirect(new URL('/auth/reset-password', origin))
+      const resetPath = locale ? `/en/auth/reset-password` : '/auth/reset-password'
+      return NextResponse.redirect(new URL(resetPath, origin))
     }
   }
 
