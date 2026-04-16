@@ -160,7 +160,8 @@
     "err_password_short": "Password must be at least 6 characters.",
     "err_rate_limit": "Too many attempts. Please wait a few minutes.",
     "err_rate_limit_flow": "Too many attempts. Please try again later.",
-    "err_check_email": "Error checking email. Please try again."
+    "err_check_email": "Error checking email. Please try again.",
+    "err_server": "Internal server error. Please try again later."
   },
   "ForgotPassword": {
     "title": "Forgot your password?",

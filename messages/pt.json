@@ -160,7 +160,8 @@
     "err_password_short": "A senha deve ter pelo menos 6 caracteres.",
     "err_rate_limit": "Muitas tentativas. Aguarde alguns minutos.",
     "err_rate_limit_flow": "Muitas tentativas. Tente novamente mais tarde.",
-    "err_check_email": "Erro ao verificar e-mail. Tente novamente."
+    "err_check_email": "Erro ao verificar e-mail. Tente novamente.",
+    "err_server": "Erro interno no servidor. Tente novamente mais tarde."
   },
   "ForgotPassword": {
     "title": "Esqueceu a senha?",

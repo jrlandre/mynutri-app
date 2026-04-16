@@ -215,5 +215,6 @@ function translateError(err: unknown, t: (key: string) => string): string {
   if (msg.includes('User already registered')) return t('err_user_registered')
   if (msg.includes('Password should be at least')) return t('err_password_short')
   if (msg.includes('rate limit') || msg.includes('Rate limit')) return t('err_rate_limit')
+  if (msg.includes('Invalid JSON response')) return t('err_server')
   return msg
 }
