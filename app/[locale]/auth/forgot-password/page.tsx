@@ -42,7 +42,7 @@ export default function ForgotPasswordPage() {
         >
           <span className="text-4xl">📩</span>
           <h1 className="text-xl font-extrabold tracking-tight">{t('check_email_title')}</h1>
-          <p className="text-sm text-muted-foreground">
+          <p className="text-sm text-muted-foreground text-center">
             {t.rich('check_email_desc', {
               email,
               bold: (chunks) => <strong className="text-foreground">{chunks}</strong>,
