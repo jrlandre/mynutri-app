@@ -409,10 +409,11 @@ function getUrlHintKey(type: string, url: string): string | null {
 
 // ─── Aba Vitrine ──────────────────────────────────────────────────────────────
 
-function TabVitrine({ expert, onSave, onPhotoChange }: {
+function TabVitrine({ expert, onSave, onPhotoChange, onDirtyChange }: {
   expert: Expert
   onSave: (data: Partial<Expert>) => Promise<void>
   onPhotoChange: (url: string) => void
+  onDirtyChange?: (dirty: boolean) => void
 }) {
   const t = useTranslations('Painel')
   const [name, setName] = useState(expert.name)
@@ -542,6 +543,8 @@ function TabVitrine({ expert, onSave, onPhotoChange }: {
     city !== (expert.city ?? "") ||
     listed !== expert.listed ||
     JSON.stringify(links) !== JSON.stringify(expert.contact_links ?? [])
+
+  useEffect(() => { onDirtyChange?.(hasChanges) }, [hasChanges]) // eslint-disable-line
 
   function urlTypeLabel(type: string): string {
     if (type === "WhatsApp")  return t('contact_whatsapp_hint')
@@ -851,9 +854,10 @@ function SubdomainSection({ expert, onSubdomainChange }: {
 
 // ─── Aba IA ───────────────────────────────────────────────────────────────────
 
-function TabIA({ expert, onSave }: {
+function TabIA({ expert, onSave, onDirtyChange }: {
   expert: Expert
   onSave: (data: Partial<Expert>) => Promise<void>
+  onDirtyChange?: (dirty: boolean) => void
 }) {
   const t = useTranslations('Painel')
   const [prompt, setPrompt] = useState(expert.system_prompt ?? "")
@@ -870,6 +874,8 @@ function TabIA({ expert, onSave }: {
   }
 
   const hasChanges = prompt !== (expert.system_prompt ?? "")
+
+  useEffect(() => { onDirtyChange?.(hasChanges) }, [hasChanges]) // eslint-disable-line
 
   return (
     <form onSubmit={handleSave} className="flex flex-col gap-4">
@@ -1060,6 +1066,20 @@ export default function PainelClient({ expert: initialExpert, initialClients, in
 
   const initialTab: TabKey = searchParams.get("tab") === "exibicao" ? "exibicao" : "inicio"
   const [tab, setTab] = useState<TabKey>(initialTab)
+  const [isDirty, setIsDirty] = useState(false)
+
+  useEffect(() => {
+    if (!isDirty) return
+    const handler = (e: BeforeUnloadEvent) => { e.preventDefault() }
+    window.addEventListener('beforeunload', handler)
+    return () => window.removeEventListener('beforeunload', handler)
+  }, [isDirty])
+
+  function switchTab(key: TabKey) {
+    if (isDirty && key !== tab && !confirm(t('unsaved_confirm'))) return
+    setTab(key)
+    setIsDirty(false)
+  }
 
   // PostHog — expert acessou painel sem clientes (onboarding)
   useEffect(() => {
@@ -1170,12 +1190,13 @@ export default function PainelClient({ expert: initialExpert, initialClients, in
           {tabKeys.map(key => (
             <button
               key={key}
-              onClick={() => setTab(key)}
+              onClick={() => switchTab(key)}
               className={`flex-1 py-2 rounded-lg text-sm font-medium transition-colors ${
                 tab === key ? "bg-background shadow-sm text-foreground" : "text-muted-foreground hover:text-foreground"
               }`}
             >
               {tabLabel[key]}
+              {isDirty && key === tab && <span className="ml-1 inline-block w-1.5 h-1.5 rounded-full bg-amber-500 align-middle" />}
             </button>
           ))}
         </div>
@@ -1207,6 +1228,7 @@ export default function PainelClient({ expert: initialExpert, initialClients, in
                 expert={expert}
                 onSave={handleSaveProfile}
                 onPhotoChange={(url) => setExpert(prev => ({ ...prev, photo_url: url }))}
+                onDirtyChange={setIsDirty}
               />
               <SubdomainSection
                 expert={expert}
@@ -1215,7 +1237,7 @@ export default function PainelClient({ expert: initialExpert, initialClients, in
             </div>
           )}
           {tab === "ia" && (
-            <TabIA expert={expert} onSave={handleSaveProfile} />
+            <TabIA expert={expert} onSave={handleSaveProfile} onDirtyChange={setIsDirty} />
           )}
           {tab === "comissoes" && expert.is_promoter && (
             <TabComissoes expert={expert} referrals={referrals} />

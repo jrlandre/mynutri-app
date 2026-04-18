@@ -442,6 +442,7 @@
     "checklist_contact": "Add a contact link",
     "pause_access": "Pause access",
     "resume_access": "Resume access",
-    "contact_remove": "Remove link"
+    "contact_remove": "Remove link",
+    "unsaved_confirm": "You have unsaved changes. Leave without saving?"
   }
 }
