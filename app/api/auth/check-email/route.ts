@@ -46,8 +46,9 @@ export async function POST(request: NextRequest) {
 
     let result: CheckEmailResponse = { exists: false }
 
-    if (data) {
-      const providers = (data.providers ?? []) as string[]
+    if (data && typeof data === 'object' && !Array.isArray(data)) {
+      const d = data as { providers?: string[]; confirmed?: boolean; has_password?: boolean }
+      const providers = (d.providers ?? []) as string[]
       let provider: Provider = 'email'
       if (providers.includes('google')) provider = 'google'
       else if (providers.includes('apple')) provider = 'apple'
@@ -56,8 +57,8 @@ export async function POST(request: NextRequest) {
       result = {
         exists: true,
         provider,
-        confirmed: data.confirmed as boolean,
-        hasPassword: provider === 'email' ? (data.has_password as boolean) : undefined,
+        confirmed: d.confirmed as boolean,
+        hasPassword: provider === 'email' ? (d.has_password as boolean) : undefined,
       }
     }
 

@@ -14,57 +14,65 @@ export type Database = {
   }
   public: {
     Tables: {
-      chat_sessions: {
-        Row: {
-          id: string
-          user_id: string
-          title: string | null
-          created_at: string
-          updated_at: string
-        }
-        Insert: {
-          id?: string
-          user_id: string
-          title?: string | null
-          created_at?: string
-          updated_at?: string
-        }
-        Update: {
-          id?: string
-          user_id?: string
-          title?: string | null
-          created_at?: string
-          updated_at?: string
-        }
-        Relationships: []
-      }
       chat_messages: {
         Row: {
-          id: string
-          session_id: string
-          role: 'user' | 'assistant'
-          content_type: 'text' | 'image' | 'audio'
           content: string
-          mime_type: string | null
+          content_type: string
           created_at: string
+          id: string
+          mime_type: string | null
+          role: string
+          session_id: string
         }
         Insert: {
-          id?: string
-          session_id: string
-          role: 'user' | 'assistant'
-          content_type: 'text' | 'image' | 'audio'
           content: string
-          mime_type?: string | null
+          content_type: string
           created_at?: string
+          id?: string
+          mime_type?: string | null
+          role: string
+          session_id: string
         }
         Update: {
-          id?: string
-          session_id?: string
-          role?: 'user' | 'assistant'
-          content_type?: 'text' | 'image' | 'audio'
           content?: string
-          mime_type?: string | null
+          content_type?: string
           created_at?: string
+          id?: string
+          mime_type?: string | null
+          role?: string
+          session_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "chat_messages_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "chat_sessions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      chat_sessions: {
+        Row: {
+          created_at: string
+          id: string
+          title: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          title?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          title?: string | null
+          updated_at?: string
+          user_id?: string
         }
         Relationships: []
       }
@@ -154,13 +162,20 @@ export type Database = {
           contact_links: Json
           created_at: string
           id: string
+          invite_fallback_used: boolean | null
+          invite_sent_at: string | null
           is_admin: boolean
           is_promoter: boolean
+          last_subdomain_change_at: string | null
           lifetime: boolean
           listed: boolean
+          locale: string
           name: string
+          onboarding_completed: boolean | null
+          onboarding_step: number | null
           photo_url: string | null
           plan: string
+          previous_subdomain: string | null
           referral_code: string | null
           specialty: string | null
           stripe_coupon_id: string | null
@@ -169,7 +184,13 @@ export type Database = {
           subdomain: string
           subscription_period: string | null
           system_prompt: string | null
+          trial_end: string | null
           user_id: string | null
+          utm_campaign: string | null
+          utm_content: string | null
+          utm_medium: string | null
+          utm_source: string | null
+          utm_term: string | null
           welcome_email_sent: boolean
         }
         Insert: {
@@ -178,13 +199,20 @@ export type Database = {
           contact_links?: Json
           created_at?: string
           id?: string
+          invite_fallback_used?: boolean | null
+          invite_sent_at?: string | null
           is_admin?: boolean
           is_promoter?: boolean
+          last_subdomain_change_at?: string | null
           lifetime?: boolean
           listed?: boolean
+          locale?: string
           name: string
+          onboarding_completed?: boolean | null
+          onboarding_step?: number | null
           photo_url?: string | null
           plan?: string
+          previous_subdomain?: string | null
           referral_code?: string | null
           specialty?: string | null
           stripe_coupon_id?: string | null
@@ -193,7 +221,13 @@ export type Database = {
           subdomain: string
           subscription_period?: string | null
           system_prompt?: string | null
+          trial_end?: string | null
           user_id?: string | null
+          utm_campaign?: string | null
+          utm_content?: string | null
+          utm_medium?: string | null
+          utm_source?: string | null
+          utm_term?: string | null
           welcome_email_sent?: boolean
         }
         Update: {
@@ -202,13 +236,20 @@ export type Database = {
           contact_links?: Json
           created_at?: string
           id?: string
+          invite_fallback_used?: boolean | null
+          invite_sent_at?: string | null
           is_admin?: boolean
           is_promoter?: boolean
+          last_subdomain_change_at?: string | null
           lifetime?: boolean
           listed?: boolean
+          locale?: string
           name?: string
+          onboarding_completed?: boolean | null
+          onboarding_step?: number | null
           photo_url?: string | null
           plan?: string
+          previous_subdomain?: string | null
           referral_code?: string | null
           specialty?: string | null
           stripe_coupon_id?: string | null
@@ -217,7 +258,13 @@ export type Database = {
           subdomain?: string
           subscription_period?: string | null
           system_prompt?: string | null
+          trial_end?: string | null
           user_id?: string | null
+          utm_campaign?: string | null
+          utm_content?: string | null
+          utm_medium?: string | null
+          utm_source?: string | null
+          utm_term?: string | null
           welcome_email_sent?: boolean
         }
         Relationships: []
@@ -314,35 +361,18 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      get_user_auth_data_by_email: {
-        Args: { p_email: string }
-        Returns: {
-          id: string
-          providers: string[]
-          confirmed: boolean
-          has_password: boolean
-        } | null
-      }
-      check_user_has_password: {
-        Args: { p_email: string }
-        Returns: boolean | null
-      }
-      get_user_id_by_email: {
-        Args: { p_email: string }
-        Returns: string | null
-      }
       check_and_increment_usage: {
         Args: {
-          p_user_id: string | null
-          p_ip: string | null
           p_date: string
+          p_ip: string | null
           p_limit: number
+          p_user_id: string | null
         }
-        Returns: {
-          allowed: boolean
-          count: number
-        }
+        Returns: Json
       }
+      check_user_has_password: { Args: { p_email: string }; Returns: boolean }
+      get_user_auth_data_by_email: { Args: { p_email: string }; Returns: Json }
+      get_user_id_by_email: { Args: { p_email: string }; Returns: string }
     }
     Enums: {
       [_ in never]: never

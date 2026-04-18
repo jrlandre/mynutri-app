@@ -7,6 +7,7 @@ import { useTranslations } from 'next-intl'
 import { useRouter } from '@/i18n/navigation'
 import posthog from 'posthog-js'
 import { PRICING } from '@/lib/config/pricing'
+import { LocaleSwitcher } from '@/components/LocaleSwitcher'
 
 type Plan = "monthly" | "yearly"
 type SubdomainStatus = "idle" | "checking" | "available" | "unavailable" | "invalid"
@@ -145,13 +146,16 @@ export default function AssinarClient({ appDomain, locale, defaultEmail = "", de
         transition={{ duration: 0.3 }}
         className="my-auto w-full max-w-sm mx-auto flex flex-col gap-8"
       >
-        <button
-          onClick={() => router.back()}
-          className="flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground transition-colors -mb-4 w-fit"
-        >
-          <ChevronLeft size={14} />
-          {t('back')}
-        </button>
+        <div className="flex items-center justify-between -mb-4">
+          <button
+            onClick={() => router.back()}
+            className="flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground transition-colors w-fit"
+          >
+            <ChevronLeft size={14} />
+            {t('back')}
+          </button>
+          <LocaleSwitcher />
+        </div>
 
         {/* Header */}
         <div className="flex flex-col gap-1">
@@ -267,6 +271,20 @@ export default function AssinarClient({ appDomain, locale, defaultEmail = "", de
           <p className="text-xs text-center text-muted-foreground">
             {t('trial_note')}
           </p>
+
+          {/* Enterprise CTA */}
+          {process.env.NEXT_PUBLIC_SALES_CALENDAR_URL && (
+            <a
+              href={process.env.NEXT_PUBLIC_SALES_CALENDAR_URL}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex flex-col gap-1 px-4 py-4 rounded-xl border border-border bg-card hover:bg-muted transition-colors"
+            >
+              <span className="text-sm font-semibold">{t('enterprise_title')}</span>
+              <span className="text-xs text-muted-foreground">{t('enterprise_desc')}</span>
+              <span className="text-xs text-primary font-medium mt-1">{t('enterprise_cta')}</span>
+            </a>
+          )}
         </form>
       </motion.div>
     </main>

@@ -90,10 +90,10 @@ export function useAuthFlow() {
       let step: AuthStep
       if (!data.exists) {
         step = 'signup'
-      } else if (!data.confirmed) {
-        step = 'verify'
       } else if (data.provider === 'google') {
         step = 'google'
+      } else if (!data.confirmed) {
+        step = 'verify'
       } else if (data.provider === 'email' && data.hasPassword === false) {
         step = 'magic'
       } else {

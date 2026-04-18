@@ -5,6 +5,8 @@ import Stripe from "stripe"
 import { adminClient } from "@/lib/supabase/admin"
 import { Resend } from "resend"
 import ExpertWelcomeEmail from "@/emails/ExpertWelcomeEmail"
+import TrialEndingEmail from "@/emails/TrialEndingEmail"
+import PaymentFailedEmail from "@/emails/PaymentFailedEmail"
 import { logger } from "@/lib/logger"
 
 // Rate limit — bloqueia flood antes da verificação de assinatura.
@@ -77,6 +79,9 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
         break
       case "charge.refunded":
         await handleChargeRefunded(event.data.object as Stripe.Charge)
+        break
+      case "customer.subscription.trial_will_end":
+        await handleTrialWillEnd(event.data.object as Stripe.Subscription)
         break
     }
   } catch (err) {
@@ -255,30 +260,79 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
   const appDomain = (process.env.NEXT_PUBLIC_APP_URL ?? "").replace(/^https?:\/\//, "").replace(/\/$/, "")
   const panelUrl = `https://${subdomain}.${appDomain}/painel?tab=exibicao`
 
-  const { data: inviteData, error: inviteError } = await adminClient.auth.admin.inviteUserByEmail(
-    email,
-    {
-      data: { name },
-      redirectTo: panelUrl,
-    }
-  )
+  let userId: string | undefined
+  let inviteFallbackUsed = false
+  let inviteSentAt: string | null = null
 
-  let userId: string
-  if (inviteError) {
-    // Fallback: usuário já existe — buscar pelo email via RPC
-    const { data: existingId } = await adminClient.rpc("get_user_id_by_email", { p_email: email })
-    if (!existingId) {
-      logger.error('stripe/webhook', 'Erro ao criar usuário via invite', { error: inviteError.message, email })
-      throw inviteError
+  {
+    const delays = [1000, 2000, 4000]
+    let lastInviteError: Error | null = null
+    let inviteSucceeded = false
+
+    for (let attempt = 0; attempt < 3; attempt++) {
+      const { data: inviteData, error } = await adminClient.auth.admin.inviteUserByEmail(email, {
+        data: { name },
+        redirectTo: panelUrl,
+      })
+      if (!error) {
+        userId = inviteData.user.id
+        inviteSentAt = new Date().toISOString()
+        inviteSucceeded = true
+        break
+      }
+      lastInviteError = new Error(error.message)
+      if (attempt < 2) await new Promise(r => setTimeout(r, delays[attempt]))
     }
-    logger.info('stripe/webhook', 'Usuário já existe — vinculando expert ao userId existente', { email })
-    userId = existingId as string
-  } else {
-    userId = inviteData.user.id
+
+    if (!inviteSucceeded) {
+      // Usuário já existe ou todos os retries falharam — buscar pelo email
+      const { data: existingId } = await adminClient.rpc("get_user_id_by_email", { p_email: email })
+      if (existingId) {
+        logger.info('stripe/webhook', 'Usuário já existe — vinculando expert ao userId existente', { email })
+        userId = existingId as string
+      } else {
+        // Último recurso: gerar magic link
+        const { data: linkData, error: linkError } = await adminClient.auth.admin.generateLink({
+          type: 'magiclink',
+          email,
+        })
+        if (linkError || !linkData) {
+          logger.error('stripe/webhook', 'Todos os retries de invite falharam', { error: lastInviteError?.message, email })
+          throw lastInviteError ?? new Error('invite failed')
+        }
+        userId = linkData.user.id
+        inviteFallbackUsed = true
+        inviteSentAt = new Date().toISOString()
+        logger.warn('stripe/webhook', 'Invite fallback via magic link usado', { email })
+
+        // Enviar magic link via Resend
+        if (process.env.RESEND_API_KEY) {
+          try {
+            const resend = new Resend(process.env.RESEND_API_KEY)
+            await resend.emails.send({
+              from: process.env.RESEND_FROM_EMAIL ?? 'MyNutri <noreply@mynutri.pro>',
+              to: email,
+              subject: expertLocale === 'en'
+                ? `Welcome to MyNutri, ${name.split(' ')[0]}!`
+                : `Boas-vindas ao MyNutri, ${name.split(' ')[0]}!`,
+              react: ExpertWelcomeEmail({ name, panelUrl: linkData.properties.action_link, locale: expertLocale }),
+            })
+          } catch (emailErr) {
+            logger.error('stripe/webhook', 'Falha ao enviar magic link fallback', { error: emailErr, email })
+          }
+        }
+      }
+    }
   }
 
-  // Detect subscription period
+  if (!userId) {
+    logger.error('stripe/webhook', 'userId não resolvido após todos os fallbacks', { email })
+    throw new Error('Failed to resolve user ID')
+  }
+
+  // Detect subscription period and trial end
   let subscription_period: "monthly" | "yearly" | null = null
+  let trial_end: string | null = null
   if (stripe_subscription_id) {
     try {
       const stripe = getStripe()
@@ -288,6 +342,9 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
       const interval = sub.items.data[0]?.price?.recurring?.interval
       if (interval === "month") subscription_period = "monthly"
       else if (interval === "year") subscription_period = "yearly"
+      if (sub.trial_end) {
+        trial_end = new Date(sub.trial_end * 1000).toISOString()
+      }
     } catch {
       // non-critical
     }
@@ -309,6 +366,9 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
       utm_campaign: utm_campaign || null,
       utm_content: utm_content || null,
       utm_term: utm_term || null,
+      invite_sent_at: inviteSentAt,
+      invite_fallback_used: inviteFallbackUsed,
+      trial_end,
     })
 
   if (insertError) {
@@ -434,7 +494,7 @@ async function handlePaymentFailed(invoice: Stripe.Invoice) {
 
   const { data: expert } = await adminClient
     .from("experts")
-    .select("id, name, user_id, subdomain, stripe_customer_id, lifetime")
+    .select("id, name, user_id, subdomain, stripe_customer_id, lifetime, locale")
     .eq("stripe_subscription_id", subscriptionId)
     .maybeSingle()
 
@@ -445,6 +505,7 @@ async function handlePaymentFailed(invoice: Stripe.Invoice) {
   const email = userData.user?.email
   if (!email || !process.env.RESEND_API_KEY) return
 
+  const expertLocale: 'pt' | 'en' = (expert.locale as string) === 'en' ? 'en' : 'pt'
   const appDomain = (process.env.NEXT_PUBLIC_APP_URL ?? "").replace(/^https?:\/\//, "").replace(/\/$/, "")
   const panelUrl = `https://${expert.subdomain}.${appDomain}/painel`
 
@@ -463,28 +524,61 @@ async function handlePaymentFailed(invoice: Stripe.Invoice) {
     }
   }
 
-  const firstName = expert.name.split(" ")[0]
+  const subject = expertLocale === 'en'
+    ? 'Issue with your MyNutri payment'
+    : 'Problema com seu pagamento no MyNutri'
+
   const resend = new Resend(process.env.RESEND_API_KEY)
   await resend.emails.send({
     from: process.env.RESEND_FROM_EMAIL ?? "MyNutri <noreply@mynutri.pro>",
     to: email,
-    subject: `Problema com seu pagamento no MyNutri`,
-    html: `
-      <p>Olá, ${firstName}.</p>
-      <p>Identificamos um problema ao processar o pagamento da sua assinatura MyNutri.</p>
-      <p>Para continuar usando sua conta sem interrupções, atualize seu método de pagamento:</p>
-      <p>
-        <a href="${billingUrl}"
-           style="background:#16a34a;color:#fff;padding:12px 24px;border-radius:8px;text-decoration:none;display:inline-block;font-weight:600;">
-          Atualizar forma de pagamento
-        </a>
-      </p>
-      <p>Tentaremos processar o pagamento novamente em breve.</p>
-      <p>— Equipe MyNutri</p>
-    `,
+    subject,
+    react: PaymentFailedEmail({ name: expert.name, billingUrl, locale: expertLocale }),
   })
 
   logger.info('stripe/webhook', 'Email de pagamento falho enviado', { email, expertId: expert.id })
+}
+
+// ─── handleTrialWillEnd ───────────────────────────────────────────────────────
+
+async function handleTrialWillEnd(subscription: Stripe.Subscription) {
+  const { data: expert } = await adminClient
+    .from("experts")
+    .select("id, name, user_id, subdomain, lifetime, locale")
+    .eq("stripe_subscription_id", subscription.id)
+    .maybeSingle()
+
+  if (!expert?.user_id || expert.lifetime) return
+
+  const { data: userData } = await adminClient.auth.admin.getUserById(expert.user_id)
+  const email = userData.user?.email
+  if (!email || !process.env.RESEND_API_KEY) return
+
+  const expertLocale: 'pt' | 'en' = (expert.locale as string) === 'en' ? 'en' : 'pt'
+  const appDomain = (process.env.NEXT_PUBLIC_APP_URL ?? "").replace(/^https?:\/\//, "").replace(/\/$/, "")
+  const panelUrl = `https://${expert.subdomain}.${appDomain}/painel`
+  const subscribeUrl = `${process.env.NEXT_PUBLIC_APP_URL ?? 'https://mynutri.pro'}/assinar`
+
+  const trialEndTs = subscription.trial_end
+  const msLeft = trialEndTs ? (trialEndTs * 1000 - Date.now()) : 0
+  const daysRemaining = Math.max(1, Math.ceil(msLeft / (1000 * 60 * 60 * 24)))
+
+  try {
+    const resend = new Resend(process.env.RESEND_API_KEY)
+    const subject = expertLocale === 'en'
+      ? `Your MyNutri trial ends in ${daysRemaining} days`
+      : `Seu trial do MyNutri expira em ${daysRemaining} dias`
+
+    await resend.emails.send({
+      from: process.env.RESEND_FROM_EMAIL ?? "MyNutri <noreply@mynutri.pro>",
+      to: email,
+      subject,
+      react: TrialEndingEmail({ name: expert.name, daysRemaining, panelUrl, subscribeUrl, locale: expertLocale }),
+    })
+    logger.info('stripe/webhook', 'Email trial_will_end (T-3) enviado', { email, expertId: expert.id, daysRemaining })
+  } catch (err) {
+    logger.error('stripe/webhook', 'Falha ao enviar email trial_will_end', { error: err, email })
+  }
 }
 
 // ─── handleChargeRefunded ─────────────────────────────────────────────────────

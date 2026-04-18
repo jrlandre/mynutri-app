@@ -12,11 +12,14 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     if (isResponse(guard)) return guard as unknown as NextResponse
 
     const { expert } = guard
+    const locale: 'pt' | 'en' = (expert.locale as string) === 'en' ? 'en' : 'pt'
     const body = await request.json() as { email?: string }
     const email = body.email?.trim() || null
 
     if (email && !/^[^\s@]+@[^\s@]{2,}\.[^\s@]{2,}$/.test(email)) {
-      return NextResponse.json({ error: 'E-mail inválido' }, { status: 400 })
+      return NextResponse.json({
+        error: locale === 'en' ? 'Invalid email' : 'E-mail inválido',
+      }, { status: 400 })
     }
 
     const token = randomUUID()
@@ -37,7 +40,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
         if (countError) throw new Error(countError.message)
         if ((count ?? 0) >= limit) {
           return NextResponse.json(
-            { error: `Limite de ${limit} clientes atingido no plano Standard.` },
+            { error: locale === 'en' ? `Client limit of ${limit} reached on your plan.` : `Limite de ${limit} clientes atingido no seu plano.` },
             { status: 403 }
           )
         }
@@ -79,7 +82,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
           if (countError) throw new Error(countError.message)
           if ((count ?? 0) >= limit) {
             return NextResponse.json(
-              { error: `Limite de ${limit} clientes atingido no plano Standard.` },
+              { error: locale === 'en' ? `Client limit of ${limit} reached on your plan.` : `Limite de ${limit} clientes atingido no seu plano.` },
               { status: 403 }
             )
           }
@@ -97,6 +100,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     const invite_url = `${protocol}://${host}/convite/${token}`
 
     // Enviar email ao cliente apenas se email foi informado (best-effort)
+    let email_sent: boolean | undefined
     if (email && process.env.RESEND_API_KEY) {
       try {
         const resend = new Resend(process.env.RESEND_API_KEY)
@@ -109,13 +113,15 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
             : `${expert.name} te convidou para o MyNutri`,
           react: ClientInviteEmail({ expertName: expert.name, inviteUrl: invite_url, locale: expertLocale }),
         })
+        email_sent = true
       } catch (err) {
         logger.error('invite', 'Falha ao enviar email de convite', { error: err, expertId: expert.id, email })
+        email_sent = false
       }
     }
 
-    return NextResponse.json({ invite_url })
+    return NextResponse.json({ invite_url, ...(email_sent !== undefined && { email_sent }) })
   } catch (e) {
-    return NextResponse.json({ error: e instanceof Error ? e.message : 'Erro interno' }, { status: 500 })
+    return NextResponse.json({ error: e instanceof Error ? e.message : 'Internal error' }, { status: 500 })
   }
 }

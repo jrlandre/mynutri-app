@@ -7,6 +7,14 @@
     {
       "path": "/api/cron/clear-commissions",
       "schedule": "0 8 * * *"
+    },
+    {
+      "path": "/api/cron/trial-reminder",
+      "schedule": "0 9 * * *"
+    },
+    {
+      "path": "/api/cron/cleanup-old-subdomains",
+      "schedule": "0 3 * * 1"
     }
   ]
 }

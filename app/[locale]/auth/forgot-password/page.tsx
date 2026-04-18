@@ -5,6 +5,7 @@ import { motion } from 'framer-motion'
 import { createClient } from '@/lib/supabase/client'
 import { useTranslations, useLocale } from 'next-intl'
 import { Link } from '@/i18n/navigation'
+import { LocaleSwitcher } from '@/components/LocaleSwitcher'
 
 export default function ForgotPasswordPage() {
   const t = useTranslations('ForgotPassword')
@@ -64,15 +65,18 @@ export default function ForgotPasswordPage() {
           animate={{ opacity: 1, y: 0 }}
           className="flex flex-col gap-2 w-full"
         >
-          <Link
-            href="/auth"
-            className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition w-fit mb-2"
-          >
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M15 18l-6-6 6-6" />
-            </svg>
-            {t('back')}
-          </Link>
+          <div className="flex items-center justify-between mb-2">
+            <Link
+              href="/auth"
+              className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition w-fit"
+            >
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M15 18l-6-6 6-6" />
+              </svg>
+              {t('back')}
+            </Link>
+            <LocaleSwitcher />
+          </div>
           <h1 className="text-xl font-extrabold tracking-tight">{t('title')}</h1>
           <p className="text-sm text-muted-foreground">{t('desc')}</p>
         </motion.div>

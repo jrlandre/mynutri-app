@@ -7,6 +7,7 @@ import { NextIntlClientProvider } from 'next-intl'
 import { createClient } from '@/lib/supabase/server'
 import { adminClient } from '@/lib/supabase/admin'
 import PainelClient from './PainelClient'
+import TrialExpiredPaywall from './TrialExpiredPaywall'
 import type { Expert, Client, Referral } from '@/types'
 
 function extractSubdomain(host: string): string | null {
@@ -104,14 +105,25 @@ export default async function PainelPage() {
       : Promise.resolve({ data: null, error: null }),
   ])
 
+  const expertData = expert as unknown as Expert
+  const isTrialExpired =
+    !expertData.active &&
+    !expertData.lifetime &&
+    !!expertData.trial_end &&
+    new Date(expertData.trial_end).getTime() < Date.now()
+
   return (
     <Suspense>
       <NextIntlClientProvider locale={expertLocale} messages={messages}>
-        <PainelClient
-          expert={expert as unknown as Expert}
-          initialClients={(clients ?? []) as Client[]}
-          initialReferrals={(referralsResult.data ?? []) as Referral[]}
-        />
+        {isTrialExpired ? (
+          <TrialExpiredPaywall />
+        ) : (
+          <PainelClient
+            expert={expertData}
+            initialClients={(clients ?? []) as Client[]}
+            initialReferrals={(referralsResult.data ?? []) as Referral[]}
+          />
+        )}
       </NextIntlClientProvider>
     </Suspense>
   )

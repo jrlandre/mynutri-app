@@ -68,6 +68,11 @@ interface Expert {
   stripe_customer_id?: string | null
   subscription_period?: 'monthly' | 'yearly' | null
   locale?: 'pt' | 'en'
+  trial_end?: string | null
+  last_subdomain_change_at?: string | null
+  previous_subdomain?: string | null
+  onboarding_completed?: boolean
+  onboarding_step?: number
 }
 
 interface Client {

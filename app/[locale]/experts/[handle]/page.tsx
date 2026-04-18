@@ -7,6 +7,7 @@ import { Link } from '@/i18n/navigation'
 import { getTranslations } from 'next-intl/server'
 import { adminClient } from "@/lib/supabase/admin"
 import type { Expert } from "@/types"
+import { LocaleSwitcher } from '@/components/LocaleSwitcher'
 
 const SAFE_PROTOCOLS = ['https://', 'http://', 'mailto:', 'tel:']
 function safeUrl(url: string): string | undefined {
@@ -48,17 +49,20 @@ const getExpert = cache(async (handle: string) => {
 export async function generateMetadata({
   params,
 }: {
-  params: Promise<{ handle: string }>
+  params: Promise<{ locale: string; handle: string }>
 }): Promise<Metadata> {
-  const { handle } = await params
-  const expert = await getExpert(handle)
+  const { locale, handle } = await params
+  const [expert, t] = await Promise.all([
+    getExpert(handle),
+    getTranslations({ locale, namespace: 'ExpertProfile' }),
+  ])
 
-  if (!expert) return { title: 'Expert não encontrado — MyNutri' }
+  if (!expert) return { title: t('meta_not_found') }
 
   const parts = [expert.specialty, expert.city].filter(Boolean).join(' · ')
   const description = parts
-    ? `${parts} — Clientes deste expert têm acesso ilimitado ao MyNutri.`
-    : 'Clientes deste expert têm acesso ilimitado ao MyNutri.'
+    ? `${parts} — ${t('meta_description_suffix')}`
+    : t('meta_description_suffix')
 
   return {
     title: `${expert.name} — MyNutri`,
@@ -107,7 +111,7 @@ export default async function ExpertProfilePage({
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
       />
       <main className="min-h-dvh max-w-2xl mx-auto px-4 pb-12 flex flex-col">
-        <div className="sticky top-0 bg-background pt-4 pb-3 z-10">
+        <div className="sticky top-0 bg-background pt-4 pb-3 z-10 flex items-center justify-between">
           <Link
             href="/experts"
             className="flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground transition-colors w-fit"
@@ -115,6 +119,7 @@ export default async function ExpertProfilePage({
             <ChevronLeft size={16} />
             {t('back')}
           </Link>
+          <LocaleSwitcher />
         </div>
 
         <div className="max-w-sm mx-auto w-full flex flex-col items-center gap-8 pt-8">

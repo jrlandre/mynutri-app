@@ -7,6 +7,7 @@ import { useTranslations } from 'next-intl'
 import { useAuthFlow } from '@/hooks/useAuthFlow'
 import type { OAuthProvider } from '@/hooks/useAuthFlow'
 import { Link } from '@/i18n/navigation'
+import { LocaleSwitcher } from '@/components/LocaleSwitcher'
 
 const variants = {
   enter: { opacity: 0, y: 10 },
@@ -71,13 +72,16 @@ function EmailStep({ flow }: { flow: ReturnType<typeof useAuthFlow> }) {
       transition={{ duration: 0.2 }}
       className="flex flex-col gap-6 w-full"
     >
-      <button
-        onClick={handleBack}
-        className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition w-fit"
-      >
-        <ChevronLeft />
-        {t('back')}
-      </button>
+      <div className="flex items-center justify-between">
+        <button
+          onClick={handleBack}
+          className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition w-fit"
+        >
+          <ChevronLeft />
+          {t('back')}
+        </button>
+        <LocaleSwitcher />
+      </div>
 
       <div className="flex flex-col items-center gap-2 text-center">
         <h1 className="text-2xl font-extrabold tracking-tight">{t('title')}</h1>
@@ -137,13 +141,16 @@ function LoginStep({ flow }: { flow: ReturnType<typeof useAuthFlow> }) {
       className="flex flex-col gap-6 w-full"
     >
       <div className="flex flex-col gap-1">
-        <button
-          onClick={flow.handleBack}
-          className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition w-fit"
-        >
-          <ChevronLeft />
-          {t('back')}
-        </button>
+        <div className="flex items-center justify-between">
+          <button
+            onClick={flow.handleBack}
+            className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition w-fit"
+          >
+            <ChevronLeft />
+            {t('back')}
+          </button>
+          <LocaleSwitcher />
+        </div>
         <h2 className="text-xl font-extrabold tracking-tight mt-2">{t('welcome_back')}</h2>
         <p className="text-sm text-muted-foreground truncate">{flow.email}</p>
       </div>
@@ -203,13 +210,16 @@ function GoogleStep({ flow }: { flow: ReturnType<typeof useAuthFlow> }) {
       className="flex flex-col gap-6 w-full"
     >
       <div className="flex flex-col gap-1">
-        <button
-          onClick={flow.handleBack}
-          className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition w-fit"
-        >
-          <ChevronLeft />
-          {t('back')}
-        </button>
+        <div className="flex items-center justify-between">
+          <button
+            onClick={flow.handleBack}
+            className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition w-fit"
+          >
+            <ChevronLeft />
+            {t('back')}
+          </button>
+          <LocaleSwitcher />
+        </div>
         <h2 className="text-xl font-extrabold tracking-tight mt-2">{t('welcome_back')}</h2>
         <p className="text-sm text-muted-foreground truncate">{flow.email}</p>
       </div>
@@ -244,13 +254,16 @@ function MagicStep({ flow }: { flow: ReturnType<typeof useAuthFlow> }) {
       className="flex flex-col gap-6 w-full"
     >
       <div className="flex flex-col gap-1">
-        <button
-          onClick={flow.handleBack}
-          className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition w-fit"
-        >
-          <ChevronLeft />
-          {t('back')}
-        </button>
+        <div className="flex items-center justify-between">
+          <button
+            onClick={flow.handleBack}
+            className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition w-fit"
+          >
+            <ChevronLeft />
+            {t('back')}
+          </button>
+          <LocaleSwitcher />
+        </div>
         <h2 className="text-xl font-extrabold tracking-tight mt-2">{t('welcome_back')}</h2>
         <p className="text-sm text-muted-foreground truncate">{flow.email}</p>
       </div>
@@ -294,13 +307,16 @@ function SignupStep({ flow }: { flow: ReturnType<typeof useAuthFlow> }) {
       className="flex flex-col gap-6 w-full"
     >
       <div className="flex flex-col gap-1">
-        <button
-          onClick={flow.handleBack}
-          className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition w-fit"
-        >
-          <ChevronLeft />
-          {t('back')}
-        </button>
+        <div className="flex items-center justify-between">
+          <button
+            onClick={flow.handleBack}
+            className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition w-fit"
+          >
+            <ChevronLeft />
+            {t('back')}
+          </button>
+          <LocaleSwitcher />
+        </div>
         <h2 className="text-xl font-extrabold tracking-tight mt-2">{t('create_account')}</h2>
         <p className="text-sm text-muted-foreground truncate">{flow.email}</p>
       </div>
@@ -350,6 +366,9 @@ function VerifyStep({ flow }: { flow: ReturnType<typeof useAuthFlow> }) {
       transition={{ duration: 0.2 }}
       className="flex flex-col items-center gap-6 w-full text-center"
     >
+      <div className="w-full flex justify-end">
+        <LocaleSwitcher />
+      </div>
       <span className="text-4xl">📬</span>
 
       <div className="flex flex-col gap-2">
