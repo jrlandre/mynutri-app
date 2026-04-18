@@ -23,7 +23,12 @@ function extractSubdomain(host: string): string | null {
   return sub
 }
 
-export default async function PainelPage() {
+export default async function PainelPage({
+  params,
+}: {
+  params: Promise<{ locale: string }>
+}) {
+  const { locale } = await params
   const headersList = await headers()
   const host = headersList.get('x-forwarded-host') || headersList.get('host') || ''
   const subdomain = extractSubdomain(host)
@@ -31,7 +36,8 @@ export default async function PainelPage() {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
 
-  if (!user) redirect('/auth?next=/painel')
+  const prefix = locale === 'pt' ? '' : `/${locale}`
+  if (!user) redirect(`${prefix}/auth?next=${prefix}/painel`)
 
   // Verifica se o usuário logado é Admin (is_admin = true)
   const { data: adminCheck } = await adminClient
