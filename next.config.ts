@@ -13,6 +13,16 @@ const nextConfig: NextConfig = {
   async redirects() {
     return [
       {
+        source: '/:locale(pt|en)/sudo',
+        destination: '/sudo',
+        permanent: true,
+      },
+      {
+        source: '/:locale(pt|en)/sudo/:path*',
+        destination: '/sudo/:path*',
+        permanent: true,
+      },
+      {
         source: '/descubra/para-experts',
         destination: '/para-experts',
         permanent: true,

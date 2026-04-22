@@ -113,24 +113,11 @@ export async function proxy(request: NextRequest) {
   // Sem isso, `/` não encontra `app/[locale]/page.tsx` e retorna 404, porque
   // o intlHandler não roda em subdomínios e o segmento [locale] fica ausente.
   // Detectamos o locale pelo Accept-Language do browser para suporte internacional.
-  if (isSubdomain) {
-    const hasLocalePrefix = /^\/(pt|en)(\/|$)/.test(pathname)
-    if (!hasLocalePrefix) {
-      const acceptLang = request.headers.get('accept-language') ?? ''
-      const primaryLang = acceptLang.split(',')[0].split(';')[0].trim().toLowerCase()
-      const locale = primaryLang.startsWith('en') ? 'en' : 'pt'
-      const url = request.nextUrl.clone()
-      url.pathname = `/${locale}${pathname === '/' ? '' : pathname}`
-      return NextResponse.rewrite(url)
-    }
-    return NextResponse.next()
-  }
-
-  // ── Páginas no domínio principal: roteamento de locale (next-intl) ─────────
+  // ── Todas as Páginas: roteamento de locale (next-intl) ─────────
   return intlHandler(request)
 }
 
 export const config = {
   // Cobre páginas públicas + API; exclui rotas de app autenticado, _next e arquivos estáticos
-  matcher: ['/((?!_next|painel|sudo|r/|.*\\..*).*)'],
+  matcher: ['/((?!_next|sudo|r/|.*\\..*).*)'],
 }

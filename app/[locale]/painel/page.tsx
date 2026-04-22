@@ -93,7 +93,7 @@ export default async function PainelPage({
     )
   }
 
-  const expertLocale: 'pt' | 'en' = ((expert as Record<string, unknown>).locale as string) === 'en' ? 'en' : 'pt'
+  const expertLocale = locale === 'en' ? 'en' : 'pt'
   const messages = (await import(`@/messages/${expertLocale}.json`)).default
 
   const [{ data: clients }, referralsResult] = await Promise.all([

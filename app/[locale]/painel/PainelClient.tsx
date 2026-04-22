@@ -2,6 +2,7 @@
 
 import { useState, useRef, useEffect } from "react"
 import { useTranslations } from "next-intl"
+import { LocaleSwitcher } from "@/components/LocaleSwitcher"
 import posthog from 'posthog-js'
 import { motion, AnimatePresence } from "framer-motion"
 import { Plus, X, Trash2, Check, Upload, Link2, ChevronLeft, Copy, Pause, Play, AlertTriangle } from "lucide-react"
@@ -1175,12 +1176,15 @@ export default function PainelClient({ expert: initialExpert, initialClients, in
           >
             <ChevronLeft size={16} /> {t('back')}
           </button>
-          <button
-            onClick={handleLogout}
-            className="text-xs text-muted-foreground hover:text-foreground transition-colors"
-          >
-            {t('logout')}
-          </button>
+          <div className="flex items-center gap-4">
+            <LocaleSwitcher />
+            <button
+              onClick={handleLogout}
+              className="text-xs text-muted-foreground hover:text-foreground transition-colors"
+            >
+              {t('logout')}
+            </button>
+          </div>
         </div>
         <h1 className="text-xl font-extrabold tracking-tight">{t('title')}</h1>
         <p className="text-sm text-muted-foreground mt-0.5">{expert.name}</p>
