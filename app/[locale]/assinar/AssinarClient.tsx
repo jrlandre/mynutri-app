@@ -148,7 +148,7 @@ export default function AssinarClient({ appDomain, locale, defaultEmail = "", de
       >
         <div className="flex items-center justify-between -mb-4">
           <button
-            onClick={() => router.back()}
+            onClick={() => router.push('/para-nutricionistas')}
             className="flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground transition-colors w-fit"
           >
             <ChevronLeft size={14} />
