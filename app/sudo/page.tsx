@@ -75,8 +75,8 @@ export default async function SudoPage() {
         status: 'active',
         limit: 100,
         expand: ['data.items.data.price', 'data.discount'],
-      })
-      mrrCents = subs.data.reduce((sum, sub) => {
+      }).autoPagingToArray(10000)
+      mrrCents = subs.reduce((sum, sub) => {
         const item = sub.items.data[0]
         let amount = item.price.unit_amount ?? 0
 
