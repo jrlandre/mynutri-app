@@ -3,8 +3,9 @@
 import { useState, useRef, useCallback, useEffect } from 'react'
 import { useTranslations } from 'next-intl'
 import { motion, AnimatePresence } from 'framer-motion'
-import { X, Upload, Sparkles, Check, AlertTriangle, Loader2, FileText, File } from 'lucide-react'
+import { X, Upload, Sparkles, Check, AlertTriangle, Loader2, FileText } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
+import { Tooltip } from '@/components/Tooltip'
 
 interface Props {
   expertId: string
@@ -306,6 +307,11 @@ export default function GeneratePromptModal({ expertId, locale, onApply, onClose
           <div className="flex items-center gap-2">
             <Sparkles size={18} className="text-primary" />
             <p className="font-semibold text-sm">{t('gp_title')}</p>
+            <Tooltip content={t('gp_beta_tooltip')} side="bottom">
+              <span className="cursor-default text-[10px] font-semibold uppercase tracking-wide text-amber-700 bg-amber-100 border border-amber-200 rounded-full px-2 py-0.5 leading-none select-none">
+                Beta
+              </span>
+            </Tooltip>
           </div>
           {!isRunning && (
             <button onClick={onClose} className="text-muted-foreground hover:text-foreground transition-colors">
