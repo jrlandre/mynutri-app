@@ -419,7 +419,7 @@
     "subdomain_available": "Disponível ✓",
     "subdomain_checking": "Verificando...",
     "subdomain_taken": "Já está em uso",
-    "subdomain_invalid": "Formato inválido",
+    "subdomain_invalid": "Formato inválido (3-30 caracteres)",
     "onboarding_step1_title": "Olá! Vamos configurar seu perfil",
     "onboarding_step1_desc": "Adicione sua foto, nome e especialidade para aparecer no diretório.",
     "onboarding_step2_title": "Sua página pública",
@@ -469,4 +469,5 @@
     "gp_err_generic": "Erro inesperado. Tente novamente.",
     "gp_beta_tooltip": "Funcionalidade experimental em fase de testes. Resultados podem variar."
   }
+} }
 }

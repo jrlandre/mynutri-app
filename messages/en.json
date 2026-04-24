@@ -419,7 +419,7 @@
     "subdomain_available": "Available ✓",
     "subdomain_checking": "Checking...",
     "subdomain_taken": "Already taken",
-    "subdomain_invalid": "Invalid format",
+    "subdomain_invalid": "Invalid format (3-30 chars)",
     "onboarding_step1_title": "Welcome! Let's set up your profile",
     "onboarding_step1_desc": "Add your photo, name and specialty to appear in the directory.",
     "onboarding_step2_title": "Your public page",
@@ -469,4 +469,5 @@
     "gp_err_generic": "Unexpected error. Please try again.",
     "gp_beta_tooltip": "Experimental feature currently in testing. Results may vary."
   }
+} }
 }
