@@ -1,11 +1,11 @@
 "use client"
 
 import { useState, useRef, useEffect } from "react"
-import { useTranslations } from "next-intl"
+import { useTranslations, useLocale } from "next-intl"
 import { LocaleSwitcher } from "@/components/LocaleSwitcher"
 import posthog from 'posthog-js'
 import { motion, AnimatePresence } from "framer-motion"
-import { Plus, X, Trash2, Check, Upload, Link2, ChevronLeft, Copy, Pause, Play, AlertTriangle } from "lucide-react"
+import { Plus, X, Trash2, Check, Upload, Link2, ChevronLeft, Copy, Pause, Play, AlertTriangle, Sparkles } from "lucide-react"
 import { useRouter, useSearchParams } from "next/navigation"
 import { createClient } from "@/lib/supabase/client"
 import { compressImage } from "@/lib/compress-image"
@@ -13,6 +13,7 @@ import type { Expert, Client, ContactLink, Referral } from "@/types"
 import { CLIENT_LIMIT as PLAN_LIMIT } from "@/lib/plans"
 import { CitySelector } from "@/components/CitySelector"
 import OnboardingWizard from "./OnboardingWizard"
+import GeneratePromptModal from "@/components/GeneratePromptModal"
 
 const CONTACT_TYPES = ["WhatsApp", "Instagram", "E-mail", "Website"] as const
 
@@ -855,8 +856,9 @@ function SubdomainSection({ expert, onSubdomainChange }: {
 
 // ─── Aba IA ───────────────────────────────────────────────────────────────────
 
-function TabIA({ expert, onSave, onDirtyChange }: {
+function TabIA({ expert, locale, onSave, onDirtyChange }: {
   expert: Expert
+  locale: string
   onSave: (data: Partial<Expert>) => Promise<void>
   onDirtyChange?: (dirty: boolean) => void
 }) {
@@ -864,6 +866,7 @@ function TabIA({ expert, onSave, onDirtyChange }: {
   const [prompt, setPrompt] = useState(expert.system_prompt ?? "")
   const [saving, setSaving] = useState(false)
   const [saved, setSaved] = useState(false)
+  const [showModal, setShowModal] = useState(false)
 
   async function handleSave(e: React.FormEvent) {
     e.preventDefault()
@@ -879,28 +882,53 @@ function TabIA({ expert, onSave, onDirtyChange }: {
   useEffect(() => { onDirtyChange?.(hasChanges) }, [hasChanges]) // eslint-disable-line
 
   return (
-    <form onSubmit={handleSave} className="flex flex-col gap-4">
-      <div className="flex flex-col gap-1.5">
-        <p className="text-sm font-semibold">{t('ai_prompt_label')}</p>
-        <p className="text-xs text-muted-foreground leading-relaxed">
-          {t('ai_prompt_desc')}
-        </p>
-      </div>
-      <textarea
-        value={prompt}
-        onChange={e => setPrompt(e.target.value)}
-        placeholder={t('ai_prompt_placeholder')}
-        rows={10}
-        className="w-full px-4 py-3 rounded-xl border border-border bg-card text-sm focus:outline-none focus:ring-2 focus:ring-ring/40 resize-none leading-relaxed"
-      />
-      <button
-        type="submit"
-        disabled={saving || !hasChanges}
-        className="w-full py-3.5 rounded-xl bg-primary text-primary-foreground text-sm font-semibold hover:opacity-90 active:scale-[0.97] transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
-      >
-        {saved ? <><Check size={18} /> {t('saved')}</> : saving ? t('saving') : t('save_btn')}
-      </button>
-    </form>
+    <>
+      <form onSubmit={handleSave} className="flex flex-col gap-4">
+        <div className="flex flex-col gap-1.5">
+          <div className="flex items-center justify-between">
+            <p className="text-sm font-semibold">{t('ai_prompt_label')}</p>
+            <button
+              type="button"
+              onClick={() => setShowModal(true)}
+              className="flex items-center gap-1.5 text-xs text-primary font-medium hover:opacity-70 transition-opacity"
+            >
+              <Sparkles size={13} /> {t('gp_btn_open')}
+            </button>
+          </div>
+          <p className="text-xs text-muted-foreground leading-relaxed">
+            {t('ai_prompt_desc')}
+          </p>
+        </div>
+        <textarea
+          value={prompt}
+          onChange={e => setPrompt(e.target.value)}
+          placeholder={t('ai_prompt_placeholder')}
+          rows={10}
+          className="w-full px-4 py-3 rounded-xl border border-border bg-card text-sm focus:outline-none focus:ring-2 focus:ring-ring/40 resize-none leading-relaxed"
+        />
+        <button
+          type="submit"
+          disabled={saving || !hasChanges}
+          className="w-full py-3.5 rounded-xl bg-primary text-primary-foreground text-sm font-semibold hover:opacity-90 active:scale-[0.97] transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+        >
+          {saved ? <><Check size={18} /> {t('saved')}</> : saving ? t('saving') : t('save_btn')}
+        </button>
+      </form>
+
+      <AnimatePresence>
+        {showModal && (
+          <GeneratePromptModal
+            expertId={expert.id}
+            locale={locale}
+            onApply={(generated) => {
+              setPrompt(generated)
+              setShowModal(false)
+            }}
+            onClose={() => setShowModal(false)}
+          />
+        )}
+      </AnimatePresence>
+    </>
   )
 }
 
@@ -1055,6 +1083,7 @@ function Field({ label, value, onChange, placeholder, required }: {
 
 export default function PainelClient({ expert: initialExpert, initialClients, initialReferrals }: Props) {
   const t = useTranslations('Painel')
+  const locale = useLocale()
   const router = useRouter()
   const searchParams = useSearchParams()
   const [expert, setExpert] = useState(initialExpert)
@@ -1241,7 +1270,7 @@ export default function PainelClient({ expert: initialExpert, initialClients, in
             </div>
           )}
           {tab === "ia" && (
-            <TabIA expert={expert} onSave={handleSaveProfile} onDirtyChange={setIsDirty} />
+            <TabIA expert={expert} locale={locale} onSave={handleSaveProfile} onDirtyChange={setIsDirty} />
           )}
           {tab === "comissoes" && expert.is_promoter && (
             <TabComissoes expert={expert} referrals={referrals} />

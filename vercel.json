@@ -15,6 +15,10 @@
     {
       "path": "/api/cron/cleanup-old-subdomains",
       "schedule": "0 3 * * 1"
+    },
+    {
+      "path": "/api/cron/cleanup-prompt-jobs",
+      "schedule": "0 * * * *"
     }
   ]
 }

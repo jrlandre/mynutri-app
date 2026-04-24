@@ -155,6 +155,80 @@ export type Database = {
           },
         ]
       }
+      expert_prompt_generations: {
+        Row: {
+          created_at: string
+          expert_id: string
+          id: string
+          status: string
+        }
+        Insert: {
+          created_at?: string
+          expert_id: string
+          id?: string
+          status?: string
+        }
+        Update: {
+          created_at?: string
+          expert_id?: string
+          id?: string
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "expert_prompt_generations_expert_id_fkey"
+            columns: ["expert_id"]
+            isOneToOne: false
+            referencedRelation: "experts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      expert_prompt_jobs: {
+        Row: {
+          created_at: string
+          expert_id: string
+          gemini_files: Json
+          generation_id: string | null
+          id: string
+          status: string
+          supabase_paths: string[]
+        }
+        Insert: {
+          created_at?: string
+          expert_id: string
+          gemini_files?: Json
+          generation_id?: string | null
+          id?: string
+          status?: string
+          supabase_paths?: string[]
+        }
+        Update: {
+          created_at?: string
+          expert_id?: string
+          gemini_files?: Json
+          generation_id?: string | null
+          id?: string
+          status?: string
+          supabase_paths?: string[]
+        }
+        Relationships: [
+          {
+            foreignKeyName: "expert_prompt_jobs_expert_id_fkey"
+            columns: ["expert_id"]
+            isOneToOne: false
+            referencedRelation: "experts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "expert_prompt_jobs_generation_id_fkey"
+            columns: ["generation_id"]
+            isOneToOne: false
+            referencedRelation: "expert_prompt_generations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       experts: {
         Row: {
           active: boolean
@@ -361,6 +435,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      append_gemini_file: {
+        Args: { p_file: Json; p_job_id: string }
+        Returns: undefined
+      }
       check_and_increment_usage: {
         Args: {
           p_date: string
@@ -371,8 +449,20 @@ export type Database = {
         Returns: Json
       }
       check_user_has_password: { Args: { p_email: string }; Returns: boolean }
+      finalize_prompt_job: {
+        Args: { p_expert_id: string; p_job_id: string; p_success: boolean }
+        Returns: undefined
+      }
       get_user_auth_data_by_email: { Args: { p_email: string }; Returns: Json }
       get_user_id_by_email: { Args: { p_email: string }; Returns: string }
+      remove_failed_gemini_files: {
+        Args: { p_failed_names: string[]; p_job_id: string }
+        Returns: undefined
+      }
+      try_start_prompt_job: {
+        Args: { p_expert_id: string; p_paths: string[] }
+        Returns: Json
+      }
     }
     Enums: {
       [_ in never]: never
