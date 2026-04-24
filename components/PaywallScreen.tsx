@@ -74,7 +74,7 @@ export default function PaywallScreen({ tenantSubdomain }: Props) {
       </button>
 
       <button
-        onClick={() => router.push('/para-experts')}
+        onClick={() => router.push('/para-nutricionistas')}
         className="flex flex-col items-center gap-0.5 text-xs text-muted-foreground hover:text-foreground transition-colors"
       >
         <span className="font-medium">{t('expert_cta')}</span>

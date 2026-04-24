@@ -9,7 +9,7 @@ export const routing = defineRouting({
     '/assinar': { pt: '/assinar', en: '/subscribe' },
     '/obrigado': { pt: '/obrigado', en: '/thank-you' },
     '/descubra': { pt: '/descubra', en: '/discover' },
-    '/para-experts': { pt: '/para-experts', en: '/for-experts' },
+    '/para-nutricionistas': { pt: '/para-nutricionistas', en: '/for-nutritionists' },
     '/experts': { pt: '/nutricionistas', en: '/nutritionists' },
     '/experts/[handle]': { pt: '/nutricionistas/[handle]', en: '/nutritionists/[handle]' },
     '/termos': { pt: '/termos', en: '/terms' },

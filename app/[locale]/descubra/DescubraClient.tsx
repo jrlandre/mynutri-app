@@ -85,7 +85,7 @@ export function DescubraClient({ isLoggedIn }: Props) {
               {t('cta_access')}
             </Link>
             <Link
-              href="/para-experts"
+              href="/para-nutricionistas"
               className="px-7 py-4 rounded-xl border border-border bg-card text-sm font-medium hover:bg-muted active:scale-[0.98] transition-all text-center"
             >
               {t('cta_for_experts')}

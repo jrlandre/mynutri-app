@@ -12,11 +12,11 @@ export async function generateMetadata({
   return {
     title: t('meta_title'),
     description: t('meta_desc'),
-    alternates: { canonical: 'https://mynutri.pro/para-experts' },
+    alternates: { canonical: 'https://mynutri.pro/para-nutricionistas' },
     openGraph: {
       title: t('meta_title'),
       description: t('meta_desc'),
-      url: 'https://mynutri.pro/para-experts',
+      url: 'https://mynutri.pro/para-nutricionistas',
       type: 'website',
       images: [{ url: '/og-default.png', width: 1200, height: 630, alt: 'MyNutri' }],
     },

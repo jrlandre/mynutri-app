@@ -23,8 +23,8 @@ const nextConfig: NextConfig = {
         permanent: true,
       },
       {
-        source: '/descubra/para-experts',
-        destination: '/para-experts',
+        source: '/descubra/para-nutricionistas',
+        destination: '/para-nutricionistas',
         permanent: true,
       },
       // /experts (e sub-rotas) em subdomínios → domínio principal

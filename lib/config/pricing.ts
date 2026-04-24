@@ -1,15 +1,14 @@
 export const PRICING = {
   monthly: {
-    amount: 97,
-    display: '$97',
-    perMonth: '$97',
+    amount: 100,
+    display: '$100',
+    perMonth: '$100',
   },
   yearly: {
-    amount: 970,
-    display: '$970',
-    perYear: '$970',
-    monthlyEquivalent: '$80',
-    savings: '$194',
+    amount: 1000,
+    display: '$1000',
+    perYear: '$1000',
+    savings: '$200',
     savingsMonths: 2,
   },
 } as const
