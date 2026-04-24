@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useRef, useEffect } from "react"
+import { useState, useRef, useEffect, useCallback } from "react"
 import { motion, AnimatePresence } from "framer-motion"
 
 const AUTO_CLOSE_MS = 6_000
@@ -33,39 +33,76 @@ const arrowStyles: Record<NonNullable<Props["side"]>, string> = {
 }
 
 export function Tooltip({ content, children, side = "top" }: Props) {
-  const [open, setOpen] = useState(false)
+  const [isHovering, setIsHovering]       = useState(false)
+  const [isFocused,  setIsFocused]        = useState(false)
+  const [isManualOpen, setIsManualOpen]   = useState(false)
+
+  const isOpen = isHovering || isFocused || isManualOpen
+
+  const triggerRef  = useRef<HTMLButtonElement>(null)
+  const contentRef  = useRef<HTMLDivElement>(null)
+  const hoverTimer  = useRef<ReturnType<typeof setTimeout> | null>(null)
   const manualTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
-  const hoverTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
-  const wrapperRef = useRef<HTMLSpanElement>(null)
 
-  // Close on outside click
+  const clearManualTimer = useCallback(() => {
+    if (manualTimer.current) { clearTimeout(manualTimer.current); manualTimer.current = null }
+  }, [])
+
+  // Outside-click: close manual open, but NOT when clicking the trigger itself
   useEffect(() => {
-    if (!open) return
+    if (!isManualOpen) return
     function onDocClick(e: MouseEvent) {
-      if (!wrapperRef.current?.contains(e.target as Node)) {
-        setOpen(false)
-        if (manualTimer.current) { clearTimeout(manualTimer.current); manualTimer.current = null }
-      }
+      if (triggerRef.current?.contains(e.target as Node)) return
+      if (contentRef.current?.contains(e.target as Node)) return
+      setIsManualOpen(false)
+      clearManualTimer()
     }
-    document.addEventListener("click", onDocClick)
-    return () => document.removeEventListener("click", onDocClick)
-  }, [open])
+    document.addEventListener("mousedown", onDocClick)
+    return () => document.removeEventListener("mousedown", onDocClick)
+  }, [isManualOpen, clearManualTimer])
 
-  function onMouseEnter() {
-    if (hoverTimer.current) clearTimeout(hoverTimer.current)
-    setOpen(true)
+  // Cleanup on unmount
+  useEffect(() => () => {
+    if (hoverTimer.current)  clearTimeout(hoverTimer.current)
+    if (manualTimer.current) clearTimeout(manualTimer.current)
+  }, [])
+
+  function onTriggerMouseEnter() {
+    if (hoverTimer.current) { clearTimeout(hoverTimer.current); hoverTimer.current = null }
+    setIsHovering(true)
   }
 
-  function onMouseLeave() {
-    hoverTimer.current = setTimeout(() => setOpen(false), 100)
+  function onTriggerMouseLeave() {
+    hoverTimer.current = setTimeout(() => setIsHovering(false), 100)
   }
+
+  function onContentMouseEnter() {
+    if (hoverTimer.current) { clearTimeout(hoverTimer.current); hoverTimer.current = null }
+    setIsHovering(true)
+  }
+
+  function onContentMouseLeave() {
+    hoverTimer.current = setTimeout(() => setIsHovering(false), 100)
+  }
+
+  function onFocus() { setIsFocused(true) }
+  function onBlur()  { setIsFocused(false) }
 
   function onClick(e: React.MouseEvent) {
     e.stopPropagation()
-    setOpen(true)
-    if (manualTimer.current) clearTimeout(manualTimer.current)
+    triggerRef.current?.blur()
+    setIsFocused(false)
+
+    if (isManualOpen) {
+      setIsManualOpen(false)
+      clearManualTimer()
+      return
+    }
+
+    setIsManualOpen(true)
+    clearManualTimer()
     manualTimer.current = setTimeout(() => {
-      setOpen(false)
+      setIsManualOpen(false)
       manualTimer.current = null
     }, AUTO_CLOSE_MS)
   }
@@ -73,29 +110,38 @@ export function Tooltip({ content, children, side = "top" }: Props) {
   const { y = 0, x = 0 } = sideMotion[side]
 
   return (
-    <span
-      ref={wrapperRef}
-      className="relative inline-flex items-center"
-      onMouseEnter={onMouseEnter}
-      onMouseLeave={onMouseLeave}
-      onClick={onClick}
-    >
-      {children}
+    <span className="relative inline-flex items-center">
+      <button
+        ref={triggerRef}
+        type="button"
+        className="inline-flex items-center cursor-default focus:outline-none"
+        onMouseEnter={onTriggerMouseEnter}
+        onMouseLeave={onTriggerMouseLeave}
+        onFocus={onFocus}
+        onBlur={onBlur}
+        onClick={onClick}
+        aria-describedby={isOpen ? "tooltip-content" : undefined}
+      >
+        {children}
+      </button>
 
       <AnimatePresence>
-        {open && (
+        {isOpen && (
           <motion.div
+            id="tooltip-content"
             role="tooltip"
+            ref={contentRef}
             initial={{ opacity: 0, scale: 0.92, y, x }}
             animate={{ opacity: 1, scale: 1, y: 0, x: 0 }}
             exit={{ opacity: 0, scale: 0.92, y, x }}
             transition={{ duration: 0.15, ease: "easeOut" }}
-            className={`pointer-events-none absolute z-50 w-max max-w-[220px] ${sideStyles[side]}`}
+            className={`pointer-events-auto absolute z-50 w-max max-w-[220px] ${sideStyles[side]}`}
+            onMouseEnter={onContentMouseEnter}
+            onMouseLeave={onContentMouseLeave}
           >
             <div className="rounded-lg bg-foreground px-3 py-2 text-[11px] leading-relaxed text-background shadow-md">
               {content}
             </div>
-            {/* Arrow */}
             <span className={`absolute border-4 ${arrowStyles[side]}`} />
           </motion.div>
         )}
