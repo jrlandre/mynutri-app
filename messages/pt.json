@@ -333,6 +333,8 @@
   "Painel": {
     "title": "Painel",
     "back": "Voltar",
+    "access_denied": "Acesso negado",
+    "account_not_associated": "Sua conta não está associada a este painel.",
     "logout": "Sair",
     "tab_inicio": "Início",
     "tab_exibicao": "Exibição",

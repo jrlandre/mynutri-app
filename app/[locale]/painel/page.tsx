@@ -4,6 +4,7 @@ import { Suspense } from 'react'
 import Link from 'next/link'
 import { ChevronLeft } from 'lucide-react'
 import { NextIntlClientProvider } from 'next-intl'
+import { getTranslations } from 'next-intl/server'
 import { createClient } from '@/lib/supabase/server'
 import { adminClient } from '@/lib/supabase/admin'
 import PainelClient from './PainelClient'
@@ -29,6 +30,7 @@ export default async function PainelPage({
   params: Promise<{ locale: string }>
 }) {
   const { locale } = await params
+  const t = await getTranslations({ locale, namespace: 'Painel' })
   const headersList = await headers()
   const host = headersList.get('x-forwarded-host') || headersList.get('host') || ''
   const subdomain = extractSubdomain(host)
@@ -77,9 +79,9 @@ export default async function PainelPage({
     return (
       <main className="min-h-dvh flex flex-col items-center justify-center px-6 gap-6">
         <div className="text-center flex flex-col gap-2 max-w-sm">
-          <p className="text-lg font-semibold">Acesso negado</p>
+          <p className="text-lg font-semibold">{t('access_denied')}</p>
           <p className="text-sm text-muted-foreground">
-            Sua conta não está associada a este painel.
+            {t('account_not_associated')}
           </p>
         </div>
         <Link
@@ -87,7 +89,7 @@ export default async function PainelPage({
           className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors"
         >
           <ChevronLeft size={16} />
-          Voltar
+          {t('back')}
         </Link>
       </main>
     )

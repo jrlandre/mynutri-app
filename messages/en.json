@@ -333,6 +333,8 @@
   "Painel": {
     "title": "Dashboard",
     "back": "Back",
+    "access_denied": "Access denied",
+    "account_not_associated": "Your account is not associated with this panel.",
     "logout": "Sign out",
     "tab_inicio": "Home",
     "tab_exibicao": "Profile",

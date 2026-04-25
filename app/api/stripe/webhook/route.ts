@@ -319,6 +319,7 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
             })
           } catch (emailErr) {
             logger.error('stripe/webhook', 'Falha ao enviar magic link fallback', { error: emailErr, email })
+            throw emailErr
           }
         }
       }
