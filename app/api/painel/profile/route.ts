@@ -11,7 +11,7 @@ export async function PATCH(request: NextRequest): Promise<NextResponse> {
     const { expert } = guard
     const body = await request.json()
 
-    const allowed = ['name', 'specialty', 'city', 'contact_links', 'listed', 'system_prompt'] as const
+    const allowed = ['name', 'specialty', 'city', 'contact_links', 'listed', 'system_prompt', 'app_name', 'app_subtitle'] as const
     const updates: Record<string, unknown> = {}
     for (const key of allowed) {
       if (key in body) updates[key] = body[key]

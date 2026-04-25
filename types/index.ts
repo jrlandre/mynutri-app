@@ -58,6 +58,8 @@ interface Expert {
   contact_links: ContactLink[]
   listed: boolean
   system_prompt: string | null
+  app_name?: string | null
+  app_subtitle?: string | null
   plan: 'standard' | 'enterprise'
   lifetime: boolean
   active: boolean
@@ -93,6 +95,8 @@ interface UserProfile {
   hasPanel?: boolean
   isSudo?: boolean
   photoUrl?: string | null
+  appName?: string | null
+  appSubtitle?: string | null
 }
 
 interface Referral {

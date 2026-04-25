@@ -114,7 +114,7 @@ function StopIcon({ className }: { className?: string }) {
   )
 }
 
-export default function HomeClient({ tenantSubdomain, userProfile }: Props) {
+export default function HomeClient({ tenantSubdomain, appName, appSubtitle, userProfile }: Props) {
   const t = useTranslations('Chat')
   const router = useRouter()
   const [session, setSession] = useState<SessionState>({ messages: [], analyses: [] })
@@ -1266,5 +1266,11 @@ export default function HomeClient({ tenantSubdomain, userProfile }: Props) {
       </AnimatePresence>
 
     </main>
+  )
+}
+>
+  )
+}
+main>
   )
 }

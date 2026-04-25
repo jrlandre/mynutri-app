@@ -238,7 +238,7 @@ function TabInicio({ expert, clients, onInvite, onToggleActive, onDelete, onNavi
                   </button>
                 </div>
                 <a
-                  href={`https://wa.me/?text=${encodeURIComponent(t('invite_whatsapp_msg', { name: expert.name, url: inviteResult.url }))}`}
+                  href={`https://wa.me/?text=${encodeURIComponent(t('invite_whatsapp_msg', { name: expert.name, url: inviteResult.url, appName: expert.app_name || "MyNutri" }))}`}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="flex items-center justify-center gap-2 w-full py-2.5 rounded-xl text-sm font-medium text-white hover:opacity-90 active:scale-[0.97] transition-all"
@@ -543,6 +543,8 @@ function TabVitrine({ expert, onSave, onPhotoChange, onDirtyChange }: {
     name !== expert.name ||
     specialty !== (expert.specialty ?? "") ||
     city !== (expert.city ?? "") ||
+    appName !== (expert.app_name ?? "") ||
+    appSubtitle !== (expert.app_subtitle ?? "") ||
     listed !== expert.listed ||
     JSON.stringify(links) !== JSON.stringify(expert.contact_links ?? [])
 
@@ -599,6 +601,15 @@ function TabVitrine({ expert, onSave, onPhotoChange, onDirtyChange }: {
       <Field label={t('field_name')} value={name} onChange={setName} required />
       <Field label={t('field_specialty')} value={specialty} onChange={setSpecialty} placeholder={t('specialty_placeholder')} />
       <CitySelector value={city} onChange={setCity} />
+
+      <div className="flex flex-col gap-4 p-5 rounded-2xl bg-muted/30 border border-border">
+        <div className="flex flex-col gap-1">
+          <p className="text-sm font-semibold">{t('app_customization_title')}</p>
+          <p className="text-xs text-muted-foreground">{t('app_customization_desc')}</p>
+        </div>
+        <Field label={t('app_name_label')} value={appName} onChange={setAppName} placeholder="MyNutri" />
+        <Field label={t('app_subtitle_label')} value={appSubtitle} onChange={setAppSubtitle} placeholder={t('app_subtitle_placeholder')} />
+      </div>
 
       {/* Perfil toggle */}
       <div className="flex items-center justify-between py-1">
@@ -1276,6 +1287,11 @@ export default function PainelClient({ expert: initialExpert, initialClients, in
             <TabComissoes expert={expert} referrals={referrals} />
           )}
         </motion.div>
+      </AnimatePresence>
+    </main>
+  )
+}
+v>
       </AnimatePresence>
     </main>
   )

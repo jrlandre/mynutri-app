@@ -102,6 +102,11 @@ export default async function Home() {
   return (
     <>
       <Suspense><SubdomainNotFoundToast /></Suspense>
+      <HomeClient tenantSubdomain={tenantSubdomain} appName={appName} appSubtitle={appSubtitle} userProfile={userProfile} />
+    </>
+  )
+}
+   <Suspense><SubdomainNotFoundToast /></Suspense>
       <HomeClient tenantSubdomain={tenantSubdomain} userProfile={userProfile} />
     </>
   )
