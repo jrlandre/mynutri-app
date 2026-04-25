@@ -8,40 +8,42 @@ interface Props {
   inviteUrl: string
   locale?: 'pt' | 'en'
   appName?: string
+  site?: string
 }
 
 const copy = {
   pt: {
     lang: 'pt-BR',
-    preview: (name: string, app: string) => `${name} te convidou para o ${app}`,
+    preview: (name: string, site: string) => `${name} te convidou para acessar ${site}`,
     heading: 'Você foi convidado!',
-    body1: (name: string, app: string) => `te convidou para usar o ${app} — seu assistente de saúde com inteligência artificial.`,
-    body2: (name: string, app: string) => `Como cliente de ${name}, você terá acesso ilimitado ao ${app} como parte do seu acompanhamento.`,
+    body1: (name: string, site: string) => `te convidou para acessar ${site} — seu assistente de saúde com inteligência artificial.`,
+    body2: (name: string) => `Como cliente de ${name}, você terá acesso ilimitado ao assistente como parte do seu acompanhamento.`,
     cta: 'Aceitar convite',
     copy_label: 'Ou copie e cole este link no seu navegador:',
     footer: (app: string) => `${app} · Este convite é pessoal e intransferível.`,
   },
   en: {
     lang: 'en',
-    preview: (name: string, app: string) => `${name} invited you to ${app}`,
+    preview: (name: string, site: string) => `${name} invited you to access ${site}`,
     heading: "You've been invited!",
-    body1: (name: string, app: string) => `invited you to use ${app} — your AI-powered health assistant.`,
-    body2: (name: string, app: string) => `As a client of ${name}, you'll have unlimited access to ${app} as part of your care.`,
+    body1: (name: string, site: string) => `invited you to access ${site} — your AI-powered health assistant.`,
+    body2: (name: string) => `As a client of ${name}, you'll have unlimited access to the assistant as part of your care.`,
     cta: 'Accept invite',
     copy_label: 'Or copy and paste this link into your browser:',
     footer: (app: string) => `${app} · This invite is personal and non-transferable.`,
   },
 } as const
 
-export default function ClientInviteEmail({ expertName, inviteUrl, locale = 'pt', appName = 'MyNutri' }: Props) {
+export default function ClientInviteEmail({ expertName, inviteUrl, locale = 'pt', appName = 'MyNutri', site }: Props) {
   const c = copy[locale] ?? copy.pt
+  const siteDisplay = site ?? appName
 
   return (
     <Html lang={c.lang}>
       <Head>
         <style>{`@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');`}</style>
       </Head>
-      <Preview>{c.preview(expertName, appName)}</Preview>
+      <Preview>{c.preview(expertName, siteDisplay)}</Preview>
       <Body style={body}>
         <Container style={container}>
           <Section style={header}>
@@ -52,10 +54,10 @@ export default function ClientInviteEmail({ expertName, inviteUrl, locale = 'pt'
           <Section style={content}>
             <Heading style={h1}>{c.heading}</Heading>
             <Text style={text}>
-              <strong>{expertName}</strong> {c.body1(expertName, appName)}
+              <strong>{expertName}</strong> {c.body1(expertName, siteDisplay)}
             </Text>
             <Text style={text}>
-              {c.body2(expertName, appName)}
+              {c.body2(expertName)}
             </Text>
 
             <Section style={{ textAlign: 'center' as const, margin: '32px 0' }}>

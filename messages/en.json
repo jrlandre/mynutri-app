@@ -347,7 +347,7 @@
     "invite_generate": "Generate",
     "invite_copied": "Copied",
     "invite_copy": "Copy",
-    "invite_whatsapp_msg": "Hi! {name} invited you to access {appName}. Click the link below to activate your account:\n\n{url}",
+    "invite_whatsapp_msg": "Hi! {name} invited you to access {site}. Click the link below to activate your account:\n\n{url}",
     "invite_whatsapp_btn": "Send via WhatsApp",
     "invite_delete_confirm": "Permanently delete this invite?",
     "pending_invites": "Pending invites",

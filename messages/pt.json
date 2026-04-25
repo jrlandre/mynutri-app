@@ -347,7 +347,7 @@
     "invite_generate": "Gerar",
     "invite_copied": "Copiado",
     "invite_copy": "Copiar",
-    "invite_whatsapp_msg": "Olá! {name} te convidou para acessar o {appName}. Acesse o link abaixo para ativar sua conta:\n\n{url}",
+    "invite_whatsapp_msg": "Olá! {name} te convidou para acessar {site}. Acesse o link abaixo para ativar sua conta:\n\n{url}",
     "invite_whatsapp_btn": "Enviar pelo WhatsApp",
     "invite_delete_confirm": "Excluir este convite permanentemente?",
     "pending_invites": "Convites pendentes",

@@ -105,14 +105,16 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       try {
         const resend = new Resend(process.env.RESEND_API_KEY)
         const expertLocale: 'pt' | 'en' = (expert.locale as string) === 'en' ? 'en' : 'pt'
-        const appName = expert.app_name || 'MyNutri'
+        const appName = expert.app_name || expert.name || 'MyNutri'
+        const appDomain = (process.env.NEXT_PUBLIC_APP_URL ?? 'mynutri.pro').replace(/^https?:\/\//, '').replace(/\/$/, '')
+        const site = expert.subdomain ? `${expert.subdomain}.${appDomain}` : appDomain
         await resend.emails.send({
           from: process.env.RESEND_FROM_EMAIL ?? `${appName} <noreply@mynutri.pro>`,
           to: email,
           subject: expertLocale === 'en'
-            ? `${expert.name} invited you to ${appName}`
-            : `${expert.name} te convidou para o ${appName}`,
-          react: ClientInviteEmail({ expertName: expert.name, inviteUrl: invite_url, locale: expertLocale, appName }),
+            ? `${expert.name} invited you to access ${site}`
+            : `${expert.name} te convidou para acessar ${site}`,
+          react: ClientInviteEmail({ expertName: expert.name, inviteUrl: invite_url, locale: expertLocale, appName, site }),
         })
         email_sent = true
       } catch (err) {

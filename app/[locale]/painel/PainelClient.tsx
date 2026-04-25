@@ -83,6 +83,8 @@ function TabInicio({ expert, clients, onInvite, onToggleActive, onDelete, onNavi
 }) {
   const t = useTranslations('Painel')
   const limit = PLAN_LIMIT[expert.plan] ?? 50
+  const appDomain = (process.env.NEXT_PUBLIC_APP_URL ?? 'mynutri.pro').replace(/^https?:\/\//, '').replace(/\/$/, '')
+  const expertSite = expert.subdomain ? `${expert.subdomain}.${appDomain}` : appDomain
 
   const pendingInvites = clients.filter(p => p.active && !p.activated_at)
   const activeClients = clients.filter(p => p.active && p.activated_at)
@@ -238,7 +240,7 @@ function TabInicio({ expert, clients, onInvite, onToggleActive, onDelete, onNavi
                   </button>
                 </div>
                 <a
-                  href={`https://wa.me/?text=${encodeURIComponent(t('invite_whatsapp_msg', { name: expert.name, url: inviteResult.url, appName: expert.app_name || expert.name || "MyNutri" }))}`}
+                  href={`https://wa.me/?text=${encodeURIComponent(t('invite_whatsapp_msg', { name: expert.name, url: inviteResult.url, site: expertSite }))}`}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="flex items-center justify-center gap-2 w-full py-2.5 rounded-xl text-sm font-medium text-white hover:opacity-90 active:scale-[0.97] transition-all"
