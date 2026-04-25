@@ -378,7 +378,6 @@
     "contact_type_label": "Type",
     "contact_label_field": "Label (optional)",
     "contact_label_placeholder": "E.g.: WhatsApp",
-    "contact_label_placeholder_prefix": "E.g.: ",
     "contact_whatsapp_hint": "WhatsApp number",
     "contact_instagram_hint": "Instagram profile",
     "contact_email_hint": "Email address",

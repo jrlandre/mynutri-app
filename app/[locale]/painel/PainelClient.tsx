@@ -572,7 +572,11 @@ function TabVitrine({ expert, onSave, onPhotoChange, onDirtyChange }: {
   }
 
   function labelPlaceholder(type: string): string {
-    return t('contact_label_placeholder_prefix') + type
+    if (type === "WhatsApp")  return "WhatsApp"
+    if (type === "Instagram") return "@mynutri.pro"
+    if (type === "E-mail")    return "E-mail"
+    if (type === "Website")   return "mynutri.pro"
+    return type
   }
 
   return (
