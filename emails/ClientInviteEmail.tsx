@@ -20,7 +20,7 @@ const copy = {
     body2: (name: string) => `Como cliente de ${name}, você terá acesso ilimitado ao assistente como parte do seu acompanhamento.`,
     cta: 'Aceitar convite',
     copy_label: 'Ou copie e cole este link no seu navegador:',
-    footer: (app: string) => `${app} · Este convite é pessoal e intransferível.`,
+    footer: () => `MyNutri · Este convite é pessoal e intransferível.`,
   },
   en: {
     lang: 'en',
@@ -30,7 +30,7 @@ const copy = {
     body2: (name: string) => `As a client of ${name}, you'll have unlimited access to the assistant as part of your care.`,
     cta: 'Accept invite',
     copy_label: 'Or copy and paste this link into your browser:',
-    footer: (app: string) => `${app} · This invite is personal and non-transferable.`,
+    footer: () => `MyNutri · This invite is personal and non-transferable.`,
   },
 } as const
 
@@ -47,7 +47,7 @@ export default function ClientInviteEmail({ expertName, inviteUrl, locale = 'pt'
       <Body style={body}>
         <Container style={container}>
           <Section style={header}>
-            <Text style={logo}>{appName}</Text>
+            <Text style={logo}>MyNutri</Text>
           </Section>
           <Section style={accentLine}>&nbsp;</Section>
 
@@ -76,7 +76,7 @@ export default function ClientInviteEmail({ expertName, inviteUrl, locale = 'pt'
 
           <Section>
             <Text style={footer}>
-              {c.footer(appName)}
+              {c.footer()}
             </Text>
           </Section>
         </Container>
