@@ -571,6 +571,10 @@ function TabVitrine({ expert, onSave, onPhotoChange, onDirtyChange }: {
     return "https://..."
   }
 
+  function labelPlaceholder(type: string): string {
+    return t('contact_label_placeholder_prefix') + type
+  }
+
   return (
     <form onSubmit={handleSave} className="flex flex-col gap-6">
       {/* Foto */}
@@ -669,7 +673,7 @@ function TabVitrine({ expert, onSave, onPhotoChange, onDirtyChange }: {
                       <input
                         value={link.label}
                         onChange={e => updateLink(i, "label", e.target.value)}
-                        placeholder={t('contact_label_placeholder')}
+                        placeholder={labelPlaceholder(link.type)}
                         className="px-3 py-2 rounded-xl border border-border bg-card text-sm focus:outline-none focus:ring-2 focus:ring-ring/40"
                       />
                     </div>
@@ -712,7 +716,7 @@ function TabVitrine({ expert, onSave, onPhotoChange, onDirtyChange }: {
         )}
       </div>
 
-      <div className="flex flex-col gap-4 p-5 rounded-2xl bg-muted/30 border border-border">
+      <div className="flex flex-col gap-4 p-5 rounded-2xl bg-muted/30 border border-border mt-2">
         <div className="flex flex-col gap-1">
           <p className="text-sm font-semibold">{t('app_customization_title')}</p>
           <p className="text-xs text-muted-foreground">{t('app_customization_desc')}</p>
