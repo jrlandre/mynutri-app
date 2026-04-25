@@ -238,7 +238,7 @@ function TabInicio({ expert, clients, onInvite, onToggleActive, onDelete, onNavi
                   </button>
                 </div>
                 <a
-                  href={`https://wa.me/?text=${encodeURIComponent(t('invite_whatsapp_msg', { name: expert.name, url: inviteResult.url, appName: expert.app_name || "MyNutri" }))}`}
+                  href={`https://wa.me/?text=${encodeURIComponent(t('invite_whatsapp_msg', { name: expert.name, url: inviteResult.url, appName: expert.app_name || expert.name || "MyNutri" }))}`}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="flex items-center justify-center gap-2 w-full py-2.5 rounded-xl text-sm font-medium text-white hover:opacity-90 active:scale-[0.97] transition-all"
@@ -726,7 +726,7 @@ function TabVitrine({ expert, onSave, onPhotoChange, onDirtyChange }: {
           <p className="text-sm font-semibold">{t('app_customization_title')}</p>
           <p className="text-xs text-muted-foreground">{t('app_customization_desc')}</p>
         </div>
-        <Field label={t('app_name_label')} value={appName} onChange={setAppName} placeholder="MyNutri" />
+        <Field label={t('app_name_label')} value={appName} onChange={setAppName} placeholder={expert.name || 'MyNutri'} />
         <div className="flex flex-col gap-1.5">
           <div className="flex items-center justify-between ml-1">
             <label className="text-[10px] font-bold text-muted-foreground uppercase">{t('app_subtitle_label')}</label>

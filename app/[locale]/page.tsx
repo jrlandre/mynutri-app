@@ -24,10 +24,11 @@ export default async function Home() {
   let appName: string | undefined
   let appSubtitle: string | undefined
   let expertPhotoUrl: string | undefined
+  let expertName: string | undefined
   if (subdomain && subdomain !== 'www') {
     const { data } = await adminClient
       .from('experts')
-      .select('id, app_name, app_subtitle, photo_url')
+      .select('id, name, app_name, app_subtitle, photo_url')
       .eq('subdomain', subdomain)
       .eq('active', true)
       .maybeSingle()
@@ -36,6 +37,7 @@ export default async function Home() {
       appName = data.app_name ?? undefined
       appSubtitle = data.app_subtitle !== null ? data.app_subtitle : undefined
       expertPhotoUrl = data.photo_url ?? undefined
+      expertName = data.name ?? undefined
     } else {
       redirect(`${process.env.NEXT_PUBLIC_APP_URL}/?subdomain_not_found=1`)
     }
@@ -108,7 +110,7 @@ export default async function Home() {
   return (
     <>
       <Suspense><SubdomainNotFoundToast /></Suspense>
-      <HomeClient tenantSubdomain={tenantSubdomain} appName={appName} appSubtitle={appSubtitle} expertPhotoUrl={expertPhotoUrl} userProfile={userProfile} />
+      <HomeClient tenantSubdomain={tenantSubdomain} appName={appName} appSubtitle={appSubtitle} expertPhotoUrl={expertPhotoUrl} expertName={expertName} userProfile={userProfile} />
     </>
   )
 }

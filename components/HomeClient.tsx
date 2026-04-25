@@ -19,6 +19,7 @@ interface Props {
   appName?: string
   appSubtitle?: string
   expertPhotoUrl?: string
+  expertName?: string
   userProfile?: UserProfile | null
 }
 
@@ -117,7 +118,7 @@ function StopIcon({ className }: { className?: string }) {
   )
 }
 
-export default function HomeClient({ tenantSubdomain, appName, appSubtitle, expertPhotoUrl, userProfile }: Props) {
+export default function HomeClient({ tenantSubdomain, appName, appSubtitle, expertPhotoUrl, expertName, userProfile }: Props) {
   const t = useTranslations('Chat')
   const router = useRouter()
   const [session, setSession] = useState<SessionState>({ messages: [], analyses: [] })
@@ -656,7 +657,7 @@ export default function HomeClient({ tenantSubdomain, appName, appSubtitle, expe
             <img src={expertPhotoUrl} alt="" className="w-8 h-8 rounded-full object-cover flex-shrink-0" />
           )}
           <div>
-            <h1 className="text-xl font-extrabold leading-tight tracking-tight">{appName || 'MyNutri'}</h1>
+            <h1 className="text-xl font-extrabold leading-tight tracking-tight">{appName || expertName || 'MyNutri'}</h1>
             {subtitleText && <p className="text-xs text-muted-foreground leading-tight">{subtitleText}</p>}
           </div>
         </div>
