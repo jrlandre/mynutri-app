@@ -74,17 +74,18 @@ export default async function SudoPage() {
       const subs = await stripe.subscriptions.list({
         status: 'active',
         limit: 100,
-        expand: ['data.items.data.price', 'data.discount'],
-      }).autoPagingToArray(10000)
+        expand: ['data.items.data.price', 'data.discounts'],
+      }).autoPagingToArray({ limit: 10000 })
       mrrCents = subs.reduce((sum, sub) => {
         const item = sub.items.data[0]
         let amount = item.price.unit_amount ?? 0
 
-        if (sub.discount?.coupon) {
-          if (sub.discount.coupon.percent_off) {
-            amount = amount * (1 - sub.discount.coupon.percent_off / 100)
-          } else if (sub.discount.coupon.amount_off) {
-            amount = Math.max(0, amount - sub.discount.coupon.amount_off)
+        const coupon = (sub.discounts?.[0] as { coupon?: { percent_off?: number | null; amount_off?: number | null } } | undefined)?.coupon
+        if (coupon) {
+          if (coupon.percent_off) {
+            amount = amount * (1 - coupon.percent_off / 100)
+          } else if (coupon.amount_off) {
+            amount = Math.max(0, amount - coupon.amount_off)
           }
         }
 

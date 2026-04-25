@@ -421,6 +421,8 @@ function TabVitrine({ expert, onSave, onPhotoChange, onDirtyChange }: {
   const [name, setName] = useState(expert.name)
   const [specialty, setSpecialty] = useState(expert.specialty ?? "")
   const [city, setCity] = useState(expert.city ?? "")
+  const [appName, setAppName] = useState(expert.app_name ?? "")
+  const [appSubtitle, setAppSubtitle] = useState(expert.app_subtitle ?? "")
   const [listed, setListed] = useState(expert.listed)
   const [links, setLinks] = useState<ContactLink[]>(expert.contact_links ?? [])
   const [saving, setSaving] = useState(false)
@@ -527,6 +529,8 @@ function TabVitrine({ expert, onSave, onPhotoChange, onDirtyChange }: {
         name,
         specialty: specialty || null,
         city: city || null,
+        app_name: appName || null,
+        app_subtitle: appSubtitle || null,
         listed,
         contact_links: processedLinks
       })
