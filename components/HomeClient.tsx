@@ -18,6 +18,7 @@ interface Props {
   tenantSubdomain?: string
   appName?: string
   appSubtitle?: string
+  expertPhotoUrl?: string
   userProfile?: UserProfile | null
 }
 
@@ -116,7 +117,7 @@ function StopIcon({ className }: { className?: string }) {
   )
 }
 
-export default function HomeClient({ tenantSubdomain, appName, appSubtitle, userProfile }: Props) {
+export default function HomeClient({ tenantSubdomain, appName, appSubtitle, expertPhotoUrl, userProfile }: Props) {
   const t = useTranslations('Chat')
   const router = useRouter()
   const [session, setSession] = useState<SessionState>({ messages: [], analyses: [] })
@@ -644,13 +645,20 @@ export default function HomeClient({ tenantSubdomain, appName, appSubtitle, user
     setAudioPlayer(s => ({ ...s, currentTime: audio.currentTime }))
   }
 
+  const subtitleText = appSubtitle === undefined ? t('subtitle') : appSubtitle
+
   return (
     <main className="h-dvh max-w-2xl mx-auto flex flex-col relative overflow-hidden">
       {/* Header */}
       <header className="px-4 pt-5 pb-3.5 flex-shrink-0 flex items-center justify-between border-b border-border bg-background z-10">
-        <div>
-          <h1 className="text-xl font-extrabold leading-tight tracking-tight">MyNutri</h1>
-          <p className="text-xs text-muted-foreground leading-tight">{t('subtitle')}</p>
+        <div className="flex items-center gap-2.5">
+          {expertPhotoUrl && (
+            <img src={expertPhotoUrl} alt="" className="w-8 h-8 rounded-full object-cover flex-shrink-0" />
+          )}
+          <div>
+            <h1 className="text-xl font-extrabold leading-tight tracking-tight">{appName || 'MyNutri'}</h1>
+            {subtitleText && <p className="text-xs text-muted-foreground leading-tight">{subtitleText}</p>}
+          </div>
         </div>
         
         <div className="flex items-center gap-3">

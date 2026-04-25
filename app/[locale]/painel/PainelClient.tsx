@@ -423,6 +423,7 @@ function TabVitrine({ expert, onSave, onPhotoChange, onDirtyChange }: {
   const [city, setCity] = useState(expert.city ?? "")
   const [appName, setAppName] = useState(expert.app_name ?? "")
   const [appSubtitle, setAppSubtitle] = useState(expert.app_subtitle ?? "")
+  const [subtitleEnabled, setSubtitleEnabled] = useState(expert.app_subtitle !== "")
   const [listed, setListed] = useState(expert.listed)
   const [links, setLinks] = useState<ContactLink[]>(expert.contact_links ?? [])
   const [saving, setSaving] = useState(false)
@@ -530,7 +531,7 @@ function TabVitrine({ expert, onSave, onPhotoChange, onDirtyChange }: {
         specialty: specialty || null,
         city: city || null,
         app_name: appName || null,
-        app_subtitle: appSubtitle || null,
+        app_subtitle: subtitleEnabled ? (appSubtitle || null) : "",
         listed,
         contact_links: processedLinks
       })
@@ -548,7 +549,7 @@ function TabVitrine({ expert, onSave, onPhotoChange, onDirtyChange }: {
     specialty !== (expert.specialty ?? "") ||
     city !== (expert.city ?? "") ||
     appName !== (expert.app_name ?? "") ||
-    appSubtitle !== (expert.app_subtitle ?? "") ||
+    (subtitleEnabled ? (appSubtitle || null) : "") !== expert.app_subtitle ||
     listed !== expert.listed ||
     JSON.stringify(links) !== JSON.stringify(expert.contact_links ?? [])
 
@@ -612,7 +613,19 @@ function TabVitrine({ expert, onSave, onPhotoChange, onDirtyChange }: {
           <p className="text-xs text-muted-foreground">{t('app_customization_desc')}</p>
         </div>
         <Field label={t('app_name_label')} value={appName} onChange={setAppName} placeholder="MyNutri" />
-        <Field label={t('app_subtitle_label')} value={appSubtitle} onChange={setAppSubtitle} placeholder={t('app_subtitle_placeholder')} />
+        <div className="flex items-center justify-between">
+          <p className="text-sm font-medium">{t('app_subtitle_toggle')}</p>
+          <button
+            type="button"
+            onClick={() => setSubtitleEnabled(v => !v)}
+            className={`w-11 h-6 rounded-full transition-colors relative ${subtitleEnabled ? "bg-primary" : "bg-muted"}`}
+          >
+            <span className={`absolute top-0.5 left-0.5 w-5 h-5 rounded-full bg-white shadow transition-transform ${subtitleEnabled ? "translate-x-5" : "translate-x-0"}`} />
+          </button>
+        </div>
+        {subtitleEnabled && (
+          <Field label={t('app_subtitle_label')} value={appSubtitle} onChange={setAppSubtitle} placeholder={t('app_subtitle_placeholder')} />
+        )}
       </div>
 
       {/* Perfil toggle */}
