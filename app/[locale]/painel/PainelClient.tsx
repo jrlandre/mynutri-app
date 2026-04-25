@@ -572,10 +572,11 @@ function TabVitrine({ expert, onSave, onPhotoChange, onDirtyChange }: {
   }
 
   function labelPlaceholder(type: string): string {
-    if (type === "WhatsApp")  return "WhatsApp"
-    if (type === "Instagram") return "@mynutri.pro"
-    if (type === "E-mail")    return "E-mail"
-    if (type === "Website")   return "mynutri.pro"
+    const p = t('contact_label_placeholder_prefix')
+    if (type === "WhatsApp")  return `${p}WhatsApp`
+    if (type === "Instagram") return `${p}@mynutri.pro`
+    if (type === "E-mail")    return `${p}E-mail`
+    if (type === "Website")   return `${p}mynutri.pro`
     return type
   }
 
@@ -1267,12 +1268,12 @@ export default function PainelClient({ expert: initialExpert, initialClients, in
             <button
               key={key}
               onClick={() => switchTab(key)}
-              className={`flex-1 py-2 rounded-lg text-sm font-medium transition-colors ${
+              className={`flex-1 py-2 rounded-lg text-sm font-medium transition-colors flex items-center justify-center gap-1 ${
                 tab === key ? "bg-background shadow-sm text-foreground" : "text-muted-foreground hover:text-foreground"
               }`}
             >
               {tabLabel[key]}
-              {isDirty && key === tab && <span className="ml-1 inline-block w-1.5 h-1.5 rounded-full bg-amber-500 align-middle" />}
+              {isDirty && key === tab && <span className="w-1.5 h-1.5 rounded-full bg-amber-500 shrink-0" />}
             </button>
           ))}
         </div>
