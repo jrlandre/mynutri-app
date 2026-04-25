@@ -1291,8 +1291,3 @@ export default function PainelClient({ expert: initialExpert, initialClients, in
     </main>
   )
 }
-v>
-      </AnimatePresence>
-    </main>
-  )
-}

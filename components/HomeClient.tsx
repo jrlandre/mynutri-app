@@ -16,6 +16,8 @@ import type { SessionState, AnalysisResult, InputType, UserProfile, Message } fr
 
 interface Props {
   tenantSubdomain?: string
+  appName?: string
+  appSubtitle?: string
   userProfile?: UserProfile | null
 }
 
@@ -1266,11 +1268,5 @@ export default function HomeClient({ tenantSubdomain, appName, appSubtitle, user
       </AnimatePresence>
 
     </main>
-  )
-}
->
-  )
-}
-main>
   )
 }
