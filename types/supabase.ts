@@ -232,6 +232,8 @@ export type Database = {
       experts: {
         Row: {
           active: boolean
+          app_name: string | null
+          app_subtitle: string | null
           city: string | null
           contact_links: Json
           created_at: string
@@ -269,6 +271,8 @@ export type Database = {
         }
         Insert: {
           active?: boolean
+          app_name?: string | null
+          app_subtitle?: string | null
           city?: string | null
           contact_links?: Json
           created_at?: string
@@ -306,6 +310,8 @@ export type Database = {
         }
         Update: {
           active?: boolean
+          app_name?: string | null
+          app_subtitle?: string | null
           city?: string | null
           contact_links?: Json
           created_at?: string
