@@ -607,27 +607,6 @@ function TabVitrine({ expert, onSave, onPhotoChange, onDirtyChange }: {
       <Field label={t('field_specialty')} value={specialty} onChange={setSpecialty} placeholder={t('specialty_placeholder')} />
       <CitySelector value={city} onChange={setCity} />
 
-      <div className="flex flex-col gap-4 p-5 rounded-2xl bg-muted/30 border border-border">
-        <div className="flex flex-col gap-1">
-          <p className="text-sm font-semibold">{t('app_customization_title')}</p>
-          <p className="text-xs text-muted-foreground">{t('app_customization_desc')}</p>
-        </div>
-        <Field label={t('app_name_label')} value={appName} onChange={setAppName} placeholder="MyNutri" />
-        <div className="flex items-center justify-between">
-          <p className="text-sm font-medium">{t('app_subtitle_toggle')}</p>
-          <button
-            type="button"
-            onClick={() => setSubtitleEnabled(v => !v)}
-            className={`w-11 h-6 rounded-full transition-colors relative ${subtitleEnabled ? "bg-primary" : "bg-muted"}`}
-          >
-            <span className={`absolute top-0.5 left-0.5 w-5 h-5 rounded-full bg-white shadow transition-transform ${subtitleEnabled ? "translate-x-5" : "translate-x-0"}`} />
-          </button>
-        </div>
-        {subtitleEnabled && (
-          <Field label={t('app_subtitle_label')} value={appSubtitle} onChange={setAppSubtitle} placeholder={t('app_subtitle_placeholder')} />
-        )}
-      </div>
-
       {/* Perfil toggle */}
       <div className="flex items-center justify-between py-1">
         <div>
@@ -731,6 +710,34 @@ function TabVitrine({ expert, onSave, onPhotoChange, onDirtyChange }: {
             })}
           </div>
         )}
+      </div>
+
+      <div className="flex flex-col gap-4 p-5 rounded-2xl bg-muted/30 border border-border">
+        <div className="flex flex-col gap-1">
+          <p className="text-sm font-semibold">{t('app_customization_title')}</p>
+          <p className="text-xs text-muted-foreground">{t('app_customization_desc')}</p>
+        </div>
+        <Field label={t('app_name_label')} value={appName} onChange={setAppName} placeholder="MyNutri" />
+        <div className="flex flex-col gap-1.5">
+          <div className="flex items-center justify-between ml-1">
+            <label className="text-[10px] font-bold text-muted-foreground uppercase">{t('app_subtitle_label')}</label>
+            <button
+              type="button"
+              onClick={() => setSubtitleEnabled(v => !v)}
+              className={`w-11 h-6 rounded-full transition-colors relative ${subtitleEnabled ? "bg-primary" : "bg-muted"}`}
+            >
+              <span className={`absolute top-0.5 left-0.5 w-5 h-5 rounded-full bg-white shadow transition-transform ${subtitleEnabled ? "translate-x-5" : "translate-x-0"}`} />
+            </button>
+          </div>
+          <div className={`overflow-hidden transition-[max-height,opacity] duration-200 ${subtitleEnabled ? "max-h-16 opacity-100" : "max-h-0 opacity-0"}`}>
+            <input
+              value={appSubtitle}
+              onChange={e => setAppSubtitle(e.target.value)}
+              placeholder={t('app_subtitle_placeholder')}
+              className="w-full px-3 py-2 rounded-xl border border-border bg-card text-sm focus:outline-none focus:ring-2 focus:ring-ring/40"
+            />
+          </div>
+        </div>
       </div>
 
       {saveError && (
