@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { adminClient } from '@/lib/supabase/admin'
-import { createClient } from '@/lib/supabase/server'
 import { requireExpert, isResponse } from '@/lib/painel/guard'
 
 const ALLOWED_TYPES = ['image/jpeg', 'image/png', 'image/webp']
@@ -29,15 +28,15 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     const path = `${expert.user_id}/avatar.${ext}`
     const buffer = Buffer.from(photo, 'base64')
 
-    // Upload usando o client do usuário autenticado (respeita RLS de storage)
-    const supabase = await createClient()
-    const { error: uploadError } = await supabase.storage
+    // Upload usando adminClient pois a autorização já foi feita pelo requireExpert()
+    // Isso permite que usuários "sudo" (admins) façam upload nas pastas de outros experts.
+    const { error: uploadError } = await adminClient.storage
       .from('avatars')
       .upload(path, buffer, { contentType: mimeType, upsert: true })
 
     if (uploadError) throw new Error(uploadError.message)
 
-    const { data: { publicUrl } } = supabase.storage.from('avatars').getPublicUrl(path)
+    const { data: { publicUrl } } = adminClient.storage.from('avatars').getPublicUrl(path)
 
     // Adiciona cache-buster para evitar imagem antiga no browser
     const photo_url = `${publicUrl}?v=${Date.now()}`
