@@ -319,7 +319,7 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
             })
           } catch (emailErr) {
             logger.error('stripe/webhook', 'Falha ao enviar magic link fallback', { error: emailErr, email })
-            throw emailErr
+            // Não relança: usuário já foi criado/vinculado; falha de e-mail não deve causar retry do webhook
           }
         }
       }

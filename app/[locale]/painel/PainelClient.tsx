@@ -788,6 +788,7 @@ function SubdomainSection({ expert, onSubdomainChange }: {
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   const cooldownActive = (() => {
+    if (expert.is_admin) return false
     if (!expert.last_subdomain_change_at) return false
     const elapsed = Date.now() - new Date(expert.last_subdomain_change_at).getTime()
     return elapsed < 30 * 24 * 60 * 60 * 1000
