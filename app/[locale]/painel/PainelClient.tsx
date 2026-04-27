@@ -469,7 +469,13 @@ function TabVitrine({ expert, onSave, onPhotoChange, onDirtyChange }: {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ photo: base64, mimeType: "image/jpeg" })
       })
-      if (!res.ok) { setPhotoError(t('photo_error')); setPhotoPreview(expert.photo_url); return }
+      if (!res.ok) {
+        const errData = await res.json().catch(() => ({ error: res.statusText }))
+        console.error("Upload falhou:", errData)
+        setPhotoError(errData.error || t('photo_error'))
+        setPhotoPreview(expert.photo_url)
+        return
+      }
       const data = await res.json() as { photo_url?: string; error?: string }
 
       if (data.error) {

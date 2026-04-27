@@ -51,6 +51,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
 
     return NextResponse.json({ photo_url })
   } catch (e) {
+    console.error("Avatar Upload Error:", e)
     return NextResponse.json({ error: e instanceof Error ? e.message : 'Erro interno' }, { status: 500 })
   }
 }
