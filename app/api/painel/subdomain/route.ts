@@ -66,7 +66,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     const guard = await requireExpert()
     if (isResponse(guard)) return guard as unknown as NextResponse
 
-    const { expert } = guard
+    const { expert, isAdmin } = guard
     const m = MSG[(expert.locale as string) === 'en' ? 'en' : 'pt']
     const body = await request.json() as { subdomain?: string }
     const newSubdomain = body.subdomain?.trim().toLowerCase()
@@ -79,8 +79,8 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       return NextResponse.json({ error: m.same }, { status: 400 })
     }
 
-    // Cooldown check
-    if (expert.last_subdomain_change_at) {
+    // Cooldown check (admins can bypass)
+    if (!isAdmin && expert.last_subdomain_change_at) {
       const elapsed = Date.now() - new Date(expert.last_subdomain_change_at as string).getTime()
       if (elapsed < COOLDOWN_MS) {
         const daysLeft = Math.ceil((COOLDOWN_MS - elapsed) / (1000 * 60 * 60 * 24))

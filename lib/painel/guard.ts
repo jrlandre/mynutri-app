@@ -6,6 +6,7 @@ export { CLIENT_LIMIT } from '@/lib/plans'
 
 export interface GuardResult {
   expert: Expert
+  isAdmin: boolean
 }
 
 function extractSubdomain(host: string): string | null {
@@ -63,7 +64,7 @@ export async function requireExpert(): Promise<GuardResult | Response> {
     return Response.json({ error: 'Acesso negado' }, { status: 403 })
   }
 
-  return { expert: expert as unknown as Expert }
+  return { expert: expert as unknown as Expert, isAdmin }
 }
 
 export function isResponse(v: GuardResult | Response): v is Response {

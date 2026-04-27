@@ -1,7 +1,7 @@
 import { after } from 'next/server'
 import { streamText } from 'ai'
 import { createGoogleGenerativeAI } from '@ai-sdk/google'
-import { createClient } from '@supabase/supabase-js'
+import { requireExpert, isResponse } from '@/lib/painel/guard'
 
 export const runtime = 'edge'
 
@@ -14,13 +14,12 @@ interface GeminiFileRef {
 }
 
 const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL!
-const ANON_KEY = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
 const SERVICE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY!
 const GEMINI_KEY = process.env.GOOGLE_GENERATIVE_AI_API_KEY!
 
 async function getJobOrThrowEdge(jobId: string, expertId: string) {
   // Uses service role key (bypasses RLS). expert_id filter is the isolation guarantee.
-  // expertId MUST come from verified auth.getUser() — never from request body.
+  // expertId MUST come from verified auth.getUser() or requireExpert() — never from request body.
   const params = new URLSearchParams({
     'id': `eq.${jobId}`,
     'expert_id': `eq.${expertId}`,
@@ -57,14 +56,11 @@ export async function POST(req: Request) {
     return new Response(JSON.stringify({ error: 'invalid_locale' }), { status: 400 })
   }
 
-  const authHeader = req.headers.get('Authorization')
-  const token = authHeader?.replace('Bearer ', '').trim()
-  if (!token) return new Response('Unauthorized', { status: 401 })
+  const guard = await requireExpert()
+  if (isResponse(guard)) return guard
 
-  const supabaseEdge = createClient(SUPABASE_URL, ANON_KEY)
-  const { data: { user } } = await supabaseEdge.auth.getUser(token)
-  if (!user) return new Response('Unauthorized', { status: 401 })
-  const expertId = user.id
+  const { expert } = guard
+  const expertId = expert.id
 
   let job: { status: string; gemini_files: GeminiFileRef[]; supabase_paths: string[] }
   try {
