@@ -23,6 +23,7 @@ interface Props {
   expert: Expert
   initialClients: Client[]
   initialReferrals: Referral[]
+  isAdmin?: boolean
 }
 
 // ─── Profile Checklist ───────────────────────────────────────────────────────
@@ -773,8 +774,9 @@ function TabVitrine({ expert, onSave, onPhotoChange, onDirtyChange }: {
 
 // ─── Seção Subdomínio (dentro de TabVitrine, separado do form) ────────────────
 
-function SubdomainSection({ expert, onSubdomainChange }: {
+function SubdomainSection({ expert, isAdmin = false, onSubdomainChange }: {
   expert: Expert
+  isAdmin?: boolean
   onSubdomainChange: (newSubdomain: string) => void
 }) {
   const t = useTranslations('Painel')
@@ -788,7 +790,7 @@ function SubdomainSection({ expert, onSubdomainChange }: {
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   const cooldownActive = (() => {
-    if (expert.is_admin) return false
+    if (isAdmin) return false
     if (!expert.last_subdomain_change_at) return false
     const elapsed = Date.now() - new Date(expert.last_subdomain_change_at).getTime()
     return elapsed < 30 * 24 * 60 * 60 * 1000
@@ -1134,7 +1136,7 @@ function Field({ label, value, onChange, placeholder, required }: {
 
 // ─── Main component ───────────────────────────────────────────────────────────
 
-export default function PainelClient({ expert: initialExpert, initialClients, initialReferrals }: Props) {
+export default function PainelClient({ expert: initialExpert, initialClients, initialReferrals, isAdmin = false }: Props) {
   const t = useTranslations('Painel')
   const locale = useLocale()
   const router = useRouter()
@@ -1318,6 +1320,7 @@ export default function PainelClient({ expert: initialExpert, initialClients, in
               />
               <SubdomainSection
                 expert={expert}
+                isAdmin={isAdmin}
                 onSubdomainChange={(sub) => setExpert(prev => ({ ...prev, subdomain: sub, last_subdomain_change_at: new Date().toISOString() }))}
               />
             </div>

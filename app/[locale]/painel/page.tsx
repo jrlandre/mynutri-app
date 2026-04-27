@@ -130,6 +130,7 @@ export default async function PainelPage({
             expert={expertData}
             initialClients={(clients ?? []) as Client[]}
             initialReferrals={(referralsResult.data ?? []) as Referral[]}
+            isAdmin={isAdmin}
           />
         )}
       </NextIntlClientProvider>
