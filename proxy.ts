@@ -13,15 +13,13 @@ import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
 import createNextIntlMiddleware from 'next-intl/middleware'
 import { routing } from './i18n/routing'
-import { adminClient } from '@/lib/supabase/admin'
-import { logger } from '@/lib/logger'
 
 const intlHandler = createNextIntlMiddleware(routing)
 
 // Cache de tenant em memória — reutilizado entre requests no mesmo Edge worker.
-// TTL de 5 min: troca-off entre conexões ao DB e propagação de mudanças no painel.
+// TTL de 30s: garante propagação rápida quando o expert atualiza o system_prompt.
 const tenantCache = new Map<string, { value: string | null; exp: number }>()
-const TENANT_TTL_MS = 5 * 60 * 1000
+const TENANT_TTL_MS = 30 * 1000
 
 async function resolveTenant(request: NextRequest): Promise<string | null> {
   const host = request.headers.get('host') ?? ''
@@ -33,19 +31,29 @@ async function resolveTenant(request: NextRequest): Promise<string | null> {
   const cached = tenantCache.get(host)
   if (cached && cached.exp > Date.now()) return cached.value
 
-  const { data } = await adminClient
-    .from('experts')
-    .select('name, system_prompt')
-    .eq('subdomain', subdomain)
-    .eq('active', true)
-    .maybeSingle()
+  try {
+    const supabaseUrl = (process.env.NEXT_PUBLIC_SUPABASE_URL ?? '').replace(/\/$/, '')
+    const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY
+    if (!supabaseUrl || !serviceKey) return null
 
-  const value = data
-    ? JSON.stringify({ subdomain, expertName: data.name, systemPrompt: data.system_prompt ?? '' })
-    : null
+    const res = await fetch(
+      `${supabaseUrl}/rest/v1/experts?subdomain=eq.${encodeURIComponent(subdomain)}&active=eq.true&select=name,system_prompt`,
+      { headers: { apikey: serviceKey, Authorization: `Bearer ${serviceKey}` } }
+    )
+    if (!res.ok) return null
 
-  tenantCache.set(host, { value, exp: Date.now() + TENANT_TTL_MS })
-  return value
+    const rows: Array<{ name: string; system_prompt: string | null }> = await res.json()
+    const data = rows[0] ?? null
+
+    const value = data
+      ? JSON.stringify({ subdomain, expertName: data.name, systemPrompt: data.system_prompt ?? '' })
+      : null
+
+    tenantCache.set(host, { value, exp: Date.now() + TENANT_TTL_MS })
+    return value
+  } catch {
+    return null
+  }
 }
 
 // Rate limiting lazy — só ativa se KV estiver configurado
