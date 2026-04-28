@@ -16,44 +16,13 @@ import { routing } from './i18n/routing'
 
 const intlHandler = createNextIntlMiddleware(routing)
 
-// Cache de tenant em memória — reutilizado entre requests no mesmo Edge worker.
-// TTL de 30s: garante propagação rápida quando o expert atualiza o system_prompt.
-const tenantCache = new Map<string, { value: string | null; exp: number }>()
-const TENANT_TTL_MS = 30 * 1000
-
-async function resolveTenant(request: NextRequest): Promise<string | null> {
+// Extrai o subdomain do host por regex — sem chamada de rede, seguro no Edge.
+// O route handler faz o fetch do expert e do system_prompt em Node.js runtime.
+function resolveSubdomain(request: NextRequest): string | null {
   const host = request.headers.get('host') ?? ''
   const appDomain = (process.env.NEXT_PUBLIC_APP_URL ?? '').replace(/^https?:\/\//, '').replace(/\/$/, '').replace(/\./g, '\\.')
   const match = appDomain ? host.match(new RegExp(`^([^.]+)\\.${appDomain}$`)) : null
-  if (!match) return null
-  const subdomain = match[1]
-
-  const cached = tenantCache.get(host)
-  if (cached && cached.exp > Date.now()) return cached.value
-
-  try {
-    const supabaseUrl = (process.env.NEXT_PUBLIC_SUPABASE_URL ?? '').replace(/\/$/, '')
-    const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY
-    if (!supabaseUrl || !serviceKey) return null
-
-    const res = await fetch(
-      `${supabaseUrl}/rest/v1/experts?subdomain=eq.${encodeURIComponent(subdomain)}&active=eq.true&select=name,system_prompt`,
-      { headers: { apikey: serviceKey, Authorization: `Bearer ${serviceKey}` } }
-    )
-    if (!res.ok) return null
-
-    const rows: Array<{ name: string; system_prompt: string | null }> = await res.json()
-    const data = rows[0] ?? null
-
-    const value = data
-      ? JSON.stringify({ subdomain, expertName: data.name, systemPrompt: data.system_prompt ?? '' })
-      : null
-
-    tenantCache.set(host, { value, exp: Date.now() + TENANT_TTL_MS })
-    return value
-  } catch {
-    return null
-  }
+  return match ? match[1] : null
 }
 
 // Rate limiting lazy — só ativa se KV estiver configurado
@@ -81,9 +50,9 @@ export async function proxy(request: NextRequest) {
 
   // ── Rotas de API: tenant resolution + rate limiting ────────────────────────
   if (isApiRoute) {
-    const tenantJson = await resolveTenant(request)
+    const subdomain = resolveSubdomain(request)
     const requestHeaders = new Headers(request.headers)
-    if (tenantJson) requestHeaders.set('x-tenant-config', tenantJson)
+    if (subdomain) requestHeaders.set('x-tenant-subdomain', subdomain)
     requestHeaders.set('x-request-id', crypto.randomUUID())
 
     const isAnalyze = pathname.startsWith('/api/analyze')

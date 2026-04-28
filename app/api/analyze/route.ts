@@ -91,31 +91,22 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       )
     }
 
-    // Resolver tenant config (multi-tenant)
-    const tenantHeader = request.headers.get('x-tenant-config')
-    let tenantConfig: TenantConfig | null = null
-    if (tenantHeader) {
-      try {
-        tenantConfig = JSON.parse(tenantHeader)
-      } catch (err) {
-        logger.error('analyze', 'x-tenant-config JSON inválido', { error: err, requestId })
-        return NextResponse.json({ error: 'x-tenant-config inválido' }, { status: 400 })
-      }
-    }
-
     const body: RequestBody = await request.json()
 
-    // Fallback path-based: tenantSubdomain no body (quando não há subdomínio no host)
-    if (!tenantConfig && body.tenantSubdomain) {
+    // Resolver tenant config (multi-tenant)
+    // Prioridade: header x-tenant-subdomain (injetado pelo proxy) > body.tenantSubdomain (fallback)
+    const tenantSubdomain = request.headers.get('x-tenant-subdomain') ?? body.tenantSubdomain ?? null
+    let tenantConfig: TenantConfig | null = null
+    if (tenantSubdomain) {
       const { data: expert } = await adminClient
         .from('experts')
         .select('name, system_prompt')
-        .eq('subdomain', body.tenantSubdomain)
+        .eq('subdomain', tenantSubdomain)
         .eq('active', true)
         .maybeSingle()
       if (expert) {
         tenantConfig = {
-          subdomain: body.tenantSubdomain,
+          subdomain: tenantSubdomain,
           expertName: expert.name,
           systemPrompt: expert.system_prompt ?? '',
         }
