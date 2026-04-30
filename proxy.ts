@@ -6,15 +6,22 @@
  *
  * Responsabilidades:
  * 1. Rotas de API (qualquer host): injetar x-tenant-config + rate limiting
- * 2. Páginas em subdomínio (ana.mynutri.pro): pass-through
- * 3. Páginas no domínio principal: roteamento de locale via next-intl
+ * 2. Páginas (todos os hosts): refresh de sessão Supabase + roteamento de locale via next-intl
  */
 import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
+import { createServerClient } from '@supabase/ssr'
 import createNextIntlMiddleware from 'next-intl/middleware'
 import { routing } from './i18n/routing'
 
 const intlHandler = createNextIntlMiddleware(routing)
+
+const cookieDomain = (() => {
+  try {
+    const h = new URL(process.env.NEXT_PUBLIC_APP_URL ?? '').hostname
+    return h && h !== 'localhost' ? `.${h}` : undefined
+  } catch { return undefined }
+})()
 
 // Extrai o subdomain do host por regex — sem chamada de rede, seguro no Edge.
 // O route handler faz o fetch do expert e do system_prompt em Node.js runtime.
@@ -39,6 +46,39 @@ async function buildLimiters() {
   }
 }
 
+// Refresh de sessão Supabase: verifica JWT e renova se expirado.
+// Retorna a resposta com os cookies de sessão atualizados (se houve renovação).
+// Também atualiza request.cookies in-place para que o intlHandler enxergue a sessão nova.
+async function refreshSession(request: NextRequest): Promise<NextResponse> {
+  let response = NextResponse.next({ request })
+
+  const supabase = createServerClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    {
+      cookieOptions: cookieDomain ? { domain: cookieDomain } : {},
+      cookies: {
+        getAll() { return request.cookies.getAll() },
+        setAll(cookiesToSet) {
+          // Atualiza os cookies do request para que a sessão nova seja visível downstream
+          cookiesToSet.forEach(({ name, value }) => request.cookies.set(name, value))
+          // Reconstrói o response para que os Set-Cookie cheguem ao browser
+          response = NextResponse.next({ request })
+          cookiesToSet.forEach(({ name, value, options }) =>
+            response.cookies.set(name, value, options)
+          )
+        },
+      },
+    }
+  )
+
+  // Dispara verificação/renovação do JWT. Erros de rede são ignorados —
+  // o server component vai lidar com sessão ausente normalmente.
+  await supabase.auth.getUser().catch(() => {})
+
+  return response
+}
+
 export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl
   const host = request.headers.get('host') ?? ''
@@ -46,7 +86,6 @@ export async function proxy(request: NextRequest) {
     .replace(/^https?:\/\//, '').replace(/\/$/, '')
 
   const isApiRoute = pathname.startsWith('/api/')
-  const isSubdomain = appDomain && host !== appDomain && host.endsWith(`.${appDomain}`)
 
   // ── Rotas de API: tenant resolution + rate limiting ────────────────────────
   if (isApiRoute) {
@@ -86,12 +125,24 @@ export async function proxy(request: NextRequest) {
     return NextResponse.next({ request: { headers: requestHeaders } })
   }
 
-  // ── Páginas em subdomínio: rewrite interno com detecção de locale ──────────
-  // Sem isso, `/` não encontra `app/[locale]/page.tsx` e retorna 404, porque
-  // o intlHandler não roda em subdomínios e o segmento [locale] fica ausente.
-  // Detectamos o locale pelo Accept-Language do browser para suporte internacional.
-  // ── Todas as Páginas: roteamento de locale (next-intl) ─────────
-  return intlHandler(request)
+  // ── Páginas: refresh de sessão Supabase + roteamento de locale ─────────────
+  // O refresh DEVE ocorrer antes do intlHandler para que:
+  // 1. O JWT renovado seja gravado nos cookies da resposta
+  // 2. O Server Component seguinte enxergue a sessão válida sem tentar escrever cookies
+  const sessionResponse = await refreshSession(request)
+
+  // Aplica roteamento de locale (next-intl). O request já tem os cookies atualizados
+  // in-place (via request.cookies.set dentro de refreshSession), então o intlHandler
+  // enxerga a sessão correta se precisar.
+  const intlResponse = intlHandler(request)
+
+  // Propaga os cookies de sessão renovada para a resposta final do intlHandler.
+  // Se não houve renovação, sessionResponse.cookies estará vazio e este loop é no-op.
+  sessionResponse.cookies.getAll().forEach(({ name, value, ...rest }) => {
+    intlResponse.cookies.set(name, value, rest)
+  })
+
+  return intlResponse
 }
 
 export const config = {

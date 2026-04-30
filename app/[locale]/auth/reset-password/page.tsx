@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { motion } from 'framer-motion'
 import { createClient } from '@/lib/supabase/client'
 import { useRouter } from '@/i18n/navigation'
@@ -15,13 +15,13 @@ export default function ResetPasswordPage() {
   const [error, setError] = useState<string | null>(null)
   const [sessionOk, setSessionOk] = useState<boolean | null>(null)
   const router = useRouter()
-  const supabase = createClient()
+  const supabase = useMemo(() => createClient(), [])
 
   useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setSessionOk(!!session)
+    supabase.auth.getUser().then(({ data: { user } }) => {
+      setSessionOk(!!user)
     })
-  }, []) // eslint-disable-line react-hooks/exhaustive-deps
+  }, [supabase])
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()

@@ -7,22 +7,10 @@ import { NextIntlClientProvider } from 'next-intl'
 import { getTranslations } from 'next-intl/server'
 import { createClient } from '@/lib/supabase/server'
 import { adminClient } from '@/lib/supabase/admin'
+import { extractSubdomain } from '@/lib/utils'
 import PainelClient from './PainelClient'
 import TrialExpiredPaywall from './TrialExpiredPaywall'
 import type { Expert, Client, Referral } from '@/types'
-
-function extractSubdomain(host: string): string | null {
-  // dev override
-  if (process.env.NODE_ENV === 'development' && process.env.PAINEL_DEV_SUBDOMAIN) {
-    return process.env.PAINEL_DEV_SUBDOMAIN
-  }
-  const appDomain = (process.env.NEXT_PUBLIC_APP_URL ?? '').replace(/^https?:\/\//, '').replace(/\/$/, '')
-  if (!appDomain) return null
-  const match = host.match(new RegExp(`^([^.]+)\\.${appDomain.replace(/\./g, '\\.')}$`))
-  const sub = match?.[1]
-  if (!sub || sub === 'www') return null
-  return sub
-}
 
 export default async function PainelPage({
   params,

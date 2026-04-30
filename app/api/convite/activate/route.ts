@@ -12,19 +12,18 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
   const token = searchParams.get('token')
   const code = searchParams.get('code')
 
-  // Trocar código por sessão (Supabase OTP callback)
-  if (code) {
-    const supabase = await createClient()
-    await supabase.auth.exchangeCodeForSession(code)
-  }
-
   if (!token) {
     return NextResponse.redirect(`${origin}/?invite_error=token_missing`)
   }
 
   try {
-    // Pegar usuário já autenticado
     const supabase = await createClient()
+
+    // Trocar código por sessão (Supabase OTP callback) antes de getUser
+    if (code) {
+      await supabase.auth.exchangeCodeForSession(code)
+    }
+
     const { data: { user } } = await supabase.auth.getUser()
 
     if (!user) {

@@ -144,10 +144,11 @@ export default function ConviteClient({ token, email: initialEmail, expertName, 
                   id="email"
                   type="email"
                   value={email}
-                  onChange={e => setEmail(e.target.value)}
+                  onChange={initialEmail ? undefined : e => setEmail(e.target.value)}
+                  readOnly={!!initialEmail}
                   placeholder={t('email_placeholder')}
                   required
-                  className="w-full px-4 py-3 rounded-xl border border-border bg-card text-sm focus:outline-none focus:ring-2 focus:ring-ring/40"
+                  className="w-full px-4 py-3 rounded-xl border border-border bg-card text-sm focus:outline-none focus:ring-2 focus:ring-ring/40 read-only:bg-muted read-only:text-muted-foreground read-only:cursor-default"
                 />
               </div>
 

@@ -18,8 +18,6 @@ export async function POST(request: NextRequest) {
         await new Promise(r => setTimeout(r, 2000))
         return NextResponse.json({ error: 'too_many_requests' }, { status: 429 })
       }
-
-      await kv.set(`auth_flow_${flowId}`, { ip, emailChecks: 0 }, { ex: 900 })
     }
   } catch {
     // KV indisponível — sem rate limiting
