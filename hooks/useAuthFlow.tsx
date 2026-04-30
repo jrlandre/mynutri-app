@@ -11,6 +11,14 @@ function getNextUrl(): string {
   return raw.startsWith('/') && !raw.startsWith('//') ? raw : '/'
 }
 
+function navigate(url: string, router: ReturnType<typeof useRouter>) {
+  if (url.startsWith('/api/')) {
+    window.location.href = url
+  } else {
+    router.push(url)
+  }
+}
+
 export type AuthStep = 'email' | 'login' | 'magic' | 'signup' | 'verify' | 'google'
 export type OAuthProvider = 'google'
 
@@ -45,14 +53,14 @@ export function useAuthFlow() {
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event) => {
       if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') {
-        router.push(getNextUrl())
+        navigate(getNextUrl(), router)
       }
     })
 
     const handleVisibility = async () => {
       if (document.visibilityState === 'visible') {
         const { data: { session } } = await supabase.auth.getSession()
-        if (session) router.push(getNextUrl())
+        if (session) navigate(getNextUrl(), router)
       }
     }
     document.addEventListener('visibilitychange', handleVisibility)
@@ -117,7 +125,7 @@ export function useAuthFlow() {
         }
         throw error
       }
-      router.push(getNextUrl())
+      navigate(getNextUrl(), router)
     } catch (err: unknown) {
       set({ loading: false, error: translateError(err, t) })
     }
@@ -136,7 +144,7 @@ export function useAuthFlow() {
       })
       if (error) throw error
       if (data.session) {
-        router.push(getNextUrl())
+        navigate(getNextUrl(), router)
       } else {
         set({ loading: false, step: 'verify', isNewUser: true })
       }

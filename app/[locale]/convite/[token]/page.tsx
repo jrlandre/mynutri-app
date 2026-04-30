@@ -1,5 +1,7 @@
 import { getTranslations } from 'next-intl/server'
+import { redirect } from 'next/navigation'
 import { adminClient } from '@/lib/supabase/admin'
+import { createClient } from '@/lib/supabase/server'
 import ConviteClient from './ConviteClient'
 
 interface Props {
@@ -49,6 +51,13 @@ export default async function ConvitePage({ params }: Props) {
     )
   }
 
+  // Já autenticado com o email certo → pula o auth e ativa direto
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (user?.email?.toLowerCase() === (client.email ?? '').toLowerCase()) {
+    redirect(`/api/convite/activate?token=${token}`)
+  }
+
   const { data: expert } = await adminClient
     .from('experts')
     .select('name')
@@ -60,6 +69,7 @@ export default async function ConvitePage({ params }: Props) {
       token={token}
       email={client.email ?? ''}
       expertName={expert?.name ?? 'seu Expert'}
+      currentEmail={user?.email ?? null}
     />
   )
 }

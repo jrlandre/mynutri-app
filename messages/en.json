@@ -213,7 +213,8 @@
     "check_email_title": "Check your email",
     "check_email_desc": "We sent an access link to <bold>{email}</bold>.",
     "use_other_email": "Use a different email",
-    "error_send": "Failed to send email. Please try again."
+    "error_send": "Failed to send email. Please try again.",
+    "wrong_account": "This invite is for <bold>{inviteEmail}</bold>. You are signed in as <bold>{currentEmail}</bold>."
   },
   "Chat": {
     "subtitle": "AI nutrition assistant",
@@ -478,5 +479,4 @@
     "gp_err_generic": "Unexpected error. Please try again.",
     "gp_beta_tooltip": "Experimental feature currently in testing. Results may vary."
   }
-} }
 }

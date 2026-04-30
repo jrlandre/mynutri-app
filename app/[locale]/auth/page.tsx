@@ -49,7 +49,11 @@ export default function AuthPage() {
 // ── Email step ────────────────────────────────────────────────────────────────
 
 function EmailStep({ flow }: { flow: ReturnType<typeof useAuthFlow> }) {
-  const [email, setEmail] = useState('')
+  const [email, setEmail] = useState(() =>
+    typeof window !== 'undefined'
+      ? (new URLSearchParams(window.location.search).get('email') ?? '')
+      : ''
+  )
   const router = useRouter()
   const t = useTranslations('Auth')
 

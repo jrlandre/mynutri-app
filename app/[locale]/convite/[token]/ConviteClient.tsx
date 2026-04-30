@@ -8,6 +8,7 @@ interface Props {
   token: string
   email: string
   expertName: string
+  currentEmail: string | null
 }
 
 function GoogleIcon() {
@@ -21,7 +22,7 @@ function GoogleIcon() {
   )
 }
 
-export default function ConviteClient({ token, email: initialEmail, expertName }: Props) {
+export default function ConviteClient({ token, email: initialEmail, expertName, currentEmail }: Props) {
   const t = useTranslations('Convite')
   const locale = useLocale()
   const [email, setEmail] = useState(initialEmail)
@@ -35,9 +36,24 @@ export default function ConviteClient({ token, email: initialEmail, expertName }
     setLoading(true)
     setError(null)
 
+    // Se o email já tem senha, redireciona para o fluxo de auth normal
+    // (lá o usuário pode entrar com senha ou pedir um link por email)
+    const checkRes = await fetch('/api/auth/check-email', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email }),
+    })
+    const checkData = await checkRes.json() as { hasPassword?: boolean; provider?: string; exists?: boolean }
+
+    if (checkData.hasPassword || (checkData.exists && checkData.provider !== 'email')) {
+      const activateUrl = `/api/convite/activate?token=${token}`
+      window.location.href = `/${locale}/auth?next=${encodeURIComponent(activateUrl)}&email=${encodeURIComponent(email)}`
+      return
+    }
+
+    // Sem senha → fluxo OTP
     const supabase = createClient()
     const redirectTo = `${window.location.origin}/api/convite/activate?token=${token}&locale=${locale}`
-
     const { error: otpError } = await supabase.auth.signInWithOtp({
       email,
       options: { emailRedirectTo: redirectTo, shouldCreateUser: true },
@@ -73,6 +89,16 @@ export default function ConviteClient({ token, email: initialEmail, expertName }
             {t('access_desc')}
           </p>
         </div>
+
+        {currentEmail && currentEmail.toLowerCase() !== initialEmail.toLowerCase() && (
+          <div className="w-full rounded-xl border border-amber-200 bg-amber-50 dark:border-amber-800 dark:bg-amber-950/40 px-4 py-3 text-xs text-amber-800 dark:text-amber-300 text-left leading-relaxed">
+            {t.rich('wrong_account', {
+              inviteEmail: initialEmail,
+              currentEmail,
+              bold: (chunks) => <span className="font-semibold">{chunks}</span>,
+            })}
+          </div>
+        )}
 
         {sent ? (
           <div className="flex flex-col gap-2 w-full">

@@ -213,7 +213,8 @@
     "check_email_title": "Verifique seu e-mail",
     "check_email_desc": "Enviamos um link de acesso para <bold>{email}</bold>.",
     "use_other_email": "Usar outro e-mail",
-    "error_send": "Não foi possível enviar o e-mail. Tente novamente."
+    "error_send": "Não foi possível enviar o e-mail. Tente novamente.",
+    "wrong_account": "Este convite é para <bold>{inviteEmail}</bold>. Você está logado como <bold>{currentEmail}</bold>."
   },
   "Chat": {
     "subtitle": "Assistente de escolhas nutricionais",
@@ -478,5 +479,4 @@
     "gp_err_generic": "Erro inesperado. Tente novamente.",
     "gp_beta_tooltip": "Funcionalidade experimental em fase de testes. Resultados podem variar."
   }
-} }
 }
